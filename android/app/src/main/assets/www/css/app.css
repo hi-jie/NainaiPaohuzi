@@ -254,7 +254,7 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 .wide .hand .card { font-size: 28px; padding-top: 1px; }
 .hand.flat {
   display: grid; grid-template-columns: repeat(auto-fill, 38px);
-  grid-template-rows: var(--strip-peek) var(--strip-height);
+  grid-template-rows: calc(var(--strip-peek) + 9px) var(--strip-height);
   align-items: start; gap: 0 8px;
 }
 .card.hinted, .hand .card[aria-pressed="true"] {
