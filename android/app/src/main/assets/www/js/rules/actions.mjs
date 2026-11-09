@@ -1,5 +1,5 @@
 import { countCard, hasCards, takeCards } from './cards.mjs';
-import { findHu } from './hu.mjs';
+import { findHu } from './hu.mjs?v=65';
 
 export const nextSeat = seat => (seat + 1) % 3;
 
@@ -51,7 +51,7 @@ export function responses(player, seat, { card, source, kind }, rules) {
 
   if (canHuFrom(kind, rules)) {
     const hu = findHu(player, card, ownDraw, rules);
-    if (hu && hu.huxi > player.passedHu) actions.push({ type: '胡', hu, priority: 2 });
+    if (hu) actions.push({ type: '胡', hu, priority: 2 });
   }
   if (kind === 'opening' && !self) return actions;
   if (count === 3 || previousType === '偎' || (previousType === '碰' && kind !== 'discard')) {

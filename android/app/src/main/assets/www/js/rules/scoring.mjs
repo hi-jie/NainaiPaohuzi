@@ -1,3 +1,12 @@
+export function tunForHuxi(huxi, rules) {
+  if (rules.mode === 'ten') {
+    const scoringHuxi = huxi === 10 ? 15 : huxi;
+    return scoringHuxi === 11 ? 1 : 2 + Math.floor((scoringHuxi - 12) / 3);
+  }
+  if (rules.mode === 'fifteen' && huxi < 15) return 1;
+  return 1 + Math.floor((huxi - rules.minimum) / 3);
+}
+
 export function settle(winner, offer, hu, rules) {
   const names = [];
   if (hu.red === 0) names.push(['黑胡', 5]);
@@ -9,12 +18,7 @@ export function settle(winner, offer, hu, rules) {
   if (offer.kind === 'discard' && offer.first) names.push(['地胡', 5]);
   if (!names.length) names.push(['平胡', 1]);
 
-  let tun = 1 + Math.floor((hu.huxi - rules.minimum) / 3);
-  if (rules.mode === 'ten') {
-    const scoringHuxi = hu.huxi === 10 ? 15 : hu.huxi;
-    tun = scoringHuxi === 11 ? 1 : 2 + Math.floor((scoringHuxi - 12) / 3);
-  }
-  if (rules.mode === 'fifteen' && hu.huxi < 15) tun = 1;
+  const tun = tunForHuxi(hu.huxi, rules);
   const unit = names.reduce((value, [, multiplier]) => value * multiplier, tun);
   const delta = [-unit, -unit, -unit];
   delta[winner] = 2 * unit;

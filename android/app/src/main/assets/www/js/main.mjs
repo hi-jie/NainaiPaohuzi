@@ -2,7 +2,7 @@ import { chooseAction } from './ai/player.mjs';
 import { setMusicPlaying } from './audio/music.mjs?v=5-d4b6275df60f';
 import { playAction } from './audio/player.mjs';
 import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
-import { Round } from './game/state-machine.mjs?v=58';
+import { Round } from './game/state-machine.mjs?v=65';
 import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs';
 import { animateAction, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=63';

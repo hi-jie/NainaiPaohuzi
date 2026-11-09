@@ -152,6 +152,47 @@ test('十胡卡正好十胡按十五胡结算，保留实际胡息', () => {
   assert.deepEqual(exactTen.delta, fifteen.delta);
 });
 
+test('十胡卡同一张玖能拆成 10 胡或 13 胡时按 10 胡结算', () => {
+  const round = new Round({ ...defaultSettings, mode: 'ten' }, 0);
+  const groups = [
+    { type: '跑', cards: [5, 5, 5, 5] },
+    { type: '吃', cards: [3, 3, 13] },
+    { type: '吃', cards: [14, 15, 16] },
+    { type: '碰', cards: [17, 17, 17] },
+    { type: '碰', cards: [9, 9, 9] }
+  ];
+  round.players = [player([8, 8, 18, 18], groups), player([]), player([])];
+  const thirteen = findHu({ ...round.players[0], passedHu: 10 }, 18, false, round.rules);
+  assert.equal(thirteen.huxi, 13);
+  assert.deepEqual(settle(0, { source: 1, kind: 'draw' }, thirteen, round.rules).delta, [4, -2, -2]);
+  round.reveal(1, 18, 'draw');
+
+  const hu = round.options[0];
+  assert.equal(hu.type, '胡');
+  assert.equal(hu.hu.huxi, 10);
+  assert.deepEqual(hu.hu.groups.slice(-2), [
+    { type: '吃', cards: [8, 8, 18] },
+    { type: '对', cards: [18, 18] }
+  ]);
+  round.act(hu);
+  assert.equal(round.result.tun, 3);
+  assert.deepEqual(round.result.delta, [6, -3, -3]);
+});
+
+test('十胡卡同一搜索分支按积分选拆法，并先排除过胡限制挡住的胡息', () => {
+  const ten = { ...rules, ...presets.ten, mode: 'ten' };
+  const hand = [0, 0, 1, 2, 3, 3, 7, 7, 10, 10, 11, 12, 13, 13];
+  const candidate = player(hand, [
+    { type: '跑', cards: [5, 5, 5, 5] },
+    { type: '碰', cards: [9, 9, 9] }
+  ]);
+  assert.equal(findHu(candidate, null, false, ten).huxi, 10);
+  candidate.passedHu = 10;
+  assert.equal(findHu(candidate, null, false, ten).huxi, 13);
+  candidate.passedHu = 13;
+  assert.equal(findHu(candidate, null, false, ten), null);
+});
+
 test('偎牌遇别人打出第四张必须跑，并升级桌面牌', () => {
   const round = new Round(defaultSettings, 0);
   round.players[0] = player([0, 1, 3], [{ type: '偎', cards: [8, 8, 8] }]);

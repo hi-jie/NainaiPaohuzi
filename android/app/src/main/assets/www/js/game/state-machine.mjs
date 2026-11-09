@@ -1,8 +1,8 @@
 import { countCard, patterns, sortCards, takeCards } from '../rules/cards.mjs';
-import { canHuFrom, nextSeat, responses } from '../rules/actions.mjs?v=46';
-import { findHu } from '../rules/hu.mjs';
+import { canHuFrom, nextSeat, responses } from '../rules/actions.mjs?v=65';
+import { findHu } from '../rules/hu.mjs?v=65';
 import { presets } from '../rules/presets.mjs';
-import { settle } from '../rules/scoring.mjs';
+import { settle } from '../rules/scoring.mjs?v=65';
 import { shuffledDeck } from './deck.mjs';
 
 function openingQuads(hand) {
@@ -180,7 +180,7 @@ export class Round {
     this.record(type, seat, card);
     if (action.forced && canHuFrom(kind, this.rules)) {
       const hu = findHu(player, null, false, this.rules);
-      if (hu && hu.huxi > player.passedHu) {
+      if (hu) {
         this.phase = 'after-meld';
         this.options = [{ type: '胡', hu }, { type: '过' }];
         this.repeatQuad = quads > 0 && (type === '跑' || type === '提') && kind !== 'opening';
