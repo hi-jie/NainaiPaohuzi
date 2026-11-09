@@ -1,4 +1,5 @@
 import { chooseAction } from './ai/player.mjs';
+import { setMusicPlaying } from './audio/music.mjs';
 import { playAction } from './audio/player.mjs';
 import { Round } from './game/state-machine.mjs';
 import { presets } from './rules/presets.mjs';
@@ -31,6 +32,7 @@ for (const field of settingFields) {
       if (input.name === field.name) input.checked = field.checked;
     }
     save(data);
+    if (field.name === 'music' && !table.hidden) setMusicPlaying(field.checked);
   });
 }
 modes.addEventListener('click', ({ target }) => {
@@ -42,6 +44,7 @@ modes.addEventListener('click', ({ target }) => {
 score.textContent = data.score;
 
 function showHome() {
+  setMusicPlaying(false);
   table.hidden = true;
   home.hidden = false;
   startButton.focus();
@@ -78,6 +81,7 @@ function start(dealer = Math.floor(Math.random() * 3)) {
   table.hidden = false;
   fitTable();
   showRound();
+  setMusicPlaying(data.settings.music);
 }
 
 function step(action) {
