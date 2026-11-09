@@ -267,7 +267,9 @@ main:has(#table:not([hidden])) { background: var(--wood); }
   box-shadow: 0 3px #7d4b35;
 }
 .opening-stack { transform: translate(calc(var(--index) * 5px), calc(var(--index) * -3px)); }
+.opening[data-stage="shuffle"] .deck-tile { visibility: hidden; }
 .opening[data-stage="shuffle"] .opening-stack {
+  visibility: visible;
   --spread: calc((var(--index) - 1.5) * 48px);
   --angle: calc((var(--index) - 1.5) * 19deg);
   animation: opening-shuffle .65s ease-in-out both;
