@@ -1,8 +1,8 @@
-import tracks from '../../media/audio/music/playlist.mjs';
+import tracks from '../../media/audio/music/playlist.mjs?v=2';
 
 const folder = new URL('../../media/audio/music/', import.meta.url);
 const audio = new Audio();
-audio.volume = 0.3;
+audio.volume = 0.45;
 let current;
 
 function play() {
