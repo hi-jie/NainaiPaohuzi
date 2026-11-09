@@ -57,7 +57,7 @@ function seatView(round, seat, event, response, openingStage) {
       <span>${seat === 0 ? '我的弃牌' : '弃牌'} <b>${discards.length}</b></span>
     </button>
     ${seat === 0 && spread ? openingHand(round.openingHand, openingStage === 'reveal') : ''}
-    ${seat === 0 && showHand ? `<div class="hand${round.rules.autoStack ? '' : ' flat'}" style="--hand-size:${hand.length}" aria-label="我的手牌">${playerHand(round, hand, yourDiscard, response)}<strong class="card-count">${hand.length}</strong></div>` : ''}
+    ${seat === 0 && showHand ? `<div class="hand${round.rules.autoStack ? '' : ' flat'}" aria-label="我的手牌">${playerHand(round, hand, yourDiscard, response)}<strong class="card-count">${hand.length}</strong></div>` : ''}
   </section>`;
 }
 

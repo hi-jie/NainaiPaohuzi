@@ -252,10 +252,10 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 .hand > .card-count { position: absolute; top: 5px; right: calc(100% + 9px); }
 .wide .hand-stack { max-width: 38px; }
 .wide .hand .card { font-size: 28px; padding-top: 1px; }
-.hand.flat { container-type: inline-size; gap: 2px; }
-.wide .hand.flat .card {
-  flex: 1 1 0; min-width: 0; max-width: 38px;
-  font-size: min(28px, calc((100cqi + 2px) / var(--hand-size) - 4px));
+.hand.flat {
+  display: grid; grid-template-columns: repeat(auto-fill, 38px);
+  grid-template-rows: var(--strip-peek) var(--strip-height);
+  align-items: start; gap: 0 8px;
 }
 .card.hinted, .hand .card[aria-pressed="true"] {
   background: linear-gradient(#fff7c8, #ffdf87);
