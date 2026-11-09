@@ -54,11 +54,11 @@ function seatView(round, seat, event, response) {
       <span class="dealer" ${round.dealer === seat ? '' : 'inert aria-hidden="true"'}>庄</span>
       ${seat !== 0 ? `<span class="count">剩 <strong>${hand.length}</strong> 张</span>` : ''}
     </div>
-    ${event?.seat === seat ? `<span class="callout${['摸', '出'].includes(event.type) ? ' long' : ''}" aria-hidden="true">${shortActionLabel(event.type)}</span>` : ''}
+    ${event?.seat === seat && !['摸', '出'].includes(event.type) ? `<span class="callout" aria-hidden="true">${event.type}</span>` : ''}
     ${seat !== 0 ? `<div class="opponent-backs" aria-hidden="true">${'<span></span>'.repeat(hand.length)}</div>` : ''}
     <div class="groups">${groups.map(group => meld(group, seat !== 0 && ['偎', '提'].includes(group.type))).join('')}</div>
     <button class="discarded" data-history="${seat}" data-view="discards" ${discards.length ? '' : 'disabled'} aria-label="${names[seat]}的弃牌，${discards.length}张">
-      <span class="discard-preview" aria-hidden="true">${discards.slice(-3).map(card => tile(card)).join('')}</span>
+      <span class="discard-preview" aria-hidden="true">${discards.slice(-1).map(card => tile(card)).join('')}</span>
       <span>${seat === 0 ? '我的弃牌' : '弃牌'} <b>${discards.length}</b></span>
     </button>
     ${seat === 0 ? `<div class="hand${round.rules.autoStack ? '' : ' flat'}" aria-label="我的手牌">${playerHand(round, hand, yourDiscard, response)}</div>` : ''}

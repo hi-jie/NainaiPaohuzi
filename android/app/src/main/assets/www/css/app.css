@@ -142,12 +142,14 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 .card.red { color: #ad281b; }
 .card.back { color: #efcb8e; background: #833f31; border-color: #cc9c69; }
 .discarded {
-  position: absolute; top: 170px; left: 0; width: 160px; height: 42px; display: flex; align-items: center; justify-content: center;
-  gap: 5px; border: 1px solid #e9d39380; border-radius: 20px; background: #123b30; font-size: 16px;
+  position: absolute; top: 128px; left: calc(100% + 4px); width: 60px; height: 46px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; padding: 2px 0; border: 1px solid #e9d39380; border-radius: 12px;
+  background: #123b30; font-size: 16px; white-space: nowrap;
 }
 .discarded:disabled { visibility: hidden; }
-.discard-preview { display: flex; gap: 2px; width: 49px; }
-.seat-0 .discarded { top: 0; left: auto; right: 0; }
+.discard-preview { display: flex; }
+.seat-2 .discarded { left: auto; right: calc(100% + 4px); }
 .hand {
   position: absolute; top: 98px; left: 0; width: 374px;
   display: flex; justify-content: center; gap: 4px;
@@ -174,14 +176,15 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 .hand button.card:active { filter: brightness(1.13); }
 .hand button.card:focus-visible { outline-offset: -3px; }
 
-.center { position: absolute; top: calc(265px + (100% - 700px) / 2); left: 50%; transform: translateX(-50%); width: 372px; height: 162px; text-align: center; }
-.play-area { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: center; gap: 24px; }
-.deck, .last-play { display: grid; justify-items: center; gap: 3px; width: 125px; font-size: 16px; }
-.deck-tile, .landing { display: grid; place-items: center; width: 37px; height: 46px; }
+.center { position: absolute; top: calc(265px + (100% - 700px) / 2); left: 50%; transform: translateX(-50%); width: 372px;
+  display: grid; grid-template-rows: 90px 56px 54px; gap: 7px; text-align: center;
+}
+.play-area { display: flex; justify-content: center; gap: 22px; }
+.deck, .last-play { display: grid; align-content: start; justify-items: center; gap: 6px; width: 125px; font-size: 16px; }
+.deck-tile, .landing { display: grid; place-items: center; width: 44px; height: 56px; }
 .deck-tile { color: #ffe4a0; font: 800 23px serif; box-shadow: 3px 3px #d0a978, 5px 5px #754b39; }
-.landing .card { width: 37px; height: 46px; font-size: 27px; }
+.landing .card { width: 100%; height: 100%; font-size: 27px; }
 .turn-status {
-  position: absolute; top: 72px; left: 0; right: 0; min-height: 34px;
   display: flex; align-items: center; justify-content: center; gap: 8px;
   color: #ffe9b3; font-size: 20px;
 }
@@ -195,38 +198,44 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 }
 .my-turn .turn-instruction { color: #fff2c4; font-weight: 800; }
 .actions { display: flex; justify-content: center; align-items: start; gap: 6px; }
-.center .actions { position: absolute; top: 113px; left: 0; right: 0; }
-.center button { min-width: 64px; min-height: 50px; }
+.center button { min-width: 64px; min-height: 53px; }
 .center .pass { background: linear-gradient(#426a55, #254739); border-color: #90a888; }
 .eat-picker { display: grid; grid-template-columns: auto auto auto; gap: 4px; align-items: start; }
 .callout {
-  position: absolute; z-index: 1; top: 0; min-width: 62px;
+  position: absolute; z-index: 1; top: 43px; width: 104px;
   color: #ffe487; text-align: center; font: 800 52px/1.05 serif;
   text-shadow: 2px 3px #80331c, -1px -1px #62351c, 0 2px 8px #110d08;
   animation: callout .55s ease-out both; pointer-events: none; white-space: nowrap;
 }
-.callout.long { font-size: 40px; }
-.seat-1 .callout { left: calc(100% + 8px); }
-.seat-2 .callout { right: calc(100% + 8px); }
-.seat-0 .callout { top: -61px; left: 0; }
+.seat-1 .callout { left: calc(100% + 4px); }
+.seat-2 .callout { right: calc(100% + 4px); }
+.seat-0 .callout { top: -58px; left: calc(50% + 162px); }
 .winning .landing .card { box-shadow: 0 0 28px 10px #ffe28a; }
 
 #table.wide .felt::after { inset: 42px 32px 112px; }
 .wide .seat { top: 69px; width: 180px; }
 .wide .seat-1 { left: 34px; }
 .wide .seat-2 { right: 34px; }
-.wide .seat-0 { top: auto; bottom: 16px; width: 776px; height: 159px; }
-.wide .seat-0 .groups { top: 3px; left: 90px; grid-template-columns: repeat(7, 86px); }
-.wide .seat-0 .discarded { top: -45px; left: 50%; right: auto; transform: translateX(-50%); }
-.wide .center { top: calc(96px + (100% - 480px) / 2); width: 388px; }
-.wide .hand { top: 34px; width: 776px; gap: 8px; --strip-height: 68px; --strip-peek: 27px; }
+.wide .seat-0 {
+  top: auto; bottom: 16px; left: 34px; right: 34px; width: auto; height: 159px; transform: none;
+}
+.wide .seat-0 .groups { top: 37px; grid-template-columns: repeat(2, 86px); }
+.wide .seat-0 .discarded {
+  top: -12px; left: auto; right: 0; width: 116px; height: 38px;
+  flex-direction: row; gap: 6px; font-size: 16px;
+}
+.wide .center { top: calc(82px + (100% - 480px) / 2); width: 300px; }
+.wide .hand {
+  top: 34px; left: calc(50% - 146px); right: 0; width: auto; justify-content: start; gap: 8px;
+  --strip-height: 68px; --strip-peek: 27px;
+}
 .wide .hand-stack { max-width: 38px; }
 .wide .hand .card { font-size: 28px; padding-top: 1px; }
 .hand.flat {
   display: grid; grid-template-columns: repeat(7, 42px); grid-auto-rows: 48px;
   justify-content: center; gap: 5px;
 }
-.wide .hand.flat { grid-template-columns: repeat(14, 43px); grid-auto-rows: 57px; gap: 6px; }
+.wide .hand.flat { grid-template-columns: repeat(11, 42px); grid-auto-rows: 57px; gap: 6px; }
 .hand.flat .card { height: 100%; padding: 0; place-items: center; }
 .card.hinted {
   background: linear-gradient(#fff7c8, #ffdf87);
