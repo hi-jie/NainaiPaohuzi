@@ -52,6 +52,7 @@ function seatView(round, seat, response) {
       <span class="dealer" ${round.dealer === seat ? '' : 'inert aria-hidden="true"'}>庄</span>
       ${seat !== 0 ? `<span class="count">剩 <strong>${hand.length}</strong> 张</span>` : ''}
     </div>
+    ${seat !== 0 ? `<div class="opponent-backs" aria-hidden="true">${'<span></span>'.repeat(hand.length)}</div>` : ''}
     <div class="groups">${groups.map(group => meld(group, seat !== 0 && ['偎', '提'].includes(group.type))).join('')}</div>
     <button class="discarded" data-history="${seat}" data-view="discards" ${discards.length ? '' : 'disabled'} aria-label="${names[seat]}的弃牌，${discards.length}张">
       <span class="discard-preview" aria-hidden="true">${discards.slice(-3).map(card => tile(card)).join('')}</span>

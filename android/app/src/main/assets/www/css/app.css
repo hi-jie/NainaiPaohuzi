@@ -99,10 +99,13 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 .seat:not(.seat-0) .dealer { position: absolute; top: 37px; left: 4px; }
 .count { margin-left: auto; font-size: 17px; color: #f5dda6; }
 .count strong { color: #fff0c8; font-size: 22px; }
-.deck-tile {
+.opponent-backs span, .deck-tile {
   background: repeating-linear-gradient(45deg, #75382e 0 3px, #8c4437 3px 6px);
   border: 1px solid #d9aa71; border-radius: 3px;
 }
+.opponent-backs { position: absolute; top: 41px; left: 31px; display: flex; }
+.opponent-backs span { width: 12px; height: 15px; }
+.opponent-backs span + span { margin-left: -6px; }
 .seat .groups {
   position: absolute; top: 65px; left: 0; display: grid;
   grid-template-columns: repeat(2, 86px); grid-auto-rows: 24px; gap: 2px; align-items: start;
