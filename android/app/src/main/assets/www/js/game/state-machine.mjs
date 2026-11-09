@@ -21,6 +21,7 @@ export class Round {
       this.players[seat].hand.push(this.deck.pop());
       seat = nextSeat(seat);
     }
+    if (deferOpening) this.openingHand = [...this.players[0].hand];
     this.opening = this.deck.pop();
     for (const player of this.players) {
       const quads = [...new Set(player.hand)].filter(card => countCard(player.hand, card) === 4);
@@ -40,6 +41,7 @@ export class Round {
   }
 
   revealOpening() {
+    delete this.openingHand;
     this.reveal(this.dealer, this.opening, 'opening');
   }
 

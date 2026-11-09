@@ -258,34 +258,13 @@ main:has(#table:not([hidden])) { background: var(--wood); }
   .hand .card { transition: none; }
 }
 
-.opening .table-hud button:last-child { margin-left: auto; }
-.opening .table-hud span { margin-left: 0; }
-.opening-seat {
-  position: absolute; top: 28%; display: grid; justify-items: center; gap: 5px;
-  transform: translate(-50%, -50%); white-space: nowrap;
-}
-.opening-seat-0 { left: 50%; top: 78%; }
-.opening-seat-1 { left: 18%; }
-.opening-seat-2 { left: 82%; }
-.opening-seat .dealer { position: absolute; top: 0; right: -25px; }
-.opening-dealer .avatar {
-  color: #43260e; background: #ffdf89; border-color: #fff0ae;
-  box-shadow: 0 0 0 3px #f9c65c, 0 0 18px #ffc7649c;
-}
-.opening[data-stage="dealer"] .opening-dealer .avatar { animation: callout .58s ease-out; }
-.opening-received { position: absolute; top: calc(100% + 6px); left: 50%; }
-.opening-pile { position: absolute; top: 48%; left: 50%; width: 0; height: 0; }
-.opening-back, .reveal-face {
-  position: absolute; left: -21px; top: -30px; width: 42px; height: 60px;
-  border-radius: 5px; box-shadow: 0 3px #7d4b35;
-}
+.opening .center .actions { grid-row: 3; }
+.opening .deck-tile, .opening .landing { position: relative; }
+.opening-pile { position: absolute; inset: 0; pointer-events: none; }
 .opening-back {
-  border: 1px solid #e1ba7a;
+  position: absolute; inset: 0; border: 1px solid #e1ba7a; border-radius: 5px;
   background: repeating-linear-gradient(45deg, #793c2d 0 4px, #954f38 4px 8px);
-}
-.opening-received .received-back {
-  left: calc(var(--index) * 9px - 20px); top: 0; width: 22px; height: 30px;
-  animation: appear .14s calc(.28s + var(--index) * .36s) both;
+  box-shadow: 0 3px #7d4b35;
 }
 .opening-stack { transform: translate(calc(var(--index) * 5px), calc(var(--index) * -3px)); }
 .opening[data-stage="shuffle"] .opening-stack {
@@ -295,20 +274,22 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 }
 .opening[data-stage="cut"] .opening-stack { --cut-height: -24px; animation: opening-cut .65s ease-in-out both; }
 .opening[data-stage="cut"] .opening-stack:nth-child(2) { --cut-height: 19px; animation-direction: reverse; }
-.deal-flight { animation: opening-deal .32s calc(var(--index) * 21ms) ease-out both; }
-.deal-flight.to-0 { --flight-x: 0px; --flight-y: calc(var(--table-height) * .30 + 48px); }
-.deal-flight.to-1 { --flight-x: calc(var(--table-width) * -.32); --flight-y: calc(var(--table-height) * -.20 + 48px); }
-.deal-flight.to-2 { --flight-x: calc(var(--table-width) * .32); --flight-y: calc(var(--table-height) * -.20 + 48px); }
-.opening:is([data-stage="sort"], [data-stage="reveal"]) .opening-seat-0 { display: none; }
-.opening[data-stage="sort"] .hand > * {
-  animation: opening-sort .54s var(--sort-delay, 0ms) ease-out both;
+.opening[data-stage="dealer"] .seat:has(.dealer:not([inert])) .avatar {
+  animation: opening-dealer-glow .32s .46s ease-out both;
 }
-.opening[data-stage="sort"] .hand > :nth-child(3n + 1) { --sort-shift: -16px; --sort-delay: 55ms; }
-.opening[data-stage="sort"] .hand > :nth-child(3n + 2) { --sort-shift: 17px; --sort-delay: 110ms; }
-.reveal-back { animation: opening-flip-back .55s ease-in-out both; }
-.reveal-face { animation: opening-flip-face .55s ease-in-out both; }
-.reveal-face .card { width: 100%; height: 100%; font-size: 32px; }
+.wide .hand.opening-row { gap: 2px; pointer-events: none; }
+.opening-card { position: relative; flex: 0 0 24px; height: 47px; }
+.wide .hand.opening-row .card { position: absolute; inset: 0; height: 100%; place-items: center; font-size: 20px; }
+.opening[data-stage="reveal"] :is(.opening-card, .landing) .opening-back {
+  animation: opening-flip-back .55s var(--flip-delay, 0ms) ease-in-out both;
+}
+.opening[data-stage="reveal"] :is(.opening-card, .landing) .card {
+  animation: opening-flip-face .55s var(--flip-delay, 0ms) ease-in-out both;
+}
 
+@keyframes opening-dealer-glow {
+  55% { box-shadow: 0 0 0 3px #f9c65c, 0 0 20px 4px #ffcb65a8; }
+}
 @keyframes opening-shuffle {
   42%, 63% { transform: translate(var(--spread), -12px) rotate(var(--angle)); }
 }
@@ -316,14 +297,6 @@ main:has(#table:not([hidden])) { background: var(--wood); }
   22% { transform: translate(-54px, 0); }
   48% { transform: translate(0, var(--cut-height)); }
   76% { transform: translate(54px, 0); }
-}
-@keyframes opening-deal {
-  0% { opacity: 0; transform: scale(.72); }
-  15%, 74% { opacity: 1; }
-  100% { opacity: 0; transform: translate(var(--flight-x), var(--flight-y)) scale(.5); }
-}
-@keyframes opening-sort {
-  from { opacity: 0; transform: translate(var(--sort-shift, 0px), 15px); }
 }
 @keyframes opening-flip-back {
   0% { transform: scaleX(1); }

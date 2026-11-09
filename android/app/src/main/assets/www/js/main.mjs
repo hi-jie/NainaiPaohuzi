@@ -2,10 +2,10 @@ import { chooseAction } from './ai/player.mjs';
 import { setMusicPlaying } from './audio/music.mjs?v=5-fbe4af7499ad';
 import { playAction } from './audio/player.mjs';
 import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
-import { Round } from './game/state-machine.mjs?v=17';
+import { Round } from './game/state-machine.mjs?v=19';
 import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs';
-import { animateAction, openingStages, renderHistory, renderOpening, renderTable } from './ui/table.mjs?v=18';
+import { animateAction, openingStages, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=19';
 
 const home = document.querySelector('#home');
 const table = document.querySelector('#table');
@@ -90,7 +90,7 @@ function beginPlay() {
 
 function showOpening(stageIndex) {
   const command = document.activeElement.closest('.opening button')?.dataset.command ?? 'skip-opening';
-  table.innerHTML = renderOpening(round, stageIndex);
+  showOpeningFrame(table, round, data.score, openingStages[stageIndex].name);
   table.querySelector(`[data-command="${command}"]`).focus({ preventScroll: true });
   timer = setTimeout(() => {
     if (stageIndex + 1 === openingStages.length) beginPlay();

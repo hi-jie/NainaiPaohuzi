@@ -46,25 +46,30 @@ function playerHand(round, hand, canDiscard, response) {
   return stacks.map(cards => stackView(cards, false)).join('') + loose.map(cards => stackView(cards, true)).join('');
 }
 
-function seatView(round, seat, event, response) {
+function seatView(round, seat, event, response, openingStage) {
   const { hand, groups, discards } = round.players[seat];
-  const active = round.seat === seat && round.phase !== 'finished';
+  const spread = openingStage === 'deal' || openingStage === 'reveal';
+  const arranging = openingStage === 'sort';
+  const showHand = !openingStage || arranging;
+  const backs = spread ? round.rules.dealt : showHand ? hand.length : 0;
+  const active = !openingStage && round.seat === seat && round.phase !== 'finished';
   const yourDiscard = seat === 0 && active && round.phase === 'discard';
   return `<section class="seat seat-${seat}${active ? ' active' : ''}${yourDiscard ? ' choosing-card' : ''}"${active ? ' aria-current="true"' : ''}>
     <div class="seat-heading">
       <span class="avatar" aria-hidden="true">${avatars[seat]}</span>
       <h3>${names[seat]}</h3>
       <span class="dealer" ${round.dealer === seat ? '' : 'inert aria-hidden="true"'}>庄</span>
-      ${seat !== 0 ? `<span class="count">剩 <strong>${hand.length}</strong> 张</span>` : ''}
+      ${seat !== 0 && showHand ? `<span class="count">剩 <strong>${hand.length}</strong> 张</span>` : ''}
     </div>
     ${event?.seat === seat && !['摸', '出'].includes(event.type) ? `<span class="callout" aria-hidden="true">${event.type}</span>` : ''}
-    ${seat !== 0 ? `<div class="opponent-backs" aria-hidden="true">${'<span></span>'.repeat(hand.length)}</div>` : ''}
-    <div class="groups">${groups.map(group => meld(group, seat !== 0 && ['偎', '提'].includes(group.type))).join('')}</div>
+    ${seat !== 0 ? `<div class="opponent-backs" aria-hidden="true">${'<span></span>'.repeat(backs)}</div>` : ''}
+    <div class="groups">${showHand ? groups.map(group => meld(group, seat !== 0 && ['偎', '提'].includes(group.type))).join('') : ''}</div>
     <button class="discarded" data-history="${seat}" data-view="discards" ${discards.length ? '' : 'disabled'} aria-label="${names[seat]}的弃牌，${discards.length}张">
       <span class="discard-preview" aria-hidden="true">${discards.slice(-1).map(card => tile(card)).join('')}</span>
       <span>${seat === 0 ? '我的弃牌' : '弃牌'} <b>${discards.length}</b></span>
     </button>
-    ${seat === 0 ? `<div class="hand${round.rules.autoStack ? '' : ' flat'}" aria-label="我的手牌">${playerHand(round, hand, yourDiscard, response)}</div>` : ''}
+    ${seat === 0 && spread ? openingHand(round.openingHand, openingStage === 'reveal') : ''}
+    ${seat === 0 && showHand ? `<div class="hand${round.rules.autoStack ? '' : ' flat'}" aria-label="我的手牌">${playerHand(round, hand, yourDiscard, response)}</div>` : ''}
   </section>`;
 }
 
@@ -124,75 +129,122 @@ export const openingStages = [
   { name: 'dealer', duration: 900 },
   { name: 'shuffle', duration: 750 },
   { name: 'cut', duration: 700 },
-  { name: 'deal', duration: 1750 },
-  { name: 'sort', duration: 780 },
-  { name: 'reveal', duration: 620 }
+  { name: 'deal', duration: 2640 },
+  { name: 'reveal', duration: 800 },
+  { name: 'sort', duration: 670 }
 ];
 
-export function renderOpening(round, stageIndex) {
-  const { dealer, rules } = round;
-  const stage = openingStages[stageIndex];
-  const dealing = stage.name === 'deal';
-  const backs = (count, className) => Array.from({ length: count }, (_, index) =>
-    `<i class="opening-back ${className}" style="--index:${index}"></i>`).join('');
-  const flights = dealing ? Array.from({ length: rules.dealt * 3 }, (_, index) =>
-    `<i class="opening-back deal-flight to-${(dealer + index) % 3}" style="--index:${index}"></i>`).join('') : '';
-  const seats = [1, 2, 0].map(seat => `<div class="opening-seat opening-seat-${seat}${dealer === seat ? ' opening-dealer' : ''}">
-    <span class="avatar" aria-hidden="true">${avatars[seat]}</span>
-    <strong>${names[seat]}</strong>
-    ${dealer === seat ? '<span class="dealer">庄</span>' : ''}
-    ${dealing ? `<div class="opening-received" aria-hidden="true">${backs(3, 'received-back')}</div>` : ''}
-  </div>`).join('');
-  const stack = stage.name === 'reveal'
-    ? `<i class="opening-back reveal-back"></i><div class="reveal-face">${tile(round.opening)}</div>`
-    : backs(stage.name === 'shuffle' ? 4 : 2, 'opening-stack');
-  const hand = ['sort', 'reveal'].includes(stage.name) ? seatView(round, 0) : '';
-  return `<div class="felt opening" data-stage="${stage.name}">
-    <div class="table-hud">
-      <button data-command="home">返回首页</button>
-      <span>${rules.name}</span>
-      <button data-command="skip-opening">跳过动画</button>
-    </div>
-    ${seats}
-    <div class="opening-pile" aria-hidden="true">${stack}${flights}</div>
-    ${hand}
-  </div>`;
+function openingHand(hand, reveal) {
+  return `<div class="hand opening-row" aria-label="我的手牌">${hand.map((card, index) =>
+    `<div class="opening-card" style="--flip-delay:${index * 9}ms">
+      <i class="opening-back" aria-hidden="true"></i>${reveal ? tile(card) : ''}
+    </div>`).join('')}</div>`;
 }
 
-export function renderTable(round, score, event, eatIndex = 0) {
+function openingPile(stage) {
+  const count = stage === 'shuffle' ? 4 : 2;
+  return `<span class="opening-pile" aria-hidden="true">${Array.from({ length: count }, (_, index) =>
+    `<i class="opening-back opening-stack" style="--index:${index}"></i>`).join('')}</span>`;
+}
+
+export function renderTable(round, score, event, eatIndex = 0, openingStage = '') {
   const { phase, seat, options, offer, events } = round;
   const response = seat === 0 && phase === 'response' ? options[eatIndex] : null;
   const last = events.at(-1);
   const visibleCard = last ? (offer && ['出', '摸'].includes(last.type) ? offer.card : last.card) : round.opening;
-  const playing = phase !== 'finished';
+  const playing = !openingStage && phase !== 'finished';
   const myTurn = playing && seat === 0;
   let actions = '';
   if (myTurn && phase === 'discard') actions = '<button class="primary" data-command="discard" disabled>出牌</button>';
   else if (myTurn) actions = actionButtons(options, eatIndex);
   const lastLabel = last ? `${names[last.seat]}${shortActionLabel(last.type)}` : '庄家亮张';
-  return `<div class="felt">
+  return `<div class="felt${openingStage ? ' opening' : ''}"${openingStage ? ` data-stage="${openingStage}"` : ''}>
     <div class="table-hud">
-      ${phase !== 'finished' ? '<button data-command="pause" aria-haspopup="dialog">返回</button>' : ''}
+      ${openingStage ? '<button data-command="home">返回</button>'
+        : phase !== 'finished' ? '<button data-command="pause" aria-haspopup="dialog">返回</button>' : ''}
       <span>${round.rules.name}</span><span>积分 ${score}</span>
     </div>
-    ${seatView(round, 1, event)}${seatView(round, 2, event)}
+    ${seatView(round, 1, event, null, openingStage)}${seatView(round, 2, event, null, openingStage)}
     <div class="center${event?.type === '胡' ? ' winning' : ''}">
       <div class="play-area">
-        <div class="deck"><span class="deck-tile" aria-hidden="true">字</span><span>余 ${round.deck.length} 张</span></div>
+        <div class="deck">
+          <span class="deck-tile" aria-hidden="true">字${openingStage ? openingPile(openingStage) : ''}</span>
+          ${!openingStage || openingStage === 'sort' ? `<span>余 ${round.deck.length} 张</span>` : ''}
+        </div>
         <div class="last-play">
-          <div class="landing">${tile(visibleCard, false, undefined, response !== null)}</div>
-          <span>${lastLabel}</span>
+          <div class="landing">${openingStage === 'reveal' ? '<i class="opening-back"></i>' : ''}
+            ${!openingStage || ['reveal', 'sort'].includes(openingStage) ? tile(visibleCard, false, undefined, response !== null) : ''}
+          </div>
+          ${!openingStage ? `<span>${lastLabel}</span>` : ''}
         </div>
       </div>
-      <div class="turn-status${myTurn ? ' my-turn' : ''}" aria-live="polite">
+      <div class="turn-status${myTurn ? ' my-turn' : ''}" aria-live="polite"${openingStage ? ' hidden' : ''}>
         ${playing ? `<strong class="turn-name">轮到${names[seat]}</strong>` : ''}
-        <span class="turn-instruction">${turnLabel(round, response)}</span>
+        <span class="turn-instruction">${openingStage ? '' : turnLabel(round, response)}</span>
       </div>
-      <div class="actions">${actions}</div>
+      <div class="actions">${openingStage ? '<button data-command="skip-opening">跳过动画</button>' : actions}</div>
     </div>
-    ${seatView(round, 0, event, response)}
+    ${seatView(round, 0, event, response, openingStage)}
     </div>
     ${phase === 'finished' ? resultView(round.result, score) : ''}`;
+}
+
+function tableOffset(table, from, to) {
+  const scale = Number(table.style.getPropertyValue('--table-scale'));
+  const x = (from.left + (from.width - to.width) / 2 - to.left) / scale;
+  const y = (from.top + (from.height - to.height) / 2 - to.top) / scale;
+  return matchMedia('(orientation: portrait)').matches ? [y, -x] : [x, y];
+}
+
+function slideFrom(table, element, from, duration, scale) {
+  const [x, y] = tableOffset(table, from, element.getBoundingClientRect());
+  element.animate([
+    { transform: `translate(${x}px, ${y}px) scale(${scale})` },
+    { transform: 'none' }
+  ], { duration, fill: 'backwards', easing: 'cubic-bezier(.22,.6,.28,1)' });
+}
+
+export function showOpeningFrame(table, round, score, stage) {
+  const previousCards = new Map();
+  if (stage === 'sort') {
+    for (const card of table.querySelectorAll('.opening-row .card')) {
+      const label = card.textContent;
+      if (!previousCards.has(label)) previousCards.set(label, []);
+      previousCards.get(label).push(card.getBoundingClientRect());
+    }
+  }
+
+  table.innerHTML = renderTable(round, score, null, 0, stage);
+  const deck = table.querySelector('.deck-tile').getBoundingClientRect();
+  if (stage === 'dealer') {
+    const badge = table.querySelector(`.seat-${round.dealer} .dealer`);
+    slideFrom(table, badge, deck, 550, 1.6);
+  } else if (stage === 'deal') {
+    const destinations = [
+      table.querySelectorAll('.opening-card'),
+      table.querySelectorAll('.seat-1 .opponent-backs span'),
+      table.querySelectorAll('.seat-2 .opponent-backs span')
+    ];
+    const positions = destinations.map(cards => Array.from(cards, card => card.getBoundingClientRect()));
+    for (let i = 0; i < round.rules.dealt * 3; i++) {
+      const seat = (round.dealer + i) % 3;
+      const index = Math.floor(i / 3);
+      const card = destinations[seat][index];
+      const [x, y] = tableOffset(table, deck, positions[seat][index]);
+      const origin = `translate(${x}px, ${y}px) scale(${seat === 0 ? 1.55 : 2.6})`;
+      card.animate([
+        { transform: origin, opacity: 0 },
+        { transform: origin, opacity: 1, offset: .05 },
+        { transform: 'none', opacity: 1 }
+      ], { duration: 320, delay: i * 37, fill: 'both', easing: 'ease-out' });
+    }
+  } else if (stage === 'sort') {
+    const arrangedCards = table.querySelectorAll('.seat-0 .hand .card, .seat-0 .groups .card');
+    arrangedCards.forEach(card => {
+      const from = previousCards.get(card.textContent)?.shift();
+      if (from) slideFrom(table, card, from, 560, .76);
+    });
+  }
 }
 
 export function animateAction(table, event) {
@@ -204,11 +256,7 @@ export function animateAction(table, event) {
     : [...seat.querySelectorAll(`.meld[data-meld="${event.type}"][data-cards~="${event.card}"]`)].at(-1);
   const from = (destination === landing ? origin : landing).getBoundingClientRect();
   const to = destination.getBoundingClientRect();
-  const scale = Number(table.style.getPropertyValue('--table-scale'));
-  const screenX = (from.left + (from.width - to.width) / 2 - to.left) / scale;
-  const screenY = (from.top + (from.height - to.height) / 2 - to.top) / scale;
-  const rotated = matchMedia('(orientation: portrait)').matches;
-  const [x, y] = rotated ? [screenY, -screenX] : [screenX, screenY];
+  const [x, y] = tableOffset(table, from, to);
   destination.animate([
     { transform: `translate(${x}px, ${y}px) scale(.72)`, opacity: .3 },
     { transform: 'translate(0, 0) scale(1.08)', opacity: 1, offset: .78 },
