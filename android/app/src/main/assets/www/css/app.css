@@ -116,18 +116,15 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 .seat:not(.seat-0) .seat-heading { right: 0; }
 .seat:not(.seat-0) .dealer { position: absolute; top: 37px; left: 4px; }
 .card-count {
-  display: inline-flex; align-items: center; gap: 4px; color: #fff0c8;
-  line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap;
+  color: #fff0c8; font-size: 22px; line-height: 1; font-variant-numeric: tabular-nums;
 }
-.count-icon { width: 11px; height: 15px; flex: none; }
-.opponent-backs span, .deck-tile, .count-icon {
+.opponent-backs span, .deck-tile {
   background: repeating-linear-gradient(45deg, #75382e 0 3px, #8c4437 3px 6px);
   border: 1px solid #d9aa71; border-radius: 3px;
 }
 .opponent-cards {
   position: absolute; top: 37px; left: 31px; height: 23px; display: flex; align-items: center; gap: 7px;
 }
-.opponent-cards .card-count { font-size: 22px; }
 .opponent-backs { display: flex; }
 .opponent-backs span { width: 11px; height: 15px; }
 .opponent-backs span + span { margin-left: -7px; }
@@ -190,7 +187,7 @@ main:has(#table:not([hidden])) { background: var(--wood); }
   position: absolute; top: -28px; left: 50%; transform: translateX(-50%);
   display: grid; justify-items: center; gap: 6px; width: 125px; font-size: 16px;
 }
-.deck .card-count { position: absolute; top: 20px; left: calc(50% + 28px); }
+.deck-count { position: absolute; bottom: calc(100% + 6px); white-space: nowrap; }
 .deck-tile, .landing { display: grid; place-items: center; width: 44px; height: 56px; }
 .deck-tile { color: #ffe4a0; font: 800 23px serif; box-shadow: 3px 3px #d0a978, 5px 5px #754b39; }
 .landing .card { width: 100%; height: 100%; font-size: 27px; }

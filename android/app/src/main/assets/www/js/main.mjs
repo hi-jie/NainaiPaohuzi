@@ -5,7 +5,7 @@ import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
 import { Round } from './game/state-machine.mjs?v=19';
 import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs';
-import { animateAction, openingStages, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=24';
+import { animateAction, openingStages, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=25';
 
 const home = document.querySelector('#home');
 const table = document.querySelector('#table');
