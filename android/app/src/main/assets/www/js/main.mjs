@@ -162,6 +162,11 @@ startButton.addEventListener('click', () => {
   save(data);
   start();
 });
+for (const type of ['selectstart', 'contextmenu']) {
+  table.addEventListener(type, event => {
+    if (event.target.closest('[data-select-card]')) event.preventDefault();
+  });
+}
 table.addEventListener('click', ({ target }) => {
   const button = target.closest('button');
   if (!button) return;
