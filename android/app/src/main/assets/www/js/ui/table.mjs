@@ -19,7 +19,7 @@ function meld(group, hide = false) {
 function turnLabel(round, response) {
   const { phase, seat, options } = round;
   if (phase === 'finished') return '本局结束';
-  if (phase === 'discard') return seat === 0 ? '点一张亮起的手牌' : '正在选牌';
+  if (phase === 'discard') return seat === 0 ? '请出牌，点一张亮起的手牌' : '正在选牌';
   if (phase === 'draw') return seat === 0 ? '点「摸牌」' : '准备摸牌';
   if (options[0].forced) return `自动${options[0].type}牌`;
   if (seat !== 0) return '正在考虑';
