@@ -5,7 +5,7 @@ import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
 import { Round } from './game/state-machine.mjs?v=17';
 import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs';
-import { animateAction, openingStages, renderHistory, renderOpening, renderTable } from './ui/table.mjs?v=17';
+import { animateAction, openingStages, renderHistory, renderOpening, renderTable } from './ui/table.mjs?v=18';
 
 const home = document.querySelector('#home');
 const table = document.querySelector('#table');
@@ -88,24 +88,24 @@ function beginPlay() {
   showRound();
 }
 
-function showOpening(stageIndex, dealerNote) {
+function showOpening(stageIndex) {
   const command = document.activeElement.closest('.opening button')?.dataset.command ?? 'skip-opening';
-  table.innerHTML = renderOpening(round, stageIndex, dealerNote);
+  table.innerHTML = renderOpening(round, stageIndex);
   table.querySelector(`[data-command="${command}"]`).focus({ preventScroll: true });
   timer = setTimeout(() => {
     if (stageIndex + 1 === openingStages.length) beginPlay();
-    else showOpening(stageIndex + 1, dealerNote);
+    else showOpening(stageIndex + 1);
   }, openingStages[stageIndex].duration);
 }
 
-function start(dealer = Math.floor(Math.random() * 3), dealerNote = '随机定庄') {
+function start(dealer = Math.floor(Math.random() * 3)) {
   const deck = cutDeck(shuffledDeck(Math.random), Math.random);
   round = new Round(data.settings, dealer, Math.random, deck, { deferOpening: true });
   home.hidden = true;
   table.hidden = false;
   fitTable();
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) beginPlay();
-  else showOpening(0, dealerNote);
+  else showOpening(0);
   startMusic();
 }
 
@@ -150,8 +150,7 @@ table.addEventListener('click', ({ target }) => {
     pauseMenu.returnValue = '';
     pauseMenu.showModal();
   } else if (button.dataset.command === 'again') {
-    const { winner } = round.result;
-    start(winner ?? round.dealer, winner === null ? '上局黄庄，原庄继续' : '上局胡牌者坐庄');
+    start(round.result.winner ?? round.dealer);
   } else if (button.dataset.selectCard !== undefined) {
     selectDiscard(button);
   } else if (button.dataset.command === 'discard') {

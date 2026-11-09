@@ -260,18 +260,6 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 
 .opening .table-hud button:last-child { margin-left: auto; }
 .opening .table-hud span { margin-left: 0; }
-.opening-progress, .opening-title {
-  position: absolute; left: 50%; transform: translateX(-50%); text-align: center;
-}
-.opening-progress {
-  top: 51px; display: flex; gap: 6px; padding: 0; margin: 0; list-style: none;
-  color: #e9d4a2; white-space: nowrap;
-}
-.opening-progress li { padding: 3px 8px; border-radius: 12px; }
-.opening-progress [aria-current="step"] { background: #f2c777; color: #45270f; font-weight: 800; }
-.opening-title { top: 92px; display: grid; gap: 4px; white-space: nowrap; }
-.opening-title strong { color: #ffe48e; font-size: 36px; text-shadow: 0 2px 4px #0b291f; }
-.opening-title span { font-size: 20px; }
 .opening-seat {
   position: absolute; top: 28%; display: grid; justify-items: center; gap: 5px;
   transform: translate(-50%, -50%); white-space: nowrap;
@@ -285,7 +273,7 @@ main:has(#table:not([hidden])) { background: var(--wood); }
   box-shadow: 0 0 0 3px #f9c65c, 0 0 18px #ffc7649c;
 }
 .opening[data-stage="dealer"] .opening-dealer .avatar { animation: callout .58s ease-out; }
-.opening-count { position: absolute; top: 68px; color: #ffe48e; animation: appear .2s 1.35s both; }
+.opening-received { position: absolute; top: calc(100% + 6px); left: 50%; }
 .opening-pile { position: absolute; top: 48%; left: 50%; width: 0; height: 0; }
 .opening-back, .reveal-face {
   position: absolute; left: -21px; top: -30px; width: 42px; height: 60px;
@@ -294,6 +282,10 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 .opening-back {
   border: 1px solid #e1ba7a;
   background: repeating-linear-gradient(45deg, #793c2d 0 4px, #954f38 4px 8px);
+}
+.opening-received .received-back {
+  left: calc(var(--index) * 9px - 20px); top: 0; width: 22px; height: 30px;
+  animation: appear .14s calc(.28s + var(--index) * .36s) both;
 }
 .opening-stack { transform: translate(calc(var(--index) * 5px), calc(var(--index) * -3px)); }
 .opening[data-stage="shuffle"] .opening-stack {
@@ -304,9 +296,9 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 .opening[data-stage="cut"] .opening-stack { --cut-height: -24px; animation: opening-cut .65s ease-in-out both; }
 .opening[data-stage="cut"] .opening-stack:nth-child(2) { --cut-height: 19px; animation-direction: reverse; }
 .deal-flight { animation: opening-deal .32s calc(var(--index) * 21ms) ease-out both; }
-.deal-flight.to-0 { --flight-x: 0px; --flight-y: calc(var(--table-height) * .25); }
-.deal-flight.to-1 { --flight-x: calc(var(--table-width) * -.32); --flight-y: calc(var(--table-height) * -.20); }
-.deal-flight.to-2 { --flight-x: calc(var(--table-width) * .32); --flight-y: calc(var(--table-height) * -.20); }
+.deal-flight.to-0 { --flight-x: 0px; --flight-y: calc(var(--table-height) * .30 + 48px); }
+.deal-flight.to-1 { --flight-x: calc(var(--table-width) * -.32); --flight-y: calc(var(--table-height) * -.20 + 48px); }
+.deal-flight.to-2 { --flight-x: calc(var(--table-width) * .32); --flight-y: calc(var(--table-height) * -.20 + 48px); }
 .opening:is([data-stage="sort"], [data-stage="reveal"]) .opening-seat-0 { display: none; }
 .opening[data-stage="sort"] .hand > * {
   animation: opening-sort .54s var(--sort-delay, 0ms) ease-out both;

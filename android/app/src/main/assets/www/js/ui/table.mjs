@@ -121,30 +121,27 @@ function resultView({ winner, hu, names: bonuses, tun, delta }, score) {
 }
 
 export const openingStages = [
-  { name: 'dealer', title: '定庄', duration: 900 },
-  { name: 'shuffle', title: '洗牌', duration: 750 },
-  { name: 'cut', title: '切牌', duration: 700 },
-  { name: 'deal', title: '抓牌', duration: 1750 },
-  { name: 'sort', title: '理牌', duration: 780 },
-  { name: 'reveal', title: '亮张', duration: 620 }
+  { name: 'dealer', duration: 900 },
+  { name: 'shuffle', duration: 750 },
+  { name: 'cut', duration: 700 },
+  { name: 'deal', duration: 1750 },
+  { name: 'sort', duration: 780 },
+  { name: 'reveal', duration: 620 }
 ];
 
-export function renderOpening(round, stageIndex, dealerNote) {
+export function renderOpening(round, stageIndex) {
   const { dealer, rules } = round;
   const stage = openingStages[stageIndex];
-  const notes = [
-    `${names[dealer]}坐庄 · ${dealerNote}`, '打乱整副字牌', '分成两叠，换位合拢',
-    `庄家先抓，每家 ${rules.dealt} 张`, '整理手牌', '庄家亮张，牌局开始'
-  ];
+  const dealing = stage.name === 'deal';
   const backs = (count, className) => Array.from({ length: count }, (_, index) =>
     `<i class="opening-back ${className}" style="--index:${index}"></i>`).join('');
-  const flights = stage.name === 'deal' ? Array.from({ length: rules.dealt * 3 }, (_, index) =>
+  const flights = dealing ? Array.from({ length: rules.dealt * 3 }, (_, index) =>
     `<i class="opening-back deal-flight to-${(dealer + index) % 3}" style="--index:${index}"></i>`).join('') : '';
   const seats = [1, 2, 0].map(seat => `<div class="opening-seat opening-seat-${seat}${dealer === seat ? ' opening-dealer' : ''}">
     <span class="avatar" aria-hidden="true">${avatars[seat]}</span>
     <strong>${names[seat]}</strong>
     ${dealer === seat ? '<span class="dealer">庄</span>' : ''}
-    ${stage.name === 'deal' ? `<span class="opening-count">${rules.dealt} 张</span>` : ''}
+    ${dealing ? `<div class="opening-received" aria-hidden="true">${backs(3, 'received-back')}</div>` : ''}
   </div>`).join('');
   const stack = stage.name === 'reveal'
     ? `<i class="opening-back reveal-back"></i><div class="reveal-face">${tile(round.opening)}</div>`
@@ -157,11 +154,8 @@ export function renderOpening(round, stageIndex, dealerNote) {
       <button data-command="skip-opening">跳过动画</button>
     </div>
     ${seats}
-    <div class="opening-title" role="status"><strong>${stage.title}</strong><span>${notes[stageIndex]}</span></div>
     <div class="opening-pile" aria-hidden="true">${stack}${flights}</div>
     ${hand}
-    <ol class="opening-progress" aria-label="开局步骤">${openingStages.map(({title}, index) =>
-      `<li${index === stageIndex ? ' aria-current="step"' : ''}>${title}</li>`).join('')}</ol>
   </div>`;
 }
 
