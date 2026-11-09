@@ -89,8 +89,9 @@ main:has(#table:not([hidden])) {
 .table-hud button { min-height: 44px; }
 .table-hud span:last-child { margin-left: auto; }
 .seat {
-  position: absolute; width: 178px; height: 212px; top: 55px;
-  --seat-cards-top: 22px; --seat-card-height: 22px; --seat-backs-height: 15px; --seat-row-gap: 4px;
+  position: absolute; width: var(--side-seat-width); height: 212px; top: 55px;
+  --side-seat-width: 178px;
+  --seat-card-height: 22px; --seat-backs-height: 15px; --seat-row-gap: 4px;
   --meld-row-height: calc(4 * var(--seat-card-height) + 3px);
 }
 .seat-1 { left: 23px; }
@@ -101,7 +102,7 @@ main:has(#table:not([hidden])) {
 }
 .seat-heading {
   position: absolute;
-  top: calc(var(--seat-cards-top) + var(--meld-row-height) + var(--seat-row-gap) + var(--seat-backs-height) - 34px);
+  top: calc(var(--meld-row-height) + var(--seat-row-gap) + var(--seat-backs-height) - 34px);
   left: 0; width: 34px; display: flex; flex-direction: column; align-items: center; gap: 2px; white-space: nowrap;
 }
 .seat-0 .seat-heading {
@@ -137,7 +138,7 @@ main:has(#table:not([hidden])) {
 .seat-backs span { width: 11px; height: 100%; }
 .seat-backs span + span { margin-left: -7px; }
 .seat-cards {
-  position: absolute; top: var(--seat-cards-top); left: 40px; width: 207px;
+  position: absolute; top: 0; left: 40px; width: 207px;
   display: grid;
   grid-template-rows: var(--meld-row-height) var(--seat-backs-height) auto; gap: var(--seat-row-gap);
 }
@@ -222,18 +223,21 @@ main:has(#table:not([hidden])) {
   clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
 .turn-arrow.to-1 { left: calc(50% - 43px); transform: translateX(-50%) rotate(180deg); }
-.turn-arrow.to-0 { top: 55px; left: 50%; transform: translateX(-50%) rotate(90deg); }
+.turn-arrow.to-0 { top: 65px; left: 50%; transform: translateX(-50%) rotate(90deg); }
 .deck-tile, .landing { display: grid; place-items: center; width: 44px; height: 56px; }
 .deck-tile { color: #ffe4a0; font: 800 23px serif; box-shadow: 3px 3px #d0a978, 5px 5px #754b39; }
 .landing .card { width: 100%; height: 100%; font-size: 27px; }
 .last-play.from-1 { left: calc(50% - 86px); }
 .last-play.from-2 { left: calc(50% + 86px); }
-.last-play.from-0 { top: 49px; }
+.last-play.from-0 { top: 72px; }
 .last-play.from-0 > span {
   position: absolute; top: 50%; left: calc(50% + 30px); transform: translateY(-50%); white-space: nowrap;
 }
 .actions { display: flex; justify-content: center; align-items: start; gap: 6px; }
-.center .actions { position: absolute; top: 16px; left: 0; right: 0; gap: 4px; }
+.center .actions {
+  position: absolute; top: 16px; left: calc(50% + 36px); right: -116px;
+  justify-content: flex-end; gap: 4px;
+}
 .center button { min-width: 64px; min-height: 53px; padding-inline: 10px; }
 .center [data-command="discard"]:disabled { opacity: .5; cursor: default; }
 .center .pass { background: linear-gradient(#426a55, #254739); border-color: #90a888; }
@@ -253,11 +257,11 @@ main:has(#table:not([hidden])) {
 }
 .seat-1 .callout { left: calc(100% + 4px); }
 .seat-2 .callout { right: calc(100% + 4px); }
-.seat-0 .callout { top: -58px; left: calc(50% + 162px); }
+.seat-0 .callout { top: -50px; left: calc(var(--side-seat-width) + 4px); }
 .winning .landing .card { box-shadow: 0 0 28px 10px #ffe28a; }
 
 #table.wide .felt::after { inset: 42px 32px 112px; }
-.wide .seat { top: 69px; width: 180px; }
+.wide .seat { top: 69px; --side-seat-width: 180px; }
 .wide .seat-1 { left: 34px; }
 .wide .seat-2 { right: 34px; }
 .wide .seat-0 {

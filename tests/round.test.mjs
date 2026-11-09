@@ -8,10 +8,11 @@ import { huxi, patterns, types } from '../android/app/src/main/assets/www/js/rul
 import { findHu } from '../android/app/src/main/assets/www/js/rules/hu.mjs';
 import { defaultSettings, presets } from '../android/app/src/main/assets/www/js/rules/presets.mjs';
 import { settle } from '../android/app/src/main/assets/www/js/rules/scoring.mjs';
+import { renderTable } from '../android/app/src/main/assets/www/js/ui/table.mjs';
 
 const rules = { ...defaultSettings, ...presets.six, patterns: patterns(false) };
 const player = (hand, groups = []) => ({
-  hand, groups, passedChi: new Set(), passedPeng: new Set(), passedHu: -1
+  hand, groups, discards: [], passedChi: new Set(), passedPeng: new Set(), passedHu: -1
 });
 const waitingHand = [0, 1, 2, 3, 3, 3, 5, 6, 7, 10, 11, 12, 15, 16];
 
@@ -70,6 +71,27 @@ test('吃和比的牌组互换顺序时只保留一种吃法', () => {
     [[0, 1, 2], [1, 2, 3]], [[0, 1, 2], [2, 3, 4]],
     [[1, 2, 3], [1, 2, 3]], [[1, 2, 3], [2, 3, 4]]
   ]);
+});
+
+test('吃碰响应未确认时箭头留在出牌者，确认后才指向接牌者', () => {
+  for (const accepted of ['碰', '吃', '过']) {
+    const round = new Round(defaultSettings, 0);
+    round.players = [player([2, 2, 9]), { ...player([]), discards: [2] }, player([0, 1, 8])];
+    const arrow = () => Number(renderTable(round, 0).match(/class="turn-arrow to-(\d)"/)[1]);
+    round.reveal(1, 2, 'discard');
+    assert.equal(round.seat, 0);
+    assert.equal(arrow(), 1);
+
+    if (accepted !== '碰') {
+      round.act(round.options.find(action => action.type === '过'));
+      assert.equal(round.seat, 2);
+      assert.equal(arrow(), 1);
+    }
+
+    round.act(round.options.find(action => action.type === accepted));
+    assert.equal(round.phase, accepted === '过' ? 'draw' : 'discard');
+    assert.equal(arrow(), accepted === '碰' ? 0 : 2);
+  }
 });
 
 test('胡牌优先于座次靠前的跑、碰和吃', () => {

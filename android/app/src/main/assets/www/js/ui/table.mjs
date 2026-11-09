@@ -150,6 +150,7 @@ function openingPile(stage) {
 export function renderTable(round, score, event, eatIndex = 0, openingStage = '') {
   const { phase, seat, options, events } = round;
   const response = seat === 0 && phase === 'response' ? options[eatIndex] : null;
+  const arrowSeat = phase === 'response' ? round.offer.source : seat;
   const last = events.findLast(({ type }) => type === '出' || type === '摸');
   const source = last?.seat ?? round.dealer;
   const visibleCard = last?.card ?? round.opening;
@@ -171,7 +172,7 @@ export function renderTable(round, score, event, eatIndex = 0, openingStage = ''
         <div class="deck">
           <span class="deck-tile" aria-hidden="true">字${openingPile(openingStage)}</span>
           ${!openingStage ? `<span class="deck-count">余 ${round.deck.length} 张</span>` : ''}
-          ${playing ? `<span class="turn-arrow to-${seat}" aria-hidden="true"></span>` : ''}
+          ${playing ? `<span class="turn-arrow to-${arrowSeat}" aria-hidden="true"></span>` : ''}
         </div>
         <div class="last-play from-${source}">
           <div class="landing">${openingStage === 'reveal' ? '<i class="opening-back"></i>' : ''}
