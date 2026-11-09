@@ -16,11 +16,17 @@ function companions(hand, card, patterns) {
 
 function eatOptions(player, card, rules) {
   const hand = player.hand.filter(value => countCard(player.hand, value) < 3);
+  const seen = new Set();
   return rules.patterns.filter(group => group.includes(card)).flatMap(group => {
     const own = takeCards(group, [card]);
     if (!hasCards(hand, own)) return [];
     return companions(takeCards(hand, own), card, rules.patterns)
       .map(rest => ({ type: '吃', cards: own, groups: [group, ...rest], priority: 5 }));
+  }).filter(({ groups }) => {
+    const key = groups.map(group => group.join(',')).sort().join('|');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
   });
 }
 

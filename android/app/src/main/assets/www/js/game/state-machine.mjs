@@ -1,5 +1,5 @@
 import { countCard, patterns, sortCards, takeCards } from '../rules/cards.mjs';
-import { canHuFrom, nextSeat, responses } from '../rules/actions.mjs';
+import { canHuFrom, nextSeat, responses } from '../rules/actions.mjs?v=46';
 import { findHu } from '../rules/hu.mjs';
 import { presets } from '../rules/presets.mjs';
 import { settle } from '../rules/scoring.mjs';

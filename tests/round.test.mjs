@@ -53,6 +53,25 @@ test('关闭放炮胡后只可胡墩上摸出的牌，不限摸牌人', () => {
   }
 });
 
+test('吃和比的牌组互换顺序时只保留一种吃法', () => {
+  const round = new Round(defaultSettings, 0);
+  round.players = [player([0, 1, 2, 3, 4, 9]), player([]), { ...player([]), discards: [2] }];
+  round.reveal(2, 2, 'discard');
+  assert.deepEqual(round.options.map(action => action.type), ['吃', '过']);
+  round.act(round.options[0]);
+  assert.deepEqual(round.players[0].hand, [9]);
+  assert.deepEqual(round.players[0].groups.map(group => group.cards), [[0, 1, 2], [2, 3, 4]]);
+  assert.deepEqual(round.players[2].discards, []);
+
+  const hand = [0, 1, 1, 2, 3, 3, 4];
+  const eats = responses(player(hand), 0, { card: 2, source: 2, kind: 'discard' }, rules)
+    .filter(action => action.type === '吃');
+  assert.deepEqual(eats.map(action => action.groups), [
+    [[0, 1, 2], [1, 2, 3]], [[0, 1, 2], [2, 3, 4]],
+    [[1, 2, 3], [1, 2, 3]], [[1, 2, 3], [2, 3, 4]]
+  ]);
+});
+
 test('胡牌优先于座次靠前的跑、碰和吃', () => {
   for (const [type, hand] of [['跑', [17, 17, 17]], ['碰', [17, 17]], ['吃', [15, 16]]]) {
     const round = new Round(defaultSettings, 0);
