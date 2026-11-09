@@ -5,37 +5,70 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#113f32">
   <title>衡阳跑胡子</title>
-  <link rel="stylesheet" href="./css/app.css?v=49">
-  <script type="module" src="./js/main.mjs?v=47-fbe4af7499ad"></script>
+  <link rel="stylesheet" href="./css/app.css?v=60">
+  <script type="module" src="./js/main.mjs?v=60-d4b6275df60f"></script>
 </head>
 <body>
+  <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="icon-back" viewBox="0 0 24 24"><path d="M19 12H5m7-7-7 7 7 7"/></symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24">
+      <path d="M10 3h4l.6 2.5 1.7 1 2.5-.7 2 3.4-1.9 1.8v2l1.9 1.8-2 3.4-2.5-.7-1.7 1-.6 2.5h-4l-.6-2.5-1.7-1-2.5.7-2-3.4 1.9-1.8v-2L3.2 9.2l2-3.4 2.5.7 1.7-1z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  </svg>
   <main>
-    <section id="home" class="panel">
-      <h1>衡阳跑胡子</h1>
-      <div class="title-tiles" aria-hidden="true"><span>贰</span><span>柒</span><span>拾</span></div>
-      <h2>选择玩法</h2>
-      <form id="settings">
-        <div class="modes" role="group" aria-label="玩法"></div>
-        <label><input type="checkbox" name="oneFiveTen"> 一五十</label>
-        <label><input type="checkbox" name="discardHu"> 放炮胡</label>
-        <label><input type="checkbox" name="autoStack"> 自动叠牌</label>
-        <label><input type="checkbox" name="sound"> 方言音效</label>
-        <label><input type="checkbox" name="music"> 背景音乐</label>
-      </form>
-      <button id="start" class="primary">开始游戏</button>
-      <p class="home-score">累计积分 <strong id="score">0</strong></p>
+    <section id="home" class="front-screen" aria-labelledby="home-title">
+      <header class="home-top">
+        <p class="home-score">积分 <strong id="score">0</strong></p>
+        <button id="open-settings" class="icon-button" type="button" aria-label="设置"><svg class="nav-icon" aria-hidden="true"><use href="#icon-settings"/></svg></button>
+      </header>
+      <div class="home-brand">
+        <h1 id="home-title">衡阳跑胡子</h1>
+        <div class="title-tiles" aria-hidden="true"><span class="card red">贰</span><span class="card red">柒</span><span class="card red">拾</span></div>
+      </div>
+      <div class="modes" role="group" aria-label="选择玩法"></div>
+    </section>
+    <section id="round-setup" class="front-screen menu-screen" hidden aria-labelledby="mode-title">
+      <header class="menu-header">
+        <button class="icon-button" type="button" data-back-home aria-label="返回首页"><svg class="nav-icon" aria-hidden="true"><use href="#icon-back"/></svg></button>
+        <h2 id="mode-title"></h2>
+      </header>
+      <div class="menu-options" role="group" aria-label="本局规则">
+        <label>一五十<input type="checkbox" name="oneFiveTen" role="switch"></label>
+        <label>放炮胡<input type="checkbox" name="discardHu" role="switch"></label>
+      </div>
+      <footer class="menu-footer"><button id="start" type="button" class="primary">开始游戏</button></footer>
+    </section>
+    <section id="settings" class="front-screen menu-screen" hidden aria-labelledby="settings-title">
+      <header class="menu-header">
+        <button class="icon-button" type="button" data-back-home aria-label="返回首页"><svg class="nav-icon" aria-hidden="true"><use href="#icon-back"/></svg></button>
+        <h2 id="settings-title">设置</h2>
+      </header>
+      <div class="menu-options">
+        <label>方言音效<input type="checkbox" name="sound" role="switch"></label>
+        <label>背景音乐<input type="checkbox" name="music" role="switch"></label>
+      </div>
     </section>
     <section id="table" class="wide" hidden aria-label="牌桌"></section>
+    <dialog id="eat-menu" aria-labelledby="eat-title"></dialog>
   </main>
-  <dialog id="pause-menu" aria-labelledby="pause-title" aria-describedby="pause-description">
-    <h2 id="pause-title">牌局已暂停</h2>
-    <p id="pause-description">返回首页会结束本局，本局积分不结算。</p>
+  <dialog id="pause-menu" class="game-dialog" aria-labelledby="pause-title">
     <form method="dialog">
+      <header class="dialog-header">
+        <h2 id="pause-title">设置</h2>
+        <button class="icon-button" aria-label="关闭设置" autofocus><svg class="nav-icon" aria-hidden="true"><use href="#icon-close"/></svg></button>
+      </header>
       <div class="pause-settings">
-        <label><input type="checkbox" name="autoStack"> 自动叠牌</label>
         <label><input type="checkbox" name="sound"> 方言音效</label>
         <label><input type="checkbox" name="music"> 背景音乐</label>
       </div>
+    </form>
+  </dialog>
+  <dialog id="leave-menu" class="game-dialog" aria-labelledby="leave-title" aria-describedby="leave-description">
+    <h2 id="leave-title">返回首页？</h2>
+    <p id="leave-description">返回首页会结束本局，本局积分不结算。</p>
+    <form method="dialog">
       <div class="actions">
         <button class="primary" value="resume" autofocus>继续打牌</button>
         <button value="home">确认返回</button>

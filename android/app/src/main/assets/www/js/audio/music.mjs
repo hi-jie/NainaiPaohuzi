@@ -1,4 +1,4 @@
-import tracks from '../../media/audio/music/playlist.mjs?v=5-fbe4af7499ad';
+import tracks from '../../media/audio/music/playlist.mjs?v=5-d4b6275df60f';
 
 const folder = new URL('../../media/audio/music/', import.meta.url);
 const audio = new Audio();

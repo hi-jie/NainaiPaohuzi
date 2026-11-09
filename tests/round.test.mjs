@@ -4,7 +4,7 @@ import { chooseAction } from '../android/app/src/main/assets/www/js/ai/player.mj
 import { cutDeck, shuffledDeck } from '../android/app/src/main/assets/www/js/game/deck.mjs';
 import { Round } from '../android/app/src/main/assets/www/js/game/state-machine.mjs';
 import { responses } from '../android/app/src/main/assets/www/js/rules/actions.mjs';
-import { huxi, patterns, types } from '../android/app/src/main/assets/www/js/rules/cards.mjs';
+import { huxi, patterns, takeCards, types } from '../android/app/src/main/assets/www/js/rules/cards.mjs';
 import { findHu } from '../android/app/src/main/assets/www/js/rules/hu.mjs';
 import { defaultSettings, presets } from '../android/app/src/main/assets/www/js/rules/presets.mjs';
 import { settle } from '../android/app/src/main/assets/www/js/rules/scoring.mjs';
@@ -33,6 +33,40 @@ test('切牌保留整副牌，亮张前后沿用同一手牌', () => {
     round.revealOpening();
     assert.deepEqual(round, new Round(settings, 1, random, deck));
   }
+});
+
+test('开局提牌逐组确认，补牌凑成的四张也要确认', () => {
+  const hands = [
+    [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 5],
+    [6, 6, 6, 6, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13],
+    [3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+  ];
+  const first = hands[0].flatMap((_, index) => hands.map(hand => hand[index])).concat(18, 2, 19);
+  const rest = takeCards(types.flatMap(card => [card, card, card, card]), first);
+  const round = new Round(defaultSettings, 0, Math.random, first.concat(rest).reverse(), { deferOpening: true });
+  assert.deepEqual(round.players[0].hand, hands[0]);
+  assert.deepEqual(round.players[0].groups, []);
+  assert.doesNotMatch(renderTable(round, 0, null, 'reveal'), /class="landing">\s*<[is]/);
+  round.revealOpening();
+  assert.equal(round.phase, 'opening-ti');
+  assert.equal(round.seat, 0);
+  assert.deepEqual(round.options.map(({ type, card, forced }) => [type, card, forced]), [['提', 0, true], ['提', 1, true]]);
+  const initialDeckSize = round.deck.length;
+  round.act(round.options[1]);
+  assert.deepEqual(round.players[0].groups.map(group => group.cards[0]), [1]);
+  assert.equal(round.deck.length, initialDeckSize);
+  round.act(round.options[0]);
+  assert.equal(round.deck.length, initialDeckSize - 1);
+  assert.deepEqual(round.options.map(action => action.card), [2]);
+  round.act(round.options[0]);
+  assert.equal(round.deck.length, initialDeckSize - 2);
+  assert.equal(round.seat, 1);
+  assert.deepEqual(round.players[1].groups, []);
+  round.act(round.options[0]);
+  assert.deepEqual(round.players[1].groups, [{ type: '提', cards: [6, 6, 6, 6] }]);
+  assert.equal(round.phase, 'discard');
+  assert.equal(round.seat, 0);
+  assert.ok(round.players[0].hand.includes(18));
 });
 
 test('一五十开关改变胡牌拆组', () => {

@@ -4,4 +4,4 @@ export const presets = {
   fifteen: { name: '十五胡', dealt: 20, minimum: 15 }
 };
 
-export const defaultSettings = { mode: 'six', oneFiveTen: false, discardHu: false, autoStack: true, sound: true, music: true };
+export const defaultSettings = { mode: 'six', oneFiveTen: false, discardHu: false, sound: true, music: true };

@@ -1,30 +1,34 @@
 import { chooseAction } from './ai/player.mjs';
-import { setMusicPlaying } from './audio/music.mjs?v=5-fbe4af7499ad';
+import { setMusicPlaying } from './audio/music.mjs?v=5-d4b6275df60f';
 import { playAction } from './audio/player.mjs';
 import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
-import { Round } from './game/state-machine.mjs?v=46';
+import { Round } from './game/state-machine.mjs?v=58';
 import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs';
-import { animateAction, openingStages, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=47';
+import { animateAction, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=60';
 
 const home = document.querySelector('#home');
+const setup = document.querySelector('#round-setup');
 const table = document.querySelector('#table');
 const history = document.querySelector('#discard-history');
 const pauseMenu = document.querySelector('#pause-menu');
+const leaveMenu = document.querySelector('#leave-menu');
+const eatMenu = document.querySelector('#eat-menu');
 const startButton = document.querySelector('#start');
 const score = document.querySelector('#score');
 const settings = document.querySelector('#settings');
+const settingsButton = document.querySelector('#open-settings');
+const modeTitle = document.querySelector('#mode-title');
 const data = load();
+let selectedMode = data.settings.mode;
 let round;
 let timer;
+let openingEnds;
 
-const modes = settings.querySelector('.modes');
-function showModes() {
-  modes.innerHTML = Object.entries(presets).map(([key, { name }]) =>
-    `<button type="button" data-mode="${key}" aria-pressed="${data.settings.mode === key}">${name}</button>`).join('');
-}
-showModes();
-const settingFields = document.querySelectorAll('#settings input, #pause-menu input');
+const modes = home.querySelector('.modes');
+modes.innerHTML = Object.entries(presets).map(([key, { name }]) =>
+  `<button type="button" class="primary" data-mode="${key}">${name}</button>`).join('');
+const settingFields = document.querySelectorAll('.menu-options input, #pause-menu input');
 for (const field of settingFields) {
   field.checked = data.settings[field.name];
   field.addEventListener('change', () => {
@@ -38,10 +42,13 @@ for (const field of settingFields) {
 }
 modes.addEventListener('click', ({ target }) => {
   if (!target.dataset.mode) return;
-  data.settings.mode = target.dataset.mode;
-  save(data);
-  showModes();
+  selectedMode = target.dataset.mode;
+  modeTitle.textContent = presets[selectedMode].name;
+  showFront(setup, startButton);
 });
+settingsButton.addEventListener('click', () => showFront(settings, settings.querySelector('[data-back-home]')));
+settings.querySelector('[data-back-home]').addEventListener('click', () => showHome(settingsButton));
+setup.querySelector('[data-back-home]').addEventListener('click', () => showHome());
 score.textContent = data.score;
 
 function startMusic() {
@@ -51,10 +58,14 @@ function startMusic() {
 startMusic();
 document.addEventListener('click', startMusic, { once: true });
 
-function showHome() {
+function showFront(screen, focus) {
   table.hidden = true;
-  home.hidden = false;
-  startButton.focus();
+  for (const page of [home, setup, settings]) page.hidden = page !== screen;
+  focus.focus({ preventScroll: true });
+}
+
+function showHome(focus = modes.querySelector(`[data-mode="${selectedMode}"]`)) {
+  showFront(home, focus);
 }
 
 function showRound(event) {
@@ -88,20 +99,36 @@ function beginPlay() {
   showRound();
 }
 
-function showOpening(stageIndex) {
-  const command = document.activeElement.closest('.opening button')?.dataset.command ?? 'skip-opening';
-  showOpeningFrame(table, round, data.score, openingStages[stageIndex].name);
-  table.querySelector(`[data-command="${command}"]`).focus({ preventScroll: true });
+function scheduleOpening(stageIndex, delay) {
   timer = setTimeout(() => {
     if (stageIndex + 1 === openingStages.length) beginPlay();
     else showOpening(stageIndex + 1);
-  }, openingStages[stageIndex].duration);
+  }, delay);
+}
+
+function showOpening(stageIndex) {
+  const { name, duration } = openingStages[stageIndex];
+  const command = document.activeElement.closest('.opening button')?.dataset.command ?? 'skip-opening';
+  showOpeningFrame(table, round, data.score, name);
+  table.querySelector(`[data-command="${command}"]`).focus({ preventScroll: true });
+  openingEnds = performance.now() + duration;
+  scheduleOpening(stageIndex, duration);
+}
+
+function resumeRound() {
+  const opening = table.querySelector('.opening');
+  if (opening) {
+    const stageIndex = openingStages.findIndex(({ name }) => name === opening.dataset.stage);
+    scheduleOpening(stageIndex, Math.max(0, openingEnds - performance.now()));
+  } else {
+    scheduleTurn();
+  }
 }
 
 function start(dealer = Math.floor(Math.random() * 3)) {
   const deck = cutDeck(shuffledDeck(Math.random), Math.random);
   round = new Round(data.settings, dealer, Math.random, deck, { deferOpening: true });
-  home.hidden = true;
+  setup.hidden = true;
   table.hidden = false;
   fitTable();
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) beginPlay();
@@ -130,10 +157,26 @@ function selectDiscard(button) {
   confirm.classList.add('guided');
 }
 
-startButton.addEventListener('click', () => start());
+startButton.addEventListener('click', () => {
+  data.settings.mode = selectedMode;
+  save(data);
+  start();
+});
 table.addEventListener('click', ({ target }) => {
   const button = target.closest('button');
   if (!button) return;
+  if (button.dataset.command === 'choose-eat') {
+    if (eatMenu.open) {
+      const choice = eatMenu.querySelector('.eat-choice[aria-pressed="true"]');
+      eatMenu.close();
+      if (choice) step(round.options[Number(choice.dataset.action)]);
+    } else {
+      eatMenu.innerHTML = renderEatChoices(round.options, round.offer.card);
+      eatMenu.show();
+    }
+    return;
+  }
+  eatMenu.close();
   if (button.dataset.history !== undefined) {
     clearTimeout(timer);
     history.innerHTML = renderHistory(round, Number(button.dataset.history), button.dataset.view);
@@ -145,8 +188,10 @@ table.addEventListener('click', ({ target }) => {
     showHome();
   } else if (button.dataset.command === 'skip-opening') {
     beginPlay();
+  } else if (button.dataset.command === 'leave') {
+    leaveMenu.returnValue = '';
+    leaveMenu.showModal();
   } else if (button.dataset.command === 'pause') {
-    pauseMenu.returnValue = '';
     pauseMenu.showModal();
   } else if (button.dataset.command === 'again') {
     start(round.result.winner ?? round.dealer);
@@ -155,33 +200,35 @@ table.addEventListener('click', ({ target }) => {
   } else if (button.dataset.command === 'discard') {
     const selected = table.querySelector('[data-select-card][aria-pressed="true"]');
     step(round.options[Number(selected.dataset.selectCard)]);
-  } else if (button.dataset.command === 'eat') {
-    step(round.options[Number(table.querySelector('.eat-picker').dataset.index)]);
-  } else if (button.dataset.command === 'next-eat') {
-    const picker = table.querySelector('.eat-picker');
-    const count = round.options.length - 1;
-    const index = (Number(picker.dataset.index) + 1) % count;
-    table.innerHTML = renderTable(round, data.score, null, index);
-    table.querySelector('[data-command="next-eat"]').focus();
   } else {
     step(round.options[Number(button.dataset.action)]);
   }
 });
+eatMenu.addEventListener('click', ({ target }) => {
+  const choice = target.closest('.eat-choice');
+  if (!choice) return;
+  eatMenu.querySelector('.eat-choice[aria-pressed="true"]')?.setAttribute('aria-pressed', 'false');
+  choice.setAttribute('aria-pressed', 'true');
+  previewEat(table, round.options[Number(choice.dataset.action)]);
+  const confirm = table.querySelector('[data-command="choose-eat"]');
+  confirm.textContent = '确认吃';
+  confirm.removeAttribute('aria-haspopup');
+});
+eatMenu.addEventListener('close', () => {
+  if (eatMenu.open) return;
+  previewEat(table);
+  const button = table.querySelector('[data-command="choose-eat"]');
+  if (button) {
+    button.textContent = '吃';
+    button.setAttribute('aria-haspopup', 'dialog');
+  }
+});
 history.addEventListener('close', scheduleTurn);
 pauseMenu.addEventListener('close', () => {
-  if (pauseMenu.returnValue === 'home') {
-    showHome();
-    return;
-  }
-  const { autoStack, sound } = data.settings;
-  round.rules.sound = sound;
-  if (round.rules.autoStack !== autoStack) {
-    round.rules.autoStack = autoStack;
-    const eatIndex = Number(table.querySelector('.eat-picker')?.dataset.index ?? 0);
-    const selected = table.querySelector('[data-select-card][aria-pressed="true"]')?.dataset.selectCard;
-    table.innerHTML = renderTable(round, data.score, null, eatIndex);
-    if (selected !== undefined) selectDiscard(table.querySelector(`[data-select-card="${selected}"]`));
-    table.querySelector('[data-command="pause"]').focus();
-  }
-  scheduleTurn();
+  round.rules.sound = data.settings.sound;
+  resumeRound();
+});
+leaveMenu.addEventListener('close', () => {
+  if (leaveMenu.returnValue === 'home') showHome();
+  else resumeRound();
 });

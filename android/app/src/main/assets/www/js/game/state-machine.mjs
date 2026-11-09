@@ -5,6 +5,10 @@ import { presets } from '../rules/presets.mjs';
 import { settle } from '../rules/scoring.mjs';
 import { shuffledDeck } from './deck.mjs';
 
+function openingQuads(hand) {
+  return [...new Set(hand)].filter(card => countCard(hand, card) === 4);
+}
+
 export class Round {
   constructor(settings, dealer, random = Math.random, deck = shuffledDeck(random), { deferOpening = false } = {}) {
     this.rules = { ...settings, ...presets[settings.mode], patterns: patterns(settings.oneFiveTen) };
@@ -23,25 +27,30 @@ export class Round {
     }
     if (deferOpening) this.openingHand = [...this.players[0].hand];
     this.opening = this.deck.pop();
-    for (const player of this.players) {
-      const quads = [...new Set(player.hand)].filter(card => countCard(player.hand, card) === 4);
-      for (const card of quads) {
-        const cards = [card, card, card, card];
-        player.hand = takeCards(player.hand, cards);
-        player.groups.push({ type: '提', cards });
-        if (player.groups.length > 1) {
-          const supplement = this.deck.pop();
-          player.hand.push(supplement);
-          if (countCard(player.hand, supplement) === 4) quads.push(supplement);
-        }
-      }
-      sortCards(player.hand);
-    }
+    for (const player of this.players) sortCards(player.hand);
     if (!deferOpening) this.revealOpening();
   }
 
   revealOpening() {
     delete this.openingHand;
+    this.waitForOpeningTi(0);
+  }
+
+  get hasOpeningTi() {
+    return this.players.some(({ hand }) => openingQuads(hand).length > 0);
+  }
+
+  waitForOpeningTi(fromSeat) {
+    for (let seat = fromSeat; seat < this.players.length; seat++) {
+      const { hand } = this.players[seat];
+      const options = openingQuads(hand)
+        .map(card => ({ type: '提', card, cards: [card, card, card, card], forced: true }));
+      if (!options.length) continue;
+      this.phase = 'opening-ti';
+      this.seat = seat;
+      this.options = options;
+      return;
+    }
     this.reveal(this.dealer, this.opening, 'opening');
   }
 
@@ -108,6 +117,17 @@ export class Round {
     const seat = this.seat;
     const player = this.players[seat];
     const { type } = action;
+    if (this.phase === 'opening-ti') {
+      player.hand = takeCards(player.hand, action.cards);
+      player.groups.push({ type, cards: action.cards });
+      if (player.groups.length > 1) {
+        player.hand.push(this.deck.pop());
+        sortCards(player.hand);
+      }
+      this.events.push({ type, seat, card: action.card, fromHand: true });
+      this.waitForOpeningTi(seat);
+      return;
+    }
     if (type === '摸') {
       if (!this.deck.length) {
         this.finish({ winner: null, delta: [0, 0, 0] });

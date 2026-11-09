@@ -23,12 +23,12 @@ python -m http.server 8000 --bind 127.0.0.1 --directory android/app/src/main/ass
 
 把 MP3、M4A、OGG 或 WAV 文件放进 [音乐目录](android/app/src/main/assets/www/media/audio/music)，可以使用中文文件名。同名曲目优先使用 MP3。在项目根目录运行以下命令。
 
-- `node scripts/update-music.mjs` 更新本地曲目列表，刷新网页即可试听。
+- `node scripts/update-music.mjs` 用 FFmpeg 将 OGG 转为 MP3，转换成功后删除 OGG，再更新本地曲目列表。同名 MP3 已存在时，会先核对时长并检查能否完整解码。FFmpeg 和 `ffprobe` 需在 `PATH` 中。
 - `node scripts/update-music.mjs --publish` 更新曲目、提交并推送到 `main`，由 GitHub Pages 自动部署。
 
 新加的 OGG 曲目会用 FFmpeg 生成同名 MP3。删除歌曲时，删除该曲目的 OGG 和 MP3 文件。
 
-进入游戏时默认随机播放，播完自动换曲。浏览器要求先点按时，会在第一次点击后播放。首页和牌局暂停窗口都有独立的「背景音乐」开关。
+进入游戏时默认随机播放，播完自动换曲。浏览器要求先点按时，会在第一次点击后播放。首页的设置页和牌局暂停窗口都能开关背景音乐。
 
 ## 首版规则取值
 
@@ -40,4 +40,4 @@ python -m http.server 8000 --bind 127.0.0.1 --directory android/app/src/main/ass
 - 地方细则待牌友确认，尤其是挡底、起手多龙、三龙直胡、飘胡、冲跑和翻醒。当前以普通组牌、基础名堂及确认稿中的动作顺序跑通对局。
 - 本地保存积分和设置，方言音效已留动作入口，待录音素材。Android 壳留待网页规则验证后接入。
 
-默认自动叠牌，可在开局前关闭，关闭后手牌按牌面顺序平铺。轮到玩家吃、碰或胡时，桌面待接的牌和对应操作会亮起。切换吃法会同步标出需要用到的手牌。
+手牌会自动叠放。点「吃」后选一组预览，亮起的手牌会用于吃牌或比牌，再点「确认吃」执行。列表打开时仍可点牌桌上的其他操作。

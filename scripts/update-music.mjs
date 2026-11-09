@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, linkSync, mkdtempSync, readdirSync, readFileSync, rmdirSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const [mode] = process.argv.slice(2);
@@ -22,6 +23,35 @@ function git(...args) {
   return execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
 }
 
+function duration(file) {
+  const result = execFileSync('ffprobe', [
+    '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=nw=1:nk=1', file
+  ], { encoding: 'utf8' });
+  return Number.parseFloat(result);
+}
+
+function convertOgg(source, target) {
+  if (existsSync(target)) {
+    if (!(Math.abs(duration(source) - duration(target)) <= 0.1)) {
+      throw new Error(`同名 MP3 的时长与 OGG 不符，已保留源文件。${source}`);
+    }
+    execFileSync('ffmpeg', ['-v', 'error', '-xerror', '-i', target, '-map', '0:a:0', '-f', 'null', '-'], { stdio: 'inherit' });
+  } else {
+    const staging = mkdtempSync(fileURLToPath(new URL('.convert-', folder)));
+    const encoded = join(staging, 'track.mp3');
+    try {
+      execFileSync('ffmpeg', [
+        '-v', 'error', '-xerror', '-n', '-i', source, '-vn', '-c:a', 'libmp3lame', '-q:a', '3', encoded
+      ], { stdio: 'inherit' });
+      linkSync(encoded, target);
+    } finally {
+      rmSync(encoded, { force: true });
+      rmdirSync(staging);
+    }
+  }
+  unlinkSync(source);
+}
+
 if (mode === '--publish' && git('branch', '--show-current') !== 'main') {
   throw new Error('请切换到 main 分支再发布。');
 }
@@ -31,11 +61,7 @@ if (mode !== '--playlist-only') {
     if (!entry.isFile() || !/\.ogg$/i.test(entry.name)) continue;
     const source = new URL(encodeURIComponent(entry.name), folder);
     const target = new URL(encodeURIComponent(entry.name.slice(0, -4) + '.mp3'), folder);
-    if (existsSync(target)) continue;
-    execFileSync('ffmpeg', [
-      '-v', 'error', '-n', '-i', fileURLToPath(source), '-vn', '-c:a', 'libmp3lame', '-q:a', '3',
-      fileURLToPath(target)
-    ], { stdio: 'inherit' });
+    convertOgg(fileURLToPath(source), fileURLToPath(target));
   }
 }
 

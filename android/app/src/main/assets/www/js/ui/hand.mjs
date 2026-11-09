@@ -4,8 +4,9 @@ export function arrangeHand(hand, patterns) {
   let remaining = hand;
   const stacks = [];
   for (const card of new Set(hand)) {
-    if (countCard(remaining, card) >= 3) {
-      const cards = [card, card, card];
+    const count = countCard(remaining, card);
+    if (count >= 3) {
+      const cards = Array(count).fill(card);
       stacks.push(cards);
       remaining = takeCards(remaining, cards);
     }
