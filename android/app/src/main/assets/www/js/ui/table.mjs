@@ -1,7 +1,7 @@
 import { cardName, isRed, sortCards } from '../rules/cards.mjs';
 import { arrangeHand } from './hand.mjs';
 
-const names = ['您', '电脑一', '电脑二'];
+const names = ['我', '电脑一', '电脑二'];
 const avatars = ['我', '东', '西'];
 
 function tile(card, hidden = false, action, hinted = false) {
@@ -20,7 +20,7 @@ function turnLabel(round) {
   const { phase, seat, options } = round;
   if (phase === 'finished') return '本局结束';
   if (phase === 'discard') return seat === 0 ? '请点一张手牌打出' : `${names[seat]}正在选牌…`;
-  if (phase === 'draw') return seat === 0 ? '轮到您摸牌' : `轮到${names[seat]}摸牌…`;
+  if (phase === 'draw') return seat === 0 ? '轮到我摸牌' : `轮到${names[seat]}摸牌…`;
   if (options[0].forced) return `${names[seat]}即将${options[0].type}牌`;
   return seat === 0 ? `可${options[0].type} · 请选择` : `${names[seat]}正在考虑…`;
 }
@@ -56,9 +56,9 @@ function seatView(round, seat, response) {
     <div class="groups">${groups.map(group => meld(group, seat !== 0 && ['偎', '提'].includes(group.type))).join('')}</div>
     <button class="discarded" data-history="${seat}" data-view="discards" ${discards.length ? '' : 'disabled'} aria-label="${names[seat]}的弃牌，${discards.length}张">
       <span class="discard-preview" aria-hidden="true">${discards.slice(-3).map(card => tile(card)).join('')}</span>
-      <span>${seat === 0 ? '您的弃牌' : '弃牌'} <b>${discards.length}</b></span>
+      <span>${seat === 0 ? '我的弃牌' : '弃牌'} <b>${discards.length}</b></span>
     </button>
-    ${seat === 0 ? `<div class="hand${round.rules.autoStack ? '' : ' flat'}" aria-label="您的手牌">${playerHand(round, hand, yourDiscard, response)}</div>` : ''}
+    ${seat === 0 ? `<div class="hand${round.rules.autoStack ? '' : ' flat'}" aria-label="我的手牌">${playerHand(round, hand, yourDiscard, response)}</div>` : ''}
   </section>`;
 }
 
@@ -148,10 +148,11 @@ export function animateAction(table, event) {
     : [...seat.querySelectorAll(`.meld[data-meld="${event.type}"][data-cards~="${event.card}"]`)].at(-1);
   const from = (destination === landing ? origin : landing).getBoundingClientRect();
   const to = destination.getBoundingClientRect();
-  const felt = table.querySelector('.felt');
-  const scale = felt.getBoundingClientRect().width / felt.offsetWidth;
-  const x = (from.left + (from.width - to.width) / 2 - to.left) / scale;
-  const y = (from.top + (from.height - to.height) / 2 - to.top) / scale;
+  const scale = Number(table.style.getPropertyValue('--table-scale'));
+  const screenX = (from.left + (from.width - to.width) / 2 - to.left) / scale;
+  const screenY = (from.top + (from.height - to.height) / 2 - to.top) / scale;
+  const rotated = matchMedia('(orientation: portrait)').matches;
+  const [x, y] = rotated ? [screenY, -screenX] : [screenX, screenY];
   destination.animate([
     { transform: `translate(${x}px, ${y}px) scale(.72)`, opacity: .3 },
     { transform: 'translate(0, 0) scale(1.08)', opacity: 1, offset: .78 },

@@ -4,7 +4,7 @@ import { playAction } from './audio/player.mjs';
 import { Round } from './game/state-machine.mjs';
 import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs';
-import { animateAction, renderHistory, renderTable } from './ui/table.mjs?v=7';
+import { animateAction, renderHistory, renderTable } from './ui/table.mjs?v=8';
 
 const home = document.querySelector('#home');
 const table = document.querySelector('#table');
@@ -65,9 +65,7 @@ function showRound(event) {
 function fitTable() {
   if (table.hidden) return;
   const { clientWidth: width, clientHeight: height } = table;
-  const wide = width > height * 1.2;
-  table.classList.toggle('wide', wide);
-  const scale = Math.min(width / (wide ? 864 : 420), height / (wide ? 480 : 700));
+  const scale = Math.min(width / 864, height / 480);
   table.style.setProperty('--table-scale', scale);
   table.style.setProperty('--table-width', `${width / scale}px`);
   table.style.setProperty('--table-height', `${height / scale}px`);
