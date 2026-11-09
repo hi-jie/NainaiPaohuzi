@@ -8,6 +8,8 @@ import { animateAction, renderHistory, renderTable } from './ui/table.mjs';
 const home = document.querySelector('#home');
 const table = document.querySelector('#table');
 const history = document.querySelector('#discard-history');
+const pauseMenu = document.querySelector('#pause-menu');
+const startButton = document.querySelector('#start');
 const score = document.querySelector('#score');
 const settings = document.querySelector('#settings');
 const data = load();
@@ -20,7 +22,17 @@ function showModes() {
     `<button type="button" data-mode="${key}" aria-pressed="${data.settings.mode === key}">${name}</button>`).join('');
 }
 showModes();
-for (const field of settings.querySelectorAll('input')) field.checked = data.settings[field.name];
+const settingFields = document.querySelectorAll('#settings input, #pause-menu input');
+for (const field of settingFields) {
+  field.checked = data.settings[field.name];
+  field.addEventListener('change', () => {
+    data.settings[field.name] = field.checked;
+    for (const input of settingFields) {
+      if (input.name === field.name) input.checked = field.checked;
+    }
+    save(data);
+  });
+}
 modes.addEventListener('click', ({ target }) => {
   if (!target.dataset.mode) return;
   data.settings.mode = target.dataset.mode;
@@ -29,10 +41,11 @@ modes.addEventListener('click', ({ target }) => {
 });
 score.textContent = data.score;
 
-settings.addEventListener('change', ({ target }) => {
-  data.settings[target.name] = target.type === 'checkbox' ? target.checked : target.value;
-  save(data);
-});
+function showHome() {
+  table.hidden = true;
+  home.hidden = false;
+  startButton.focus();
+}
 
 function showRound(event) {
   table.innerHTML = renderTable(round, data.score, event);
@@ -80,7 +93,7 @@ function step(action) {
   showRound(event);
 }
 
-document.querySelector('#start').addEventListener('click', () => start());
+startButton.addEventListener('click', () => start());
 table.addEventListener('click', ({ target }) => {
   const button = target.closest('button');
   if (!button) return;
@@ -92,8 +105,10 @@ table.addEventListener('click', ({ target }) => {
   }
   clearTimeout(timer);
   if (button.dataset.command === 'home') {
-    table.hidden = true;
-    home.hidden = false;
+    showHome();
+  } else if (button.dataset.command === 'pause') {
+    pauseMenu.returnValue = '';
+    pauseMenu.showModal();
   } else if (button.dataset.command === 'again') {
     start(round.result.winner ?? round.dealer);
   } else if (button.dataset.command === 'eat') {
@@ -109,3 +124,18 @@ table.addEventListener('click', ({ target }) => {
   }
 });
 history.addEventListener('close', scheduleTurn);
+pauseMenu.addEventListener('close', () => {
+  if (pauseMenu.returnValue === 'home') {
+    showHome();
+    return;
+  }
+  const { autoStack, sound } = data.settings;
+  round.rules.sound = sound;
+  if (round.rules.autoStack !== autoStack) {
+    round.rules.autoStack = autoStack;
+    const eatIndex = Number(table.querySelector('.eat-picker')?.dataset.index ?? 0);
+    table.innerHTML = renderTable(round, data.score, null, eatIndex);
+    table.querySelector('[data-command="pause"]').focus();
+  }
+  scheduleTurn();
+});

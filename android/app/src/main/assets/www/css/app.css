@@ -17,12 +17,12 @@ main {
 h1, h2, h3, p { margin: 0; }
 button { font: inherit; color: #fff1cf; cursor: pointer; touch-action: manipulation; }
 button:focus-visible { outline: 3px solid #fff0b0; outline-offset: 3px; }
-button.primary, .center button, .modes button, .result button {
+button.primary, .center button, .modes button, .result button, #pause-menu button, .table-hud button {
   min-height: 46px; padding: 6px 14px; border-radius: 12px; font-weight: 750;
   border: 1px solid #e5b66d; background: linear-gradient(#8f4d30, #562b21);
   box-shadow: 0 3px #342017, inset 0 1px #ffe0a44f;
 }
-button.primary, .center button.primary {
+button.primary, .center button.primary, #pause-menu button.primary {
   color: #402517; background: linear-gradient(#fff0b8, #d29a4e);
   box-shadow: 0 3px #734623, inset 0 1px #fff7d2;
 }
@@ -45,8 +45,8 @@ button:active { filter: brightness(1.12); }
 .title-tiles span:first-child { transform: translateY(5px) rotate(-12deg); }
 .title-tiles span:last-child { transform: translateY(5px) rotate(12deg); }
 #settings { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px 12px; margin-bottom: 12px; }
-#settings label { min-height: 44px; display: flex; align-items: center; gap: 4px; cursor: pointer; }
-#settings input { width: 22px; height: 22px; margin: 0; accent-color: var(--gold); }
+#settings label, .pause-settings label { min-height: 44px; display: flex; align-items: center; gap: 4px; cursor: pointer; }
+#settings input, .pause-settings input { width: 22px; height: 22px; margin: 0; accent-color: var(--gold); }
 .modes { display: grid; width: 100%; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .modes button { padding: 5px; }
 .modes button[aria-pressed="true"] { color: #3d2519; background: linear-gradient(#ffeac1, #dca661); }
@@ -69,9 +69,11 @@ button:active { filter: brightness(1.12); }
 }
 .felt::after { inset: 49px 22px 168px; border-radius: 36%; border: 1px solid #e9d08b35; z-index: -1; }
 .table-hud {
-  position: absolute; top: 20px; left: 26px; right: 26px; display: flex; justify-content: space-between;
+  position: absolute; top: 11px; left: 26px; right: 26px; display: flex; align-items: center; gap: 12px; min-height: 44px;
   color: #ffe6ad; font-size: 17px; font-weight: 750;
 }
+.table-hud button { min-height: 44px; }
+.table-hud span:last-child { margin-left: auto; }
 .seat { position: absolute; width: 178px; height: 212px; top: 55px; }
 .seat-1 { left: 23px; }
 .seat-2 { right: 23px; }
@@ -193,7 +195,7 @@ button:active { filter: brightness(1.12); }
 }
 
 .settlement { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; background: #080e0ad1; animation: appear .24s .36s both; }
-.result, #discard-history {
+.result, #discard-history, #pause-menu {
   width: min(calc(100% - 18px), 530px); text-align: center; padding: 10px;
   border: 3px solid #ad7947; border-radius: 17px; color: #fff0c8;
   background: radial-gradient(ellipse at top, #65412c, #30241a); box-shadow: 0 12px 35px #0009;
@@ -206,7 +208,12 @@ button:active { filter: brightness(1.12); }
 .deltas div { background: #241b14; border-radius: 7px; padding: 2px; }
 .deltas strong { display: block; color: #ffe399; }
 .deltas .loss { color: #ffc2ae; }
-#discard-history::backdrop { background: #050d09bd; }
+#discard-history::backdrop, #pause-menu::backdrop { background: #050d09bd; }
+#pause-menu { width: min(calc(100% - 24px), 390px); padding: 16px; }
+#pause-menu h2 { font-size: 24px; color: #ffe096; margin-bottom: 6px; }
+#pause-menu .actions { flex-wrap: wrap; }
+.pause-settings { display: flex; justify-content: center; flex-wrap: wrap; gap: 0 20px; margin: 8px 0 12px; }
+.pause-settings label { gap: 8px; }
 .history-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(22px, 1fr)); gap: 4px; margin: 8px 0 12px; }
 .history-cards .card { width: 100%; height: 24px; font-size: 16px; }
 @media (max-height: 420px) { .title-tiles { display: none; } }

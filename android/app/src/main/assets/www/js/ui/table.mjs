@@ -116,7 +116,10 @@ export function renderTable(round, score, event, eatIndex = 0) {
     ? actionButtons(options, eatIndex, response !== null) : '';
   const lastLabel = last ? `${names[last.seat]}${last.type}${['摸', '出'].includes(last.type) ? '牌' : ''}` : '庄家亮张';
   return `<div class="felt">
-    <div class="table-hud"><span>${round.rules.name}</span><span>积分 ${score}</span></div>
+    <div class="table-hud">
+      ${phase !== 'finished' ? '<button data-command="pause" aria-haspopup="dialog">返回</button>' : ''}
+      <span>${round.rules.name}</span><span>积分 ${score}</span>
+    </div>
     ${seatView(round, 1)}${seatView(round, 2)}
     <div class="center${event?.type === '胡' ? ' winning' : ''}">
       <div class="play-area">

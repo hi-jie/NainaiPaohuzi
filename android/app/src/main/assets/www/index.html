@@ -26,6 +26,20 @@
     </section>
     <section id="table" hidden aria-label="牌桌"></section>
   </main>
+  <dialog id="pause-menu" aria-labelledby="pause-title" aria-describedby="pause-description">
+    <h2 id="pause-title">牌局已暂停</h2>
+    <p id="pause-description">返回首页会结束本局，本局积分不结算。</p>
+    <form method="dialog">
+      <div class="pause-settings">
+        <label><input type="checkbox" name="autoStack"> 自动叠牌</label>
+        <label><input type="checkbox" name="sound"> 方言音效</label>
+      </div>
+      <div class="actions">
+        <button class="primary" value="resume" autofocus>继续打牌</button>
+        <button value="home">确认返回</button>
+      </div>
+    </form>
+  </dialog>
   <dialog id="discard-history" aria-label="弃牌记录"></dialog>
 </body>
 </html>
