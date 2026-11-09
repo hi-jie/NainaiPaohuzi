@@ -189,8 +189,8 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 }
 .deck-count { position: absolute; bottom: calc(100% + 6px); white-space: nowrap; }
 .turn-arrow {
-  position: absolute; top: 18px; left: calc(50% + 43px); width: 24px; height: 20px;
-  transform: translateX(-50%) rotate(-14deg); pointer-events: none;
+  position: absolute; top: 17px; left: calc(50% + 43px); width: 12px; height: 22px;
+  transform: translateX(-50%); pointer-events: none;
   filter: drop-shadow(0 0 4px #ffc45db0);
 }
 .turn-arrow::before {
@@ -198,23 +198,23 @@ main:has(#table:not([hidden])) { background: var(--wood); }
   background: linear-gradient(#fff1a8, #edaa38);
   clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
-.turn-arrow.to-1 { left: calc(50% - 43px); transform: translateX(-50%) rotate(194deg); }
-.turn-arrow.to-0 { top: 43px; left: calc(50% - 43px); transform: translateX(-50%) rotate(148deg); }
+.turn-arrow.to-1 { left: calc(50% - 43px); transform: translateX(-50%) rotate(180deg); }
+.turn-arrow.to-0 { top: 55px; left: 50%; transform: translateX(-50%) rotate(90deg); }
 .deck-tile, .landing { display: grid; place-items: center; width: 44px; height: 56px; }
 .deck-tile { color: #ffe4a0; font: 800 23px serif; box-shadow: 3px 3px #d0a978, 5px 5px #754b39; }
 .landing .card { width: 100%; height: 100%; font-size: 27px; }
 .last-play.from-1 { left: calc(50% - 86px); }
 .last-play.from-2 { left: calc(50% + 86px); }
-.last-play.from-0 { top: 36px; }
+.last-play.from-0 { top: 49px; }
 .last-play.from-0 > span {
   position: absolute; top: 50%; left: calc(50% + 30px); transform: translateY(-50%); white-space: nowrap;
 }
 .actions { display: flex; justify-content: center; align-items: start; gap: 6px; }
-.center .actions { position: absolute; top: 2px; left: 0; right: 0; }
-.center button { min-width: 64px; min-height: 53px; }
+.center .actions { position: absolute; top: 16px; left: 0; right: 0; gap: 4px; }
+.center button { min-width: 64px; min-height: 53px; padding-inline: 10px; }
 .center [data-command="discard"]:disabled { opacity: .5; cursor: default; }
 .center .pass { background: linear-gradient(#426a55, #254739); border-color: #90a888; }
-.eat-picker { display: grid; grid-template-columns: auto auto auto; gap: 4px; align-items: start; }
+.eat-picker { display: grid; grid-template-columns: auto auto auto; gap: 3px; align-items: start; }
 .eat-picker [data-command="next-eat"] {
   display: inline-flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap;
 }
