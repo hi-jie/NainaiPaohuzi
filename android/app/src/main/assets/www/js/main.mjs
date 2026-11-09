@@ -1,5 +1,5 @@
 import { chooseAction } from './ai/player.mjs';
-import { setMusicPlaying } from './audio/music.mjs?v=3';
+import { setMusicPlaying } from './audio/music.mjs?v=5-fbe4af7499ad';
 import { playAction } from './audio/player.mjs';
 import { Round } from './game/state-machine.mjs';
 import { presets } from './rules/presets.mjs';

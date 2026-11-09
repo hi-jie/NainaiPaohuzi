@@ -22,7 +22,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
-      - run: node scripts/update-music.mjs
+      - run: node scripts/update-music.mjs --playlist-only
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

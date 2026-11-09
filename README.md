@@ -21,7 +21,12 @@ python -m http.server 8000 --bind 127.0.0.1 --directory android/app/src/main/ass
 
 ## 背景音乐
 
-把 MP3、M4A、OGG 或 WAV 文件放进 [音乐目录](android/app/src/main/assets/www/media/audio/music)，可以使用中文文件名。同名曲目优先使用 MP3。本地新增或删除歌曲后，运行 `node scripts/update-music.mjs` 更新曲目并刷新网页。GitHub Pages 部署时会自动更新曲目。
+把 MP3、M4A、OGG 或 WAV 文件放进 [音乐目录](android/app/src/main/assets/www/media/audio/music)，可以使用中文文件名。同名曲目优先使用 MP3。在项目根目录运行以下命令。
+
+- `node scripts/update-music.mjs` 更新本地曲目列表，刷新网页即可试听。
+- `node scripts/update-music.mjs --publish` 更新曲目、提交并推送到 `main`，由 GitHub Pages 自动部署。
+
+新加的 OGG 曲目会用 FFmpeg 生成同名 MP3。删除歌曲时，删除该曲目的 OGG 和 MP3 文件。
 
 进入游戏时默认随机播放，播完自动换曲。浏览器要求先点按时，会在第一次点击后播放。首页和牌局暂停窗口都有独立的「背景音乐」开关。
 

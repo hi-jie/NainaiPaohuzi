@@ -1,4 +1,4 @@
-import tracks from '../../media/audio/music/playlist.mjs?v=2';
+import tracks from '../../media/audio/music/playlist.mjs?v=5-fbe4af7499ad';
 
 const folder = new URL('../../media/audio/music/', import.meta.url);
 const audio = new Audio();
@@ -14,7 +14,9 @@ function play() {
 function nextTrack() {
   const choices = tracks.length > 1 ? tracks.filter(track => track !== current) : tracks;
   current = choices[Math.floor(Math.random() * choices.length)];
-  audio.src = new URL(encodeURIComponent(current), folder);
+  const url = new URL(encodeURIComponent(current), folder);
+  url.search = new URL(import.meta.url).search;
+  audio.src = url;
   play();
 }
 
