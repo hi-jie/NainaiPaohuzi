@@ -4,7 +4,14 @@
   font-weight: 500;
   font-display: swap;
 }
+@font-face {
+  font-family: "Hengyang Card Ink";
+  src: url("../media/fonts/hengyang-card.woff") format("woff");
+  font-weight: 800;
+  font-display: swap;
+}
 :root {
+  --card-font: "Hengyang Card Ink", "Table Kai", serif;
   --ink-font: "Table Kai", KaiTi, STKaiti, serif;
   color-scheme: dark;
   font: 18px/1.35 system-ui, "Microsoft YaHei", sans-serif;
@@ -54,7 +61,7 @@ button:active { filter: brightness(1.12); }
 .title-tiles span {
   display: grid; place-items: center; width: 48px; height: 65px;
   background: linear-gradient(#fff8dc, #dfbd88); color: #a22719; border: 1px solid #fff2cc;
-  border-radius: 7px; box-shadow: 0 4px #996239, 0 7px 8px #0007; font: 800 30px var(--ink-font);
+  border-radius: 7px; box-shadow: 0 4px #996239, 0 7px 8px #0007; font: 800 30px var(--card-font);
 }
 .title-tiles span:first-child { transform: translateY(5px) rotate(-12deg); }
 .title-tiles span:last-child { transform: translateY(5px) rotate(12deg); }
@@ -137,7 +144,7 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 .card {
   display: inline-grid; place-items: center; padding: 0; width: 15px; height: 20px;
   border: 1px solid #f8e3b7; border-radius: 3px; background: linear-gradient(#fff8e1, #e5c594);
-  color: #281a13; font: 800 14px/1 var(--ink-font); box-shadow: 0 2px #9a6845;
+  color: #281a13; font: 800 14px/1 var(--card-font); box-shadow: 0 2px #9a6845;
 }
 .card.red { color: #ad281b; }
 .card.back { color: #efcb8e; background: #833f31; border-color: #cc9c69; }
@@ -200,15 +207,15 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 .center .pass { background: linear-gradient(#426a55, #254739); border-color: #90a888; }
 .eat-picker { display: grid; grid-template-columns: auto auto auto; gap: 4px; align-items: start; }
 .callout {
-  position: absolute; z-index: 1; top: 0; min-width: 58px; padding: 2px 8px;
-  border: 1px solid #ffe9a3; border-radius: 9px; background: linear-gradient(#a53e29, #692c20);
-  color: #fff2bd; text-align: center; font: 800 25px/1.25 var(--ink-font);
-  text-shadow: 0 2px #6d291b; box-shadow: 0 3px 9px #0007;
-  animation: callout .42s ease-out both; pointer-events: none; white-space: nowrap;
+  position: absolute; z-index: 1; top: 0; min-width: 62px;
+  color: #ffe487; text-align: center; font: 900 52px/1.05 var(--ink-font);
+  text-shadow: 2px 3px #80331c, -1px -1px #62351c, 0 2px 8px #110d08;
+  animation: callout .55s ease-out both; pointer-events: none; white-space: nowrap;
 }
+.callout.long { font-size: 40px; }
 .seat-1 .callout { left: calc(100% + 8px); }
 .seat-2 .callout { right: calc(100% + 8px); }
-.seat-0 .callout { top: -43px; left: 0; }
+.seat-0 .callout { top: -61px; left: 0; }
 .winning .landing .card { box-shadow: 0 0 28px 10px #ffe28a; }
 
 #table.wide .felt::after { inset: 42px 32px 112px; }
@@ -221,7 +228,7 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 .wide .center { top: calc(96px + (100% - 480px) / 2); width: 388px; }
 .wide .hand { top: 34px; width: 776px; gap: 8px; --strip-height: 68px; --strip-peek: 27px; }
 .wide .hand-stack { max-width: 38px; }
-.wide .hand .card { font-size: 24px; padding-top: 2px; }
+.wide .hand .card { font-size: 28px; padding-top: 1px; }
 .hand.flat {
   display: grid; grid-template-columns: repeat(7, 42px); grid-auto-rows: 48px;
   justify-content: center; gap: 5px;
