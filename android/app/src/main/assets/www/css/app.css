@@ -39,12 +39,12 @@ main {
 h1, h2, h3, p { margin: 0; }
 button { font: inherit; color: #fff1cf; cursor: pointer; touch-action: manipulation; }
 button:focus-visible { outline: 3px solid #fff0b0; outline-offset: 3px; }
-button.primary, .front-screen button, .center button, .result button, .game-dialog button, #eat-menu button, .table-hud button {
+button.primary, .front-screen button, .hand-actions button, .result button, .game-dialog button, #eat-menu button, .table-hud button {
   min-height: 46px; padding: 6px 14px; border-radius: 12px; font-weight: 750;
   border: 1px solid #e5b66d; background: linear-gradient(#8f4d30, #562b21);
   box-shadow: 0 3px #342017, inset 0 1px #ffe0a44f;
 }
-button.primary, .center button.primary, .game-dialog button.primary {
+button.primary, .hand-actions button.primary, .game-dialog button.primary {
   color: #402517; background: linear-gradient(#fff0b8, #d29a4e);
   box-shadow: 0 3px #734623, inset 0 1px #fff7d2;
 }
@@ -137,6 +137,7 @@ main:has(#table:not([hidden])) {
 .seat-2 { right: 23px; }
 .seat-0 {
   width: 374px; height: 255px; top: auto; bottom: 15px; left: 50%; transform: translateX(-50%);
+  --hand-top: 98px;
   --seat-cards-bottom: 2px; --discard-row-height: 76.8px;
 }
 .seat-heading {
@@ -220,7 +221,7 @@ main:has(#table:not([hidden])) {
 }
 .seat-2 .seat-backs { justify-content: flex-end; }
 .hand {
-  position: absolute; top: 98px; left: 0; width: 374px;
+  position: absolute; top: var(--hand-top); left: 0; width: 374px;
   display: flex; justify-content: center; gap: 4px;
   --strip-height: 85px;
   --strip-peek: 34px;
@@ -278,14 +279,14 @@ main:has(#table:not([hidden])) {
   position: absolute; top: 50%; left: calc(50% + 30px); transform: translateY(-50%); white-space: nowrap;
 }
 .actions { display: flex; justify-content: center; align-items: start; gap: 6px; }
-.center .actions {
-  position: absolute; top: -56px; left: calc(50% + 36px); right: -75px;
+.hand-actions {
+  position: absolute; bottom: calc(100% - var(--hand-top) + 8px); left: calc(50% + 36px); width: 189px;
   justify-content: flex-end; gap: 4px;
 }
-.center button { min-width: 64px; min-height: 53px; padding-inline: 10px; font-size: 21.6px; white-space: nowrap; }
-.center [data-command="choose-eat"] { min-width: 78px; }
-.center [data-command="discard"]:disabled { opacity: .5; cursor: default; }
-.center .pass { background: linear-gradient(#426a55, #254739); border-color: #90a888; }
+.hand-actions button { min-width: 64px; min-height: 53px; padding-inline: 10px; font-size: 21.6px; white-space: nowrap; }
+.hand-actions [data-command="choose-eat"] { min-width: 78px; }
+.hand-actions [data-command="discard"]:disabled { opacity: .5; cursor: default; }
+.hand-actions .pass { background: linear-gradient(#426a55, #254739); border-color: #90a888; }
 .callout {
   position: absolute; z-index: 1; top: 43px; width: 104px;
   color: #ffe487; text-align: center; font: 800 52px/1.05 serif;
@@ -304,10 +305,11 @@ main:has(#table:not([hidden])) {
 .wide .seat-0 {
   --seat-bottom: 16px;
   --seat-inset: 34px;
+  --hand-top: 15px;
   top: auto; bottom: var(--seat-bottom); inset-inline: var(--seat-inset); width: auto; height: 223px; transform: none;
 }
 .wide .hand {
-  top: 15px; bottom: calc(-1 * var(--seat-bottom)); right: 0;
+  bottom: calc(-1 * var(--seat-bottom)); right: 0;
   width: auto; justify-content: start; gap: 8px;
   --strip-width: 45.6px; --strip-height: 81.6px; --strip-font: 33.6px; --strip-peek: 56.4px;
 }
@@ -327,7 +329,7 @@ main:has(#table:not([hidden])) {
   box-shadow: 0 0 0 2px #ffe1a0, 0 0 16px 3px #ffc75a90;
   animation: claim-glow .45s ease-out;
 }
-.center .guided { box-shadow: 0 0 0 2px #ffe1a0, 0 0 12px #ffc75a65; }
+.hand-actions .guided { box-shadow: 0 0 0 2px #ffe1a0, 0 0 12px #ffc75a65; }
 @keyframes claim-glow {
   from { filter: brightness(1.25); }
 }

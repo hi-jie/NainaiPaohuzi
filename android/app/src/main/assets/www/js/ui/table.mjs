@@ -43,7 +43,7 @@ function playerHand(round, hand, canDiscard, response) {
     `<div class="hand-stack loose">${cards.map(cardView).join('')}</div>`).join('');
 }
 
-function seatView(round, seat, event, response, openingStage) {
+function seatView(round, seat, event, response, openingStage, actions = '') {
   const { hand, groups, discards } = round.players[seat];
   const spread = openingStage === 'deal' || openingStage === 'reveal';
   const arranging = openingStage === 'sort';
@@ -66,6 +66,7 @@ function seatView(round, seat, event, response, openingStage) {
         ${discards.map(card => tile(card)).join('')}
       </button>
     </div>
+    ${actions ? `<div class="actions hand-actions">${actions}</div>` : ''}
     ${seat === 0 && spread ? openingHand(round.openingHand, openingStage === 'reveal') : ''}
     ${seat === 0 && showHand ? `<div class="hand" aria-label="我的手牌">${playerHand(round, hand, yourDiscard, response)}</div>` : ''}
   </section>`;
@@ -182,7 +183,8 @@ export function renderTable(round, score, event, openingStage = '') {
   const playing = !openingStage && phase !== 'finished';
   const myTurn = playing && seat === 0;
   let actions = '';
-  if (myTurn && phase === 'discard') actions = '<button class="primary" data-command="discard" disabled>出牌</button>';
+  if (openingStage) actions = '<button data-command="skip-opening">跳过动画</button>';
+  else if (myTurn && phase === 'discard') actions = '<button class="primary" data-command="discard" disabled>出牌</button>';
   else if (myTurn) actions = actionButtons(options);
   const lastLabel = last ? shortActionLabel(last.type) : '庄家亮张';
   return `<div class="felt${openingStage ? ' opening' : ''}"${openingStage ? ` data-stage="${openingStage}"` : ''}>
@@ -205,9 +207,8 @@ export function renderTable(round, score, event, openingStage = '') {
           ${showLastPlay ? `<span>${lastLabel}</span>` : ''}
         </div>
       </div>
-      <div class="actions">${openingStage ? '<button data-command="skip-opening">跳过动画</button>' : actions}</div>
     </div>
-    ${seatView(round, 0, event, handHint, openingStage)}
+    ${seatView(round, 0, event, handHint, openingStage, actions)}
     </div>
     ${phase === 'finished' ? resultView(round.result, score) : ''}`;
 }
