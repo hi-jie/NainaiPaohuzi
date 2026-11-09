@@ -16,10 +16,6 @@ function meld(group, hide = false) {
   return `<span class="meld" data-meld="${group.type}" data-cards="${group.cards.join(' ')}"><b>${group.type}</b>${group.cards.map((card, index) => tile(card, hide && index > 0)).join('')}</span>`;
 }
 
-export function needsPlayerInput(action) {
-  return !action.forced || action.type === '跑';
-}
-
 function turnLabel(round, response) {
   const { phase, seat, options } = round;
   if (phase === 'finished') return '本局结束';
@@ -27,7 +23,7 @@ function turnLabel(round, response) {
   if (phase === 'draw') return seat === 0 ? '请摸牌，点「摸牌」' : '准备摸牌';
   const { type, forced } = options[0];
   if (forced) {
-    return seat === 0 && needsPlayerInput(options[0]) ? `必须${type}牌，点「${type}」` : `自动${type}牌`;
+    return seat === 0 ? `必须${type}牌，点「${type}」` : `自动${type}牌`;
   }
   if (seat !== 0) return '正在考虑';
   if (type === '吃' && options.length > 2) return `可吃牌，点「吃这组」\n${eatGroupNames(response).join('·')}`;
@@ -133,7 +129,7 @@ export function renderTable(round, score, event, eatIndex = 0) {
   const myTurn = playing && seat === 0;
   let actions = '';
   if (myTurn && phase === 'discard') actions = '<button class="primary" data-command="discard" disabled>出牌</button>';
-  else if (myTurn && needsPlayerInput(options[0])) actions = actionButtons(options, eatIndex);
+  else if (myTurn) actions = actionButtons(options, eatIndex);
   const lastLabel = last ? `${names[last.seat]}${shortActionLabel(last.type)}` : '庄家亮张';
   return `<div class="felt">
     <div class="table-hud">

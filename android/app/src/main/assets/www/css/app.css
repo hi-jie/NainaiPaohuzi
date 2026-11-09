@@ -155,6 +155,8 @@ main:has(#table:not([hidden])) { background: var(--wood); }
   display: flex; justify-content: center; gap: 4px;
   --strip-height: 85px;
   --strip-peek: 34px;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .hand-stack { flex: 1 1 0; min-width: 0; max-width: 44px; display: flex; flex-direction: column; }
 .hand-stack.loose { margin-left: 3px; }
