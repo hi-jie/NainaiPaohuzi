@@ -4,7 +4,7 @@ import { playAction } from './audio/player.mjs';
 import { Round } from './game/state-machine.mjs';
 import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs';
-import { animateAction, renderHistory, renderTable } from './ui/table.mjs?v=14';
+import { animateAction, needsPlayerInput, renderHistory, renderTable } from './ui/table.mjs?v=15';
 
 const home = document.querySelector('#home');
 const table = document.querySelector('#table');
@@ -74,7 +74,7 @@ function fitTable() {
 new ResizeObserver(fitTable).observe(table);
 
 function scheduleTurn() {
-  if (round.phase !== 'finished' && (round.seat !== 0 || round.options[0].forced)) {
+  if (round.phase !== 'finished' && (round.seat !== 0 || !needsPlayerInput(round.options[0]))) {
     const action = round.options[0];
     const thinking = round.phase === 'discard' ? 1450 : round.phase === 'draw' ? 950 : 1150;
     const delay = action.forced ? 650 : thinking + Math.random() * 650;

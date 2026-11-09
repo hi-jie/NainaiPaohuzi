@@ -16,14 +16,20 @@ function meld(group, hide = false) {
   return `<span class="meld" data-meld="${group.type}" data-cards="${group.cards.join(' ')}"><b>${group.type}</b>${group.cards.map((card, index) => tile(card, hide && index > 0)).join('')}</span>`;
 }
 
+export function needsPlayerInput(action) {
+  return !action.forced || action.type === '跑';
+}
+
 function turnLabel(round, response) {
   const { phase, seat, options } = round;
   if (phase === 'finished') return '本局结束';
   if (phase === 'discard') return seat === 0 ? '请出牌，选择手牌后点「出牌」' : '正在选牌';
   if (phase === 'draw') return seat === 0 ? '请摸牌，点「摸牌」' : '准备摸牌';
-  if (options[0].forced) return `自动${options[0].type}牌`;
+  const { type, forced } = options[0];
+  if (forced) {
+    return seat === 0 && needsPlayerInput(options[0]) ? `必须${type}牌，点「${type}」` : `自动${type}牌`;
+  }
   if (seat !== 0) return '正在考虑';
-  const { type } = options[0];
   if (type === '吃' && options.length > 2) return `可吃牌，点「吃这组」\n${eatGroupNames(response).join('·')}`;
   return `可以${type}牌，点「${type}」`;
 }
@@ -83,12 +89,12 @@ function actionButtons(options, eatIndex) {
   const eats = options.filter(action => action.type === '吃');
   if (eats.length > 1) {
     return `<div class="eat-picker" data-index="${eatIndex}">
-      <button class="primary guided" data-command="eat">吃这组</button>
+      <button class="pass" data-action="${options.length - 1}">过</button>
       <button data-command="next-eat">换一种 ${eatIndex + 1}/${eats.length}</button>
-      <button class="pass" data-action="${options.length - 1}">过</button></div>`;
+      <button class="primary guided" data-command="eat">吃这组</button></div>`;
   }
   return options.map((action, index) =>
-    `<button class="${action.type === '过' ? 'pass' : 'primary guided'}" data-action="${index}">${actionLabel(action)}</button>`).join('');
+    `<button class="${action.type === '过' ? 'pass' : 'primary guided'}" data-action="${index}">${actionLabel(action)}</button>`).reverse().join('');
 }
 
 export function renderHistory(round, seat, view) {
@@ -127,7 +133,7 @@ export function renderTable(round, score, event, eatIndex = 0) {
   const myTurn = playing && seat === 0;
   let actions = '';
   if (myTurn && phase === 'discard') actions = '<button class="primary" data-command="discard" disabled>出牌</button>';
-  else if (myTurn && !options[0].forced) actions = actionButtons(options, eatIndex);
+  else if (myTurn && needsPlayerInput(options[0])) actions = actionButtons(options, eatIndex);
   const lastLabel = last ? `${names[last.seat]}${shortActionLabel(last.type)}` : '庄家亮张';
   return `<div class="felt">
     <div class="table-hud">
