@@ -142,6 +142,7 @@ function openingHand(hand, reveal) {
 }
 
 function openingPile(stage) {
+  if (!['shuffle', 'cut', 'deal'].includes(stage)) return '';
   const count = stage === 'shuffle' ? 4 : 2;
   return `<span class="opening-pile" aria-hidden="true">${Array.from({ length: count }, (_, index) =>
     `<i class="opening-back opening-stack" style="--index:${index}"></i>`).join('')}</span>`;
@@ -168,8 +169,8 @@ export function renderTable(round, score, event, eatIndex = 0, openingStage = ''
     <div class="center${event?.type === '胡' ? ' winning' : ''}">
       <div class="play-area">
         <div class="deck">
-          <span class="deck-tile" aria-hidden="true">字${openingStage ? openingPile(openingStage) : ''}</span>
-          ${!openingStage || openingStage === 'sort' ? `<span>余 ${round.deck.length} 张</span>` : ''}
+          <span class="deck-tile" aria-hidden="true">字${openingPile(openingStage)}</span>
+          ${!openingStage ? `<span>余 ${round.deck.length} 张</span>` : ''}
         </div>
         <div class="last-play">
           <div class="landing">${openingStage === 'reveal' ? '<i class="opening-back"></i>' : ''}
