@@ -1,10 +1,10 @@
 import { chooseAction } from './ai/player.mjs';
-import { setMusicPlaying } from './audio/music.mjs?v=2';
+import { setMusicPlaying } from './audio/music.mjs?v=3';
 import { playAction } from './audio/player.mjs';
 import { Round } from './game/state-machine.mjs';
 import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs';
-import { animateAction, renderHistory, renderTable } from './ui/table.mjs';
+import { animateAction, renderHistory, renderTable } from './ui/table.mjs?v=3';
 
 const home = document.querySelector('#home');
 const table = document.querySelector('#table');
@@ -32,7 +32,7 @@ for (const field of settingFields) {
       if (input.name === field.name) input.checked = field.checked;
     }
     save(data);
-    if (field.name === 'music' && !table.hidden) setMusicPlaying(field.checked);
+    if (field.name === 'music') setMusicPlaying(field.checked);
   });
 }
 modes.addEventListener('click', ({ target }) => {
@@ -43,8 +43,14 @@ modes.addEventListener('click', ({ target }) => {
 });
 score.textContent = data.score;
 
+function startMusic() {
+  setMusicPlaying(data.settings.music);
+}
+
+startMusic();
+document.addEventListener('click', startMusic, { once: true });
+
 function showHome() {
-  setMusicPlaying(false);
   table.hidden = true;
   home.hidden = false;
   startButton.focus();
@@ -61,7 +67,10 @@ function fitTable() {
   const { clientWidth: width, clientHeight: height } = table;
   const wide = width > height * 1.2;
   table.classList.toggle('wide', wide);
-  table.style.setProperty('--table-scale', Math.min(width / (wide ? 864 : 420), height / (wide ? 480 : 700)));
+  const scale = Math.min(width / (wide ? 864 : 420), height / (wide ? 480 : 700));
+  table.style.setProperty('--table-scale', scale);
+  table.style.setProperty('--table-width', `${width / scale}px`);
+  table.style.setProperty('--table-height', `${height / scale}px`);
 }
 
 new ResizeObserver(fitTable).observe(table);
@@ -81,7 +90,7 @@ function start(dealer = Math.floor(Math.random() * 3)) {
   table.hidden = false;
   fitTable();
   showRound();
-  setMusicPlaying(data.settings.music);
+  startMusic();
 }
 
 function step(action) {

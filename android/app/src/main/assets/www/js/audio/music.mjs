@@ -7,7 +7,7 @@ let current;
 
 function play() {
   audio.play().catch(error => {
-    if (error.name !== 'AbortError') console.warn('背景音乐播放失败', error);
+    if (!['AbortError', 'NotAllowedError'].includes(error.name)) console.warn('背景音乐播放失败', error);
   });
 }
 
