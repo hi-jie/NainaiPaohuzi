@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { chooseAction } from '../android/app/src/main/assets/www/js/ai/player.mjs';
+import { cutDeck, shuffledDeck } from '../android/app/src/main/assets/www/js/game/deck.mjs';
 import { Round } from '../android/app/src/main/assets/www/js/game/state-machine.mjs';
 import { responses } from '../android/app/src/main/assets/www/js/rules/actions.mjs';
 import { huxi, patterns, types } from '../android/app/src/main/assets/www/js/rules/cards.mjs';
@@ -13,6 +14,25 @@ const player = (hand, groups = []) => ({
   hand, groups, passedChi: new Set(), passedPeng: new Set(), passedHu: -1
 });
 const waitingHand = [0, 1, 2, 3, 3, 3, 5, 6, 7, 10, 11, 12, 15, 16];
+
+test('切牌保留整副牌，亮张前后沿用同一手牌', () => {
+  const random = () => 0.375;
+  const shuffled = shuffledDeck(random);
+  const deck = cutDeck(shuffled, random);
+  assert.notDeepEqual(deck, shuffled);
+  assert.deepEqual([...deck].sort(), [...shuffled].sort());
+
+  for (const mode of Object.keys(presets)) {
+    const settings = { ...defaultSettings, mode };
+    const round = new Round(settings, 1, random, deck, { deferOpening: true });
+    assert.equal(round.phase, undefined);
+    assert.equal(round.events.length, 0);
+    const beforeOpening = round.players.flatMap(({ hand, groups }) => [...hand, ...groups.flatMap(group => group.cards)]);
+    assert.deepEqual([...beforeOpening, ...round.deck, round.opening].sort(), [...deck].sort());
+    round.revealOpening();
+    assert.deepEqual(round, new Round(settings, 1, random, deck));
+  }
+});
 
 test('一五十开关改变胡牌拆组', () => {
   const hand = [0, 4, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 3, 3, 3].sort((a, b) => a - b);

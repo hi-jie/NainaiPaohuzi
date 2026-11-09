@@ -8,3 +8,8 @@ export function shuffledDeck(random) {
   }
   return deck;
 }
+
+export function cutDeck(deck, random) {
+  const index = 1 + Math.floor(random() * (deck.length - 1));
+  return [...deck.slice(index), ...deck.slice(0, index)];
+}

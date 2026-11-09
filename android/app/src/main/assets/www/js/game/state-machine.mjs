@@ -6,7 +6,7 @@ import { settle } from '../rules/scoring.mjs';
 import { shuffledDeck } from './deck.mjs';
 
 export class Round {
-  constructor(settings, dealer, random = Math.random, deck = shuffledDeck(random)) {
+  constructor(settings, dealer, random = Math.random, deck = shuffledDeck(random), { deferOpening = false } = {}) {
     this.rules = { ...settings, ...presets[settings.mode], patterns: patterns(settings.oneFiveTen) };
     this.dealer = dealer;
     this.deck = [...deck];
@@ -36,7 +36,11 @@ export class Round {
       }
       sortCards(player.hand);
     }
-    this.reveal(dealer, this.opening, 'opening');
+    if (!deferOpening) this.revealOpening();
+  }
+
+  revealOpening() {
+    this.reveal(this.dealer, this.opening, 'opening');
   }
 
   record(type, seat, card) {
