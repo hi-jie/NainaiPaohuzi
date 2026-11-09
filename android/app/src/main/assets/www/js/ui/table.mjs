@@ -45,22 +45,19 @@ function seatView(round, seat, response) {
   const { hand, groups, discards } = round.players[seat];
   const active = round.seat === seat && round.phase !== 'finished';
   const yourDiscard = seat === 0 && active && round.phase === 'discard';
-  const handView = seat === 0 ? playerHand(round, hand, yourDiscard, response)
-    : `<div class="fan" aria-hidden="true">${'<i></i>'.repeat(Math.min(hand.length, 6))}</div>`;
   return `<section class="seat seat-${seat}${active ? ' active' : ''}">
     <div class="seat-heading">
       <span class="avatar" aria-hidden="true">${avatars[seat]}</span>
       <h3>${names[seat]}</h3>
       <span class="dealer" ${round.dealer === seat ? '' : 'inert aria-hidden="true"'}>庄</span>
-      ${seat !== 0 ? `<span class="count">${hand.length} 张</span>` : ''}
+      ${seat !== 0 ? `<span class="count">剩 <strong>${hand.length}</strong> 张</span>` : ''}
     </div>
-    ${seat !== 0 ? `<div class="opponent-hand">${handView}</div>` : ''}
     <div class="groups">${groups.map(group => meld(group, seat !== 0 && ['偎', '提'].includes(group.type))).join('')}</div>
     <button class="discarded" data-history="${seat}" data-view="discards" ${discards.length ? '' : 'disabled'} aria-label="${names[seat]}的弃牌，${discards.length}张">
       <span class="discard-preview" aria-hidden="true">${discards.slice(-3).map(card => tile(card)).join('')}</span>
       <span>${seat === 0 ? '您的弃牌' : '弃牌'} <b>${discards.length}</b></span>
     </button>
-    ${seat === 0 ? `<div class="hand${round.rules.autoStack ? '' : ' flat'}" aria-label="您的手牌">${handView}</div>` : ''}
+    ${seat === 0 ? `<div class="hand${round.rules.autoStack ? '' : ' flat'}" aria-label="您的手牌">${playerHand(round, hand, yourDiscard, response)}</div>` : ''}
   </section>`;
 }
 

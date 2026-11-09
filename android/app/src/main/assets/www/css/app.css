@@ -95,14 +95,14 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 .seat h3 { font-size: 19px; color: #fff0c8; text-shadow: 0 2px 2px #05271f; }
 .dealer { color: #3f2217; background: #efcb80; border-radius: 4px; padding: 1px 3px; font-size: 16px; font-weight: 750; }
 .dealer[inert] { visibility: hidden; }
-.count { font-size: 16px; color: #f5dda6; min-width: 48px; text-align: right; }
-.opponent-hand { position: absolute; top: 40px; left: 4px; }
-.fan { display: flex; height: 19px; }
-.fan i, .deck-tile {
+.seat:not(.seat-0) .seat-heading { right: 0; }
+.seat:not(.seat-0) .dealer { position: absolute; top: 37px; left: 4px; }
+.count { margin-left: auto; font-size: 17px; color: #f5dda6; }
+.count strong { color: #fff0c8; font-size: 22px; }
+.deck-tile {
   background: repeating-linear-gradient(45deg, #75382e 0 3px, #8c4437 3px 6px);
   border: 1px solid #d9aa71; border-radius: 3px;
 }
-.fan i { width: 16px; height: 19px; margin-right: -4px; transform: rotate(-6deg); }
 .seat .groups {
   position: absolute; top: 65px; left: 0; display: grid;
   grid-template-columns: repeat(2, 86px); grid-auto-rows: 24px; gap: 2px; align-items: start;
