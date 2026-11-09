@@ -16,13 +16,15 @@ function meld(group, hide = false) {
   return `<span class="meld" data-meld="${group.type}" data-cards="${group.cards.join(' ')}"><b>${group.type}</b>${group.cards.map((card, index) => tile(card, hide && index > 0)).join('')}</span>`;
 }
 
-function turnLabel(round) {
+function turnLabel(round, response) {
   const { phase, seat, options } = round;
   if (phase === 'finished') return '本局结束';
-  if (phase === 'discard') return seat === 0 ? '请点一张手牌打出' : `${names[seat]}正在选牌…`;
-  if (phase === 'draw') return seat === 0 ? '轮到我摸牌' : `轮到${names[seat]}摸牌…`;
-  if (options[0].forced) return `${names[seat]}即将${options[0].type}牌`;
-  return seat === 0 ? `可${options[0].type} · 请选择` : `${names[seat]}正在考虑…`;
+  if (phase === 'discard') return seat === 0 ? '点一张亮起的手牌' : '正在选牌';
+  if (phase === 'draw') return seat === 0 ? '点「摸牌」' : '准备摸牌';
+  if (options[0].forced) return `自动${options[0].type}牌`;
+  if (seat !== 0) return '正在考虑';
+  if (options[0].type === '吃' && options.length > 2) return actionLabel(response);
+  return `可以${options[0].type}牌，请选择`;
 }
 
 function playerHand(round, hand, canDiscard, response) {
@@ -41,17 +43,18 @@ function playerHand(round, hand, canDiscard, response) {
   return stacks.map(cards => stackView(cards, false)).join('') + loose.map(cards => stackView(cards, true)).join('');
 }
 
-function seatView(round, seat, response) {
+function seatView(round, seat, event, response) {
   const { hand, groups, discards } = round.players[seat];
   const active = round.seat === seat && round.phase !== 'finished';
   const yourDiscard = seat === 0 && active && round.phase === 'discard';
-  return `<section class="seat seat-${seat}${active ? ' active' : ''}">
+  return `<section class="seat seat-${seat}${active ? ' active' : ''}${yourDiscard ? ' choosing-card' : ''}"${active ? ' aria-current="true"' : ''}>
     <div class="seat-heading">
       <span class="avatar" aria-hidden="true">${avatars[seat]}</span>
       <h3>${names[seat]}</h3>
       <span class="dealer" ${round.dealer === seat ? '' : 'inert aria-hidden="true"'}>庄</span>
       ${seat !== 0 ? `<span class="count">剩 <strong>${hand.length}</strong> 张</span>` : ''}
     </div>
+    ${event?.seat === seat ? `<span class="callout" aria-hidden="true">${shortActionLabel(event.type)}</span>` : ''}
     ${seat !== 0 ? `<div class="opponent-backs" aria-hidden="true">${'<span></span>'.repeat(hand.length)}</div>` : ''}
     <div class="groups">${groups.map(group => meld(group, seat !== 0 && ['偎', '提'].includes(group.type))).join('')}</div>
     <button class="discarded" data-history="${seat}" data-view="discards" ${discards.length ? '' : 'disabled'} aria-label="${names[seat]}的弃牌，${discards.length}张">
@@ -62,23 +65,25 @@ function seatView(round, seat, response) {
   </section>`;
 }
 
+function shortActionLabel(type) {
+  return ['摸', '出'].includes(type) ? `${type}牌` : type;
+}
+
 function actionLabel(action) {
-  if (action.type === '摸') return '摸牌';
-  if (action.type !== '吃') return action.type;
+  if (action.type !== '吃') return shortActionLabel(action.type);
   return `吃 ${action.groups.map(group => group.map(cardName).join('')).join(' + ')}`;
 }
 
-function actionButtons(options, eatIndex, guiding) {
+function actionButtons(options, eatIndex) {
   const eats = options.filter(action => action.type === '吃');
   if (eats.length > 1) {
     return `<div class="eat-picker" data-index="${eatIndex}">
-      <strong class="eat-label" aria-live="polite">${actionLabel(eats[eatIndex])}</strong>
       <button class="primary guided" data-command="eat">吃这组</button>
       <button data-command="next-eat">换一种 ${eatIndex + 1}/${eats.length}</button>
       <button class="pass" data-action="${options.length - 1}">过</button></div>`;
   }
   return options.map((action, index) =>
-    `<button class="${action.type === '过' ? 'pass' : guiding ? 'primary guided' : 'primary'}" data-action="${index}">${actionLabel(action)}</button>`).join('');
+    `<button class="${action.type === '过' ? 'pass' : 'primary guided'}" data-action="${index}">${actionLabel(action)}</button>`).join('');
 }
 
 export function renderHistory(round, seat, view) {
@@ -113,15 +118,16 @@ export function renderTable(round, score, event, eatIndex = 0) {
   const response = seat === 0 && phase === 'response' ? options[eatIndex] : null;
   const last = events.at(-1);
   const visibleCard = last ? (offer && ['出', '摸'].includes(last.type) ? offer.card : last.card) : round.opening;
-  const actions = phase !== 'finished' && phase !== 'discard' && seat === 0 && !options[0].forced
-    ? actionButtons(options, eatIndex, response !== null) : '';
-  const lastLabel = last ? `${names[last.seat]}${last.type}${['摸', '出'].includes(last.type) ? '牌' : ''}` : '庄家亮张';
+  const playing = phase !== 'finished';
+  const myTurn = playing && seat === 0;
+  const actions = myTurn && phase !== 'discard' && !options[0].forced ? actionButtons(options, eatIndex) : '';
+  const lastLabel = last ? `${names[last.seat]}${shortActionLabel(last.type)}` : '庄家亮张';
   return `<div class="felt">
     <div class="table-hud">
       ${phase !== 'finished' ? '<button data-command="pause" aria-haspopup="dialog">返回</button>' : ''}
       <span>${round.rules.name}</span><span>积分 ${score}</span>
     </div>
-    ${seatView(round, 1)}${seatView(round, 2)}
+    ${seatView(round, 1, event)}${seatView(round, 2, event)}
     <div class="center${event?.type === '胡' ? ' winning' : ''}">
       <div class="play-area">
         <div class="deck"><span class="deck-tile" aria-hidden="true">字</span><span>余 ${round.deck.length} 张</span></div>
@@ -129,12 +135,14 @@ export function renderTable(round, score, event, eatIndex = 0) {
           <div class="landing">${tile(visibleCard, false, undefined, response !== null)}</div>
           <span>${lastLabel}</span>
         </div>
-        ${event && !['摸', '出'].includes(event.type) ? `<span class="callout" aria-hidden="true">${event.type}</span>` : ''}
       </div>
-      <strong class="turn-status" aria-live="polite">${turnLabel(round)}</strong>
+      <div class="turn-status${myTurn ? ' my-turn' : ''}" aria-live="polite">
+        ${playing ? `<strong class="turn-name">轮到${names[seat]}</strong>` : ''}
+        <span class="turn-instruction">${turnLabel(round, response)}</span>
+      </div>
       <div class="actions">${actions}</div>
     </div>
-    ${seatView(round, 0, response)}
+    ${seatView(round, 0, event, response)}
     </div>
     ${phase === 'finished' ? resultView(round.result, score) : ''}`;
 }
