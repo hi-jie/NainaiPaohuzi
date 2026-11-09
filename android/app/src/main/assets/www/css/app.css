@@ -178,7 +178,7 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 .hand button.card:focus-visible { outline-offset: -3px; }
 
 .center { position: absolute; top: 50%; left: 50%; width: 300px; transform: translateX(-50%); text-align: center; }
-.play-area { position: relative; }
+.play-area { position: absolute; top: -98px; left: 0; right: 0; }
 .deck, .last-play {
   position: absolute; top: -28px; left: 50%; transform: translateX(-50%);
   display: grid; justify-items: center; gap: 6px; width: 125px; font-size: 16px;
@@ -194,7 +194,7 @@ main:has(#table:not([hidden])) { background: var(--wood); }
   position: absolute; top: 50%; left: calc(50% + 30px); transform: translateY(-50%); white-space: nowrap;
 }
 .actions { display: flex; justify-content: center; align-items: start; gap: 6px; }
-.center .actions { position: absolute; bottom: 94px; left: 0; right: 0; }
+.center .actions { position: absolute; top: 2px; left: 0; right: 0; }
 .center button { min-width: 64px; min-height: 53px; }
 .center [data-command="discard"]:disabled { opacity: .5; cursor: default; }
 .center .pass { background: linear-gradient(#426a55, #254739); border-color: #90a888; }
@@ -207,7 +207,6 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 }
 .seat-1 .callout { left: calc(100% + 4px); }
 .seat-2 .callout { right: calc(100% + 4px); }
-.seat:not(.seat-0) .callout { top: calc(90px + (var(--table-height) - 480px) / 2); }
 .seat-0 .callout { top: -58px; left: calc(50% + 162px); }
 .winning .landing .card { box-shadow: 0 0 28px 10px #ffe28a; }
 
