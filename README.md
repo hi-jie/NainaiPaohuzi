@@ -19,6 +19,18 @@ python -m http.server 8000 --bind 127.0.0.1 --directory android/app/src/main/ass
 
 浏览器打开 [本地牌桌](http://127.0.0.1:8000/)。规则测试使用 `node --test`，网页源码直接由浏览器加载。
 
+## 构建离线安卓 APK
+
+使用 JDK 17、Android SDK Platform 35 和 Build Tools 34.0.0。将 `ANDROID_HOME` 指向 SDK 目录，或在 `android/local.properties` 中填写 `sdk.dir`。首次构建会下载 Gradle 和构建依赖。
+
+```powershell
+cd android
+.\gradlew.bat :app:assembleDebug
+adb install -r .\app\build\outputs\apk\debug\app-debug.apk
+```
+
+验收包支持 Android 8.0 及以上，使用手机自带的 Android System WebView。网页、字体和音乐随 APK 安装，积分和设置保存在应用内。安装后可开启飞行模式验证开局和播放，退出再打开可核对积分是否保留。
+
 ## 背景音乐
 
 把 MP3、M4A、OGG 或 WAV 文件放进 [音乐目录](android/app/src/main/assets/www/media/audio/music)，可以使用中文文件名。同名曲目优先使用 MP3。在项目根目录运行以下命令。
@@ -38,6 +50,6 @@ python -m http.server 8000 --bind 127.0.0.1 --directory android/app/src/main/ass
 - 黄庄原庄续坐。十胡卡正好 10 胡按同玩法的 15 胡计分，结算仍显示实际 10 胡息。11 胡 1 囤、12 胡 2 囤，之后每满 3 胡加一囤。六胡抢和十五胡从起胡线算 1 囤，每多满 3 胡加一囤。十五胡黑胡最低 10 胡，10–14 胡暂记 1 囤。
 - 自摸或胡别人摸亮的牌，两家各付一份。放炮时由放炮者付两份。名堂暂按乘法叠加，十红与十三红取最高一档。
 - 地方细则待牌友确认，尤其是挡底、起手多龙、三龙直胡、飘胡、冲跑和翻醒。当前以普通组牌、基础名堂及确认稿中的动作顺序跑通对局。
-- 本地保存积分和设置，方言音效已留动作入口，待录音素材。Android 壳留待网页规则验证后接入。
+- 本地保存积分和设置，方言音效已留动作入口，待录音素材。
 
 手牌会自动叠放。点「吃」后选一组预览，亮起的手牌会用于吃牌或比牌，再点「确认吃」执行。列表打开时仍可点牌桌上的其他操作。
