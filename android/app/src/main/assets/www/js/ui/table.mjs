@@ -32,6 +32,12 @@ function playerHand(round, hand, canDiscard, response) {
   return stacks.map(cards => stackView(cards, false)).join('') + loose.map(cards => stackView(cards, true)).join('');
 }
 
+function cardCount(count, name) {
+  return `<span class="card-count" role="img" aria-label="${name}剩 ${count} 张">
+    <i class="count-icon" aria-hidden="true"></i><strong aria-hidden="true">${count}</strong>
+  </span>`;
+}
+
 function seatView(round, seat, event, response, openingStage) {
   const { hand, groups, discards } = round.players[seat];
   const spread = openingStage === 'deal' || openingStage === 'reveal';
@@ -45,10 +51,12 @@ function seatView(round, seat, event, response, openingStage) {
       <span class="avatar" aria-hidden="true">${avatars[seat]}</span>
       <h3>${names[seat]}</h3>
       <span class="dealer" ${round.dealer === seat ? '' : 'inert aria-hidden="true"'}>庄</span>
-      ${seat !== 0 && showHand ? `<span class="count">剩 <strong>${hand.length}</strong> 张</span>` : ''}
     </div>
     ${event?.seat === seat && !['摸', '出'].includes(event.type) ? `<span class="callout" aria-hidden="true">${event.type}</span>` : ''}
-    ${seat !== 0 ? `<div class="opponent-backs" aria-hidden="true">${'<span></span>'.repeat(backs)}</div>` : ''}
+    ${seat !== 0 ? `<div class="opponent-cards">
+      <div class="opponent-backs" aria-hidden="true">${'<span></span>'.repeat(backs)}</div>
+      ${showHand ? cardCount(hand.length, names[seat]) : ''}
+    </div>` : ''}
     <div class="groups">${showHand ? groups.map(group => meld(group, seat !== 0 && ['偎', '提'].includes(group.type))).join('') : ''}</div>
     <button class="discarded" data-history="${seat}" data-view="discards" ${discards.length ? '' : 'disabled'} aria-label="${names[seat]}的弃牌，${discards.length}张">
       <span class="discard-preview" aria-hidden="true">${discards.slice(-1).map(card => tile(card)).join('')}</span>
@@ -77,7 +85,11 @@ function actionButtons(options, eatIndex) {
   if (eats.length > 1) {
     return `<div class="eat-picker" data-index="${eatIndex}">
       <button class="pass" data-action="${options.length - 1}">过</button>
-      <button data-command="next-eat">换一种 ${eatIndex + 1}/${eats.length}</button>
+      <button data-command="next-eat" aria-label="换一种吃法，当前第 ${eatIndex + 1} 组，共 ${eats.length} 组">
+        <svg class="change-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 9a7 7 0 0 0-12-3L4 9m0-5v5h5m-4 6a7 7 0 0 0 12 3l3-3m0 5v-5h-5"/>
+        </svg>换 ${eatIndex + 1}/${eats.length}
+      </button>
       <button class="primary guided" data-command="eat" aria-label="吃这组 ${eatGroupNames(eats[eatIndex]).join('、')}">吃这组</button></div>`;
   }
   return options.map((action, index) =>
@@ -157,7 +169,7 @@ export function renderTable(round, score, event, eatIndex = 0, openingStage = ''
       <div class="play-area">
         <div class="deck">
           <span class="deck-tile" aria-hidden="true">字${openingPile(openingStage)}</span>
-          ${!openingStage ? `<span>余 ${round.deck.length} 张</span>` : ''}
+          ${!openingStage ? cardCount(round.deck.length, '牌墩') : ''}
         </div>
         <div class="last-play from-${source}">
           <div class="landing">${openingStage === 'reveal' ? '<i class="opening-back"></i>' : ''}
