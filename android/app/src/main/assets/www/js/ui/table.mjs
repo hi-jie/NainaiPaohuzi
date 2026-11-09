@@ -57,7 +57,7 @@ function seatView(round, seat, event, response, openingStage) {
       <span>${seat === 0 ? '我的弃牌' : '弃牌'} <b>${discards.length}</b></span>
     </button>
     ${seat === 0 && spread ? openingHand(round.openingHand, openingStage === 'reveal') : ''}
-    ${seat === 0 && showHand ? `<div class="hand${round.rules.autoStack ? '' : ' flat'}" aria-label="我的手牌">${playerHand(round, hand, yourDiscard, response)}</div>` : ''}
+    ${seat === 0 && showHand ? `<div class="hand${round.rules.autoStack ? '' : ' flat'}" aria-label="我的手牌">${playerHand(round, hand, yourDiscard, response)}<strong class="card-count">${hand.length}</strong></div>` : ''}
   </section>`;
 }
 
@@ -164,6 +164,7 @@ export function renderTable(round, score, event, eatIndex = 0, openingStage = ''
         <div class="deck">
           <span class="deck-tile" aria-hidden="true">字${openingPile(openingStage)}</span>
           ${!openingStage ? `<span class="deck-count">余 ${round.deck.length} 张</span>` : ''}
+          ${playing ? `<span class="turn-arrow to-${seat}" aria-hidden="true"></span>` : ''}
         </div>
         <div class="last-play from-${source}">
           <div class="landing">${openingStage === 'reveal' ? '<i class="opening-back"></i>' : ''}

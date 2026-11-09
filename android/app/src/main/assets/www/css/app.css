@@ -188,6 +188,18 @@ main:has(#table:not([hidden])) { background: var(--wood); }
   display: grid; justify-items: center; gap: 6px; width: 125px; font-size: 16px;
 }
 .deck-count { position: absolute; bottom: calc(100% + 6px); white-space: nowrap; }
+.turn-arrow {
+  position: absolute; top: 18px; left: calc(50% + 43px); width: 24px; height: 20px;
+  transform: translateX(-50%) rotate(-14deg); pointer-events: none;
+  filter: drop-shadow(0 0 4px #ffc45db0);
+}
+.turn-arrow::before {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(#fff1a8, #edaa38);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+.turn-arrow.to-1 { left: calc(50% - 43px); transform: translateX(-50%) rotate(194deg); }
+.turn-arrow.to-0 { top: 43px; left: calc(50% - 43px); transform: translateX(-50%) rotate(148deg); }
 .deck-tile, .landing { display: grid; place-items: center; width: 44px; height: 56px; }
 .deck-tile { color: #ffe4a0; font: 800 23px serif; box-shadow: 3px 3px #d0a978, 5px 5px #754b39; }
 .landing .card { width: 100%; height: 100%; font-size: 27px; }
@@ -237,6 +249,7 @@ main:has(#table:not([hidden])) { background: var(--wood); }
   top: 34px; left: calc(50% - 146px); right: 0; width: auto; justify-content: start; gap: 8px;
   --strip-height: 68px; --strip-peek: 27px;
 }
+.hand > .card-count { position: absolute; top: 5px; right: calc(100% + 9px); }
 .wide .hand-stack { max-width: 38px; }
 .wide .hand .card { font-size: 28px; padding-top: 1px; }
 .hand.flat {
