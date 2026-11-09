@@ -1,0 +1,8 @@
+/site/
+/site-deploy*.tar.gz
+/.openai/
+/.gradle/
+/android/.gradle/
+/android/local.properties
+/android/**/build/
+/.idea/

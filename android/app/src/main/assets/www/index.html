@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#113f32">
+  <title>衡阳跑胡子</title>
+  <link rel="stylesheet" href="./css/app.css">
+  <script type="module" src="./js/main.mjs"></script>
+</head>
+<body>
+  <main>
+    <section id="home" class="panel">
+      <h1>衡阳跑胡子</h1>
+      <div class="title-tiles" aria-hidden="true"><span>贰</span><span>柒</span><span>拾</span></div>
+      <h2>选择玩法</h2>
+      <form id="settings">
+        <div class="modes" role="group" aria-label="玩法"></div>
+        <label><input type="checkbox" name="oneFiveTen"> 一五十</label>
+        <label><input type="checkbox" name="discardHu"> 放炮胡</label>
+        <label><input type="checkbox" name="autoStack"> 自动叠牌</label>
+        <label><input type="checkbox" name="sound"> 方言音效</label>
+      </form>
+      <button id="start" class="primary">开始游戏</button>
+      <p class="home-score">累计积分 <strong id="score">0</strong></p>
+    </section>
+    <section id="table" hidden aria-label="牌桌"></section>
+  </main>
+  <dialog id="discard-history" aria-label="弃牌记录"></dialog>
+</body>
+</html>
