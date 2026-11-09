@@ -4,7 +4,7 @@ import { playAction } from './audio/player.mjs';
 import { Round } from './game/state-machine.mjs';
 import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs';
-import { animateAction, renderHistory, renderTable } from './ui/table.mjs?v=3';
+import { animateAction, renderHistory, renderTable } from './ui/table.mjs?v=4';
 
 const home = document.querySelector('#home');
 const table = document.querySelector('#table');

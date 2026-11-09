@@ -137,8 +137,10 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 .hand-stack.loose { margin-left: 3px; }
 .hand .card {
   flex: none; position: relative; width: 100%; height: var(--strip-height);
-  place-items: start center; padding-top: 3px; border-radius: 4px; font-size: 28px;
-  background: linear-gradient(#fffbe9 0 35%, #efdebb 82%, #e6c999);
+  place-items: start center; padding-top: 3px; font-size: 28px;
+}
+.hand .card, .history-cards .card {
+  border-radius: 4px; background: linear-gradient(#fffbe9 0 35%, #efdebb 82%, #e6c999);
   box-shadow: 0 2px 3px #281c1499, inset 0 0 0 1px #bc965d55;
 }
 .hand-stack .card + .card { margin-top: calc(var(--strip-peek) - var(--strip-height)); }
@@ -218,8 +220,20 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 #pause-menu .actions { flex-wrap: wrap; }
 .pause-settings { display: flex; justify-content: center; flex-wrap: wrap; gap: 0 20px; margin: 8px 0 12px; }
 .pause-settings label { gap: 8px; }
-.history-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(22px, 1fr)); gap: 4px; margin: 8px 0 12px; }
-.history-cards .card { width: 100%; height: 24px; font-size: 16px; }
+#discard-history[open] {
+  display: flex; flex-direction: column; max-height: calc(100dvh - 24px); overflow: hidden;
+}
+#discard-history h2 { font-size: 24px; color: #ffe096; }
+.history-count { margin-top: 4px; color: #f4d4a5; }
+.history-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, 42px); grid-auto-rows: 68px;
+  justify-content: center; align-content: start; gap: 8px; min-height: 0;
+  margin: 8px 0 12px; padding: 10px; overflow-y: auto; overscroll-behavior: contain;
+  border-radius: 10px; background: #174d3d; box-shadow: inset 0 0 12px #082e25;
+}
+.history-cards .card { width: 100%; height: 100%; font-size: 27px; }
+#discard-history form { flex: none; }
+#discard-history button { min-width: 110px; }
 @media (max-height: 420px) { .title-tiles { display: none; } }
 @keyframes appear { from { opacity: 0; } to { opacity: 1; } }
 @keyframes callout { from { transform: scale(.65); opacity: 0; } 45% { transform: scale(1.16); } to { transform: none; opacity: 1; } }

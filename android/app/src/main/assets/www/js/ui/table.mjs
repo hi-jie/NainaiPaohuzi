@@ -87,9 +87,12 @@ export function renderHistory(round, seat, view) {
   const player = round.players[seat];
   const content = view === 'groups'
     ? `<div class="groups">${player.groups.map(group => meld(group, seat !== 0 && ['偎', '提'].includes(group.type))).join('')}</div>`
-    : `<div class="history-cards">${player.discards.map(card => tile(card)).join('')}</div>`;
+    : `<p class="history-count">共 ${player.discards.length} 张</p>
+    <div class="history-cards" role="region" aria-label="按出现顺序排列的弃牌" tabindex="0">
+      ${player.discards.map(card => tile(card)).join('')}
+    </div>`;
   return `<h2>${names[seat]}的${view === 'groups' ? '落地牌' : '弃牌'}</h2>${content}
-    <form method="dialog"><button class="primary">关闭</button></form>`;
+    <form method="dialog"><button class="primary" autofocus>关闭</button></form>`;
 }
 
 function resultView({ winner, hu, names: bonuses, tun, delta }, score) {
