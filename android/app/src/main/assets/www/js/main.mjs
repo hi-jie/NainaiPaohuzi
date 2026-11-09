@@ -5,7 +5,7 @@ import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
 import { Round } from './game/state-machine.mjs?v=19';
 import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs';
-import { animateAction, openingStages, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=21';
+import { animateAction, openingStages, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=22';
 
 const home = document.querySelector('#home');
 const table = document.querySelector('#table');
@@ -128,7 +128,6 @@ function selectDiscard(button) {
   const confirm = table.querySelector('[data-command="discard"]');
   confirm.disabled = false;
   confirm.classList.add('guided');
-  table.querySelector('.turn-instruction').textContent = '请出牌，点「出牌」';
 }
 
 startButton.addEventListener('click', () => start());

@@ -16,20 +16,6 @@ function meld(group, hide = false) {
   return `<span class="meld" data-meld="${group.type}" data-cards="${group.cards.join(' ')}"><b>${group.type}</b>${group.cards.map((card, index) => tile(card, hide && index > 0)).join('')}</span>`;
 }
 
-function turnLabel(round, response) {
-  const { phase, seat, options } = round;
-  if (phase === 'finished') return '本局结束';
-  if (phase === 'discard') return seat === 0 ? '请出牌，选择手牌后点「出牌」' : '正在选牌';
-  if (phase === 'draw') return seat === 0 ? '请摸牌，点「摸牌」' : '准备摸牌';
-  const { type, forced } = options[0];
-  if (forced) {
-    return seat === 0 ? `必须${type}牌，点「${type}」` : `自动${type}牌`;
-  }
-  if (seat !== 0) return '正在考虑';
-  if (type === '吃' && options.length > 2) return `可吃牌，点「吃这组」\n${eatGroupNames(response).join('·')}`;
-  return `可以${type}牌，点「${type}」`;
-}
-
 function playerHand(round, hand, canDiscard, response) {
   const matching = response?.type === '吃'
     ? [...response.cards, ...response.groups.slice(1).flat()] : [...(response?.cards ?? [])];
@@ -92,7 +78,7 @@ function actionButtons(options, eatIndex) {
     return `<div class="eat-picker" data-index="${eatIndex}">
       <button class="pass" data-action="${options.length - 1}">过</button>
       <button data-command="next-eat">换一种 ${eatIndex + 1}/${eats.length}</button>
-      <button class="primary guided" data-command="eat">吃这组</button></div>`;
+      <button class="primary guided" data-command="eat" aria-label="吃这组 ${eatGroupNames(eats[eatIndex]).join('、')}">吃这组</button></div>`;
   }
   return options.map((action, index) =>
     `<button class="${action.type === '过' ? 'pass' : 'primary guided'}" data-action="${index}">${actionLabel(action)}</button>`).reverse().join('');
@@ -149,10 +135,11 @@ function openingPile(stage) {
 }
 
 export function renderTable(round, score, event, eatIndex = 0, openingStage = '') {
-  const { phase, seat, options, offer, events } = round;
+  const { phase, seat, options, events } = round;
   const response = seat === 0 && phase === 'response' ? options[eatIndex] : null;
-  const last = events.at(-1);
-  const visibleCard = last ? (offer && ['出', '摸'].includes(last.type) ? offer.card : last.card) : round.opening;
+  const last = events.findLast(({ type }) => type === '出' || type === '摸');
+  const source = last?.seat ?? round.dealer;
+  const visibleCard = last?.card ?? round.opening;
   const playing = !openingStage && phase !== 'finished';
   const myTurn = playing && seat === 0;
   let actions = '';
@@ -172,16 +159,12 @@ export function renderTable(round, score, event, eatIndex = 0, openingStage = ''
           <span class="deck-tile" aria-hidden="true">字${openingPile(openingStage)}</span>
           ${!openingStage ? `<span>余 ${round.deck.length} 张</span>` : ''}
         </div>
-        <div class="last-play">
+        <div class="last-play from-${source}">
           <div class="landing">${openingStage === 'reveal' ? '<i class="opening-back"></i>' : ''}
             ${!openingStage || ['reveal', 'sort'].includes(openingStage) ? tile(visibleCard, false, undefined, response !== null) : ''}
           </div>
           ${!openingStage ? `<span>${lastLabel}</span>` : ''}
         </div>
-      </div>
-      <div class="turn-status${myTurn ? ' my-turn' : ''}" aria-live="polite"${openingStage ? ' hidden' : ''}>
-        ${playing ? `<strong class="turn-name">轮到${names[seat]}</strong>` : ''}
-        <span class="turn-instruction">${openingStage ? '' : turnLabel(round, response)}</span>
       </div>
       <div class="actions">${openingStage ? '<button data-command="skip-opening">跳过动画</button>' : actions}</div>
     </div>
