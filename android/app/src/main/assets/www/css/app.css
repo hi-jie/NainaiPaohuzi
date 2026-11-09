@@ -1,18 +1,11 @@
 @font-face {
-  font-family: "Table Kai";
-  src: url("../media/fonts/wenkai-table.woff") format("woff");
-  font-weight: 500;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Hengyang Card Ink";
-  src: url("../media/fonts/hengyang-card.woff") format("woff");
+  font-family: "Card Song";
+  src: url("../media/fonts/card-song.woff") format("woff");
   font-weight: 800;
   font-display: swap;
 }
 :root {
-  --card-font: "Hengyang Card Ink", "Table Kai", serif;
-  --ink-font: "Table Kai", KaiTi, STKaiti, serif;
+  --card-font: "Card Song", SimSun, "Songti SC", serif;
   color-scheme: dark;
   font: 18px/1.35 system-ui, "Microsoft YaHei", sans-serif;
   color: #fff0cc;
@@ -55,7 +48,7 @@ button:active { filter: brightness(1.12); }
   box-shadow: 0 18px 45px #0007;
 }
 #home h2 { margin: 10px 0; font-size: 1.12rem; color: #ffeac0; }
-#home h1 { font: 750 26px var(--ink-font); letter-spacing: .12em; }
+#home h1 { font: 750 24px serif; letter-spacing: .12em; }
 .home-score { margin-top: 12px; font-size: 16px; color: #f6dfaf; }
 .title-tiles { display: flex; justify-content: center; gap: 4px; margin: 8px auto 16px; }
 .title-tiles span {
@@ -107,7 +100,7 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 .avatar {
   display: grid; place-items: center; width: 34px; height: 34px; flex: none; border-radius: 50%;
   border: 2px solid #d0a273; background: radial-gradient(circle at 40% 25%, #a55c3b, #633524); color: #fff1c5;
-  font: 800 21px var(--ink-font); box-shadow: 0 2px 4px #0006;
+  font: 800 20px serif; box-shadow: 0 2px 4px #0006;
 }
 .seat-2 .avatar { background: radial-gradient(circle at 40% 25%, #578b89, #244e54); }
 .seat-0 .avatar { background: radial-gradient(circle at 40% 25%, #ad8550, #64472b); }
@@ -190,11 +183,11 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 .turn-status {
   position: absolute; top: 72px; left: 0; right: 0; min-height: 34px;
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  color: #ffe9b3; font-size: 18px;
+  color: #ffe9b3; font-size: 20px;
 }
 .turn-name {
   border-radius: 18px; padding: 3px 10px; background: #14362b; white-space: nowrap;
-  font: 800 20px var(--ink-font);
+  font-weight: 800;
 }
 .my-turn .turn-name {
   color: #4d2810; background: linear-gradient(#fff2b8, #e5ad53);
@@ -203,12 +196,12 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 .my-turn .turn-instruction { color: #fff2c4; font-weight: 800; }
 .actions { display: flex; justify-content: center; align-items: start; gap: 6px; }
 .center .actions { position: absolute; top: 113px; left: 0; right: 0; }
-.center button { min-width: 64px; min-height: 50px; font-size: 20px; }
+.center button { min-width: 64px; min-height: 50px; }
 .center .pass { background: linear-gradient(#426a55, #254739); border-color: #90a888; }
 .eat-picker { display: grid; grid-template-columns: auto auto auto; gap: 4px; align-items: start; }
 .callout {
   position: absolute; z-index: 1; top: 0; min-width: 62px;
-  color: #ffe487; text-align: center; font: 900 52px/1.05 var(--ink-font);
+  color: #ffe487; text-align: center; font: 800 52px/1.05 serif;
   text-shadow: 2px 3px #80331c, -1px -1px #62351c, 0 2px 8px #110d08;
   animation: callout .55s ease-out both; pointer-events: none; white-space: nowrap;
 }
@@ -258,7 +251,7 @@ main:has(#table:not([hidden])) { background: var(--wood); }
   border: 3px solid #ad7947; border-radius: 17px; color: #fff0c8;
   background: radial-gradient(ellipse at top, #65412c, #30241a); box-shadow: 0 12px 35px #0009;
 }
-.result h2 { font-family: var(--ink-font); color: #ffe096; font-size: 24px; margin: 2px; }
+.result h2 { color: #ffe096; font-size: 24px; margin: 2px; }
 .result small { color: #f4d4a5; font-size: 16px; }
 .result p { margin: 3px 0; }
 .result .groups, #discard-history .groups { display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; margin: 4px 0; }
@@ -268,7 +261,7 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 .deltas .loss { color: #ffc2ae; }
 #discard-history::backdrop, #pause-menu::backdrop { background: #050d09bd; }
 #pause-menu { width: min(calc(var(--screen-width) - 24px), 390px); padding: 16px; }
-#pause-menu h2 { font-family: var(--ink-font); font-size: 24px; color: #ffe096; margin-bottom: 6px; }
+#pause-menu h2 { font-size: 24px; color: #ffe096; margin-bottom: 6px; }
 #pause-menu .actions { flex-wrap: wrap; }
 .pause-settings { display: flex; justify-content: center; flex-wrap: wrap; gap: 0 20px; margin: 8px 0 12px; }
 .pause-settings label { gap: 8px; }
@@ -278,7 +271,7 @@ main:has(#table:not([hidden])) { background: var(--wood); }
 #discard-history, #pause-menu {
   max-width: calc(var(--screen-width) - 24px); max-height: calc(var(--screen-height) - 24px);
 }
-#discard-history h2 { font-family: var(--ink-font); font-size: 24px; color: #ffe096; }
+#discard-history h2 { font-size: 24px; color: #ffe096; }
 .history-count { margin-top: 4px; color: #f4d4a5; }
 .history-cards {
   display: grid; grid-template-columns: repeat(auto-fill, 42px); grid-auto-rows: 68px;
