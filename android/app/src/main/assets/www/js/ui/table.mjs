@@ -4,10 +4,10 @@ import { arrangeHand } from './hand.mjs';
 const names = ['我', '电脑一', '电脑二'];
 const avatars = ['我', '东', '西'];
 
-function tile(card, hidden = false, action, hinted = false) {
+function tile(card, hidden = false, selection, hinted = false) {
   const classes = `card${hidden ? ' back' : isRed(card) ? ' red' : ''}${hinted ? ' hinted' : ''}`;
-  if (action !== undefined) {
-    return `<button class="${classes}" data-action="${action}" aria-label="打出${cardName(card)}">${cardName(card)}</button>`;
+  if (selection !== undefined) {
+    return `<button class="${classes}" data-select-card="${selection}" aria-pressed="false" aria-label="选择${cardName(card)}">${cardName(card)}</button>`;
   }
   return `<span class="${classes}">${hidden ? '◆' : cardName(card)}</span>`;
 }
@@ -19,12 +19,13 @@ function meld(group, hide = false) {
 function turnLabel(round, response) {
   const { phase, seat, options } = round;
   if (phase === 'finished') return '本局结束';
-  if (phase === 'discard') return seat === 0 ? '请出牌，点一张亮起的手牌' : '正在选牌';
-  if (phase === 'draw') return seat === 0 ? '点「摸牌」' : '准备摸牌';
+  if (phase === 'discard') return seat === 0 ? '请出牌，选择手牌后点「出牌」' : '正在选牌';
+  if (phase === 'draw') return seat === 0 ? '请摸牌，点「摸牌」' : '准备摸牌';
   if (options[0].forced) return `自动${options[0].type}牌`;
   if (seat !== 0) return '正在考虑';
-  if (options[0].type === '吃' && options.length > 2) return actionLabel(response);
-  return `可以${options[0].type}牌，请选择`;
+  const { type } = options[0];
+  if (type === '吃' && options.length > 2) return `可吃牌，点「吃这组」\n${eatGroupNames(response).join('·')}`;
+  return `可以${type}牌，点「${type}」`;
 }
 
 function playerHand(round, hand, canDiscard, response) {
@@ -69,9 +70,13 @@ function shortActionLabel(type) {
   return ['摸', '出'].includes(type) ? `${type}牌` : type;
 }
 
+function eatGroupNames(action) {
+  return action.groups.map(group => group.map(cardName).join(''));
+}
+
 function actionLabel(action) {
   if (action.type !== '吃') return shortActionLabel(action.type);
-  return `吃 ${action.groups.map(group => group.map(cardName).join('')).join(' + ')}`;
+  return `吃 ${eatGroupNames(action).join(' + ')}`;
 }
 
 function actionButtons(options, eatIndex) {
@@ -120,7 +125,9 @@ export function renderTable(round, score, event, eatIndex = 0) {
   const visibleCard = last ? (offer && ['出', '摸'].includes(last.type) ? offer.card : last.card) : round.opening;
   const playing = phase !== 'finished';
   const myTurn = playing && seat === 0;
-  const actions = myTurn && phase !== 'discard' && !options[0].forced ? actionButtons(options, eatIndex) : '';
+  let actions = '';
+  if (myTurn && phase === 'discard') actions = '<button class="primary" data-command="discard" disabled>出牌</button>';
+  else if (myTurn && !options[0].forced) actions = actionButtons(options, eatIndex);
   const lastLabel = last ? `${names[last.seat]}${shortActionLabel(last.type)}` : '庄家亮张';
   return `<div class="felt">
     <div class="table-hud">

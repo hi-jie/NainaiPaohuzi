@@ -4,7 +4,7 @@ import { playAction } from './audio/player.mjs';
 import { Round } from './game/state-machine.mjs';
 import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs';
-import { animateAction, renderHistory, renderTable } from './ui/table.mjs?v=13';
+import { animateAction, renderHistory, renderTable } from './ui/table.mjs?v=14';
 
 const home = document.querySelector('#home');
 const table = document.querySelector('#table');
@@ -104,6 +104,15 @@ function step(action) {
   showRound(event);
 }
 
+function selectDiscard(button) {
+  table.querySelector('[data-select-card][aria-pressed="true"]')?.setAttribute('aria-pressed', 'false');
+  button.setAttribute('aria-pressed', 'true');
+  const confirm = table.querySelector('[data-command="discard"]');
+  confirm.disabled = false;
+  confirm.classList.add('guided');
+  table.querySelector('.turn-instruction').textContent = '请出牌，点「出牌」';
+}
+
 startButton.addEventListener('click', () => start());
 table.addEventListener('click', ({ target }) => {
   const button = target.closest('button');
@@ -122,6 +131,11 @@ table.addEventListener('click', ({ target }) => {
     pauseMenu.showModal();
   } else if (button.dataset.command === 'again') {
     start(round.result.winner ?? round.dealer);
+  } else if (button.dataset.selectCard !== undefined) {
+    selectDiscard(button);
+  } else if (button.dataset.command === 'discard') {
+    const selected = table.querySelector('[data-select-card][aria-pressed="true"]');
+    step(round.options[Number(selected.dataset.selectCard)]);
   } else if (button.dataset.command === 'eat') {
     step(round.options[Number(table.querySelector('.eat-picker').dataset.index)]);
   } else if (button.dataset.command === 'next-eat') {
@@ -145,7 +159,9 @@ pauseMenu.addEventListener('close', () => {
   if (round.rules.autoStack !== autoStack) {
     round.rules.autoStack = autoStack;
     const eatIndex = Number(table.querySelector('.eat-picker')?.dataset.index ?? 0);
+    const selected = table.querySelector('[data-select-card][aria-pressed="true"]')?.dataset.selectCard;
     table.innerHTML = renderTable(round, data.score, null, eatIndex);
+    if (selected !== undefined) selectDiscard(table.querySelector(`[data-select-card="${selected}"]`));
     table.querySelector('[data-command="pause"]').focus();
   }
   scheduleTurn();
