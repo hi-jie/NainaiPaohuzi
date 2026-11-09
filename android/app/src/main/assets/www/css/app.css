@@ -130,6 +130,7 @@ main:has(#table:not([hidden])) {
   --side-seat-width: 178px;
   --avatar-size: 40.8px;
   --seat-card-offset: calc(var(--avatar-size) + 7px);
+  --seat-cards-width: 250px;
   --seat-backs-height: 21.6px; --seat-row-gap: 4.8px; --meld-row-height: 100.8px;
 }
 .seat-1 { left: 23px; }
@@ -172,7 +173,7 @@ main:has(#table:not([hidden])) {
 .seat-backs span { flex: none; width: 12px; height: 100%; }
 .seat-backs span + span { margin-left: -6px; }
 .seat-cards {
-  position: absolute; top: 0; left: var(--seat-card-offset); width: 250px;
+  position: absolute; top: 0; left: var(--seat-card-offset); width: var(--seat-cards-width);
   display: grid;
   grid-template-rows: var(--meld-row-height) var(--seat-backs-height) auto; gap: var(--seat-row-gap);
   --strip-width: 21.6px; --strip-height: 38.4px; --strip-font: 19.2px; --strip-peek: 24px;
@@ -302,14 +303,20 @@ main:has(#table:not([hidden])) {
 .wide .seat-2 { right: 34px; }
 .wide .seat-0 {
   --seat-bottom: 16px;
-  top: auto; bottom: var(--seat-bottom); left: 34px; right: 34px; width: auto; height: 223px; transform: none;
+  --seat-inset: 34px;
+  top: auto; bottom: var(--seat-bottom); inset-inline: var(--seat-inset); width: auto; height: 223px; transform: none;
 }
 .wide .hand {
-  top: 15px; bottom: calc(-1 * var(--seat-bottom)); left: max(306px, calc(50% - 104px)); right: 0;
+  top: 15px; bottom: calc(-1 * var(--seat-bottom)); right: 0;
   width: auto; justify-content: start; gap: 8px;
   --strip-width: 45.6px; --strip-height: 81.6px; --strip-font: 33.6px; --strip-peek: 56.4px;
 }
-.wide .hand-stack { max-width: var(--strip-width); align-self: end; }
+.wide .hand:not(.opening-row) {
+  --hand-start: calc(var(--seat-card-offset) + var(--seat-cards-width));
+  left: 50%; right: auto; width: max-content; max-width: calc(100% - var(--hand-start));
+  transform: translateX(max(-50%, calc(var(--hand-start) + var(--seat-inset) - var(--table-width) / 2)));
+}
+.wide .hand-stack { flex: 0 1 auto; width: var(--strip-width); max-width: none; align-self: end; }
 .wide .hand-stack:has(> .card:nth-child(4)) { --strip-peek: 43.2px; }
 .card.hinted, .hand .card:is(.eat-preview, [aria-pressed="true"]) {
   background: linear-gradient(#fff7c8, #ffdf87);
