@@ -206,7 +206,8 @@ main:has(#table:not([hidden])) {
 }
 .seat-cards .card { padding-top: 2.4px; }
 .seat-cards :is(.card.back, .seat-backs span) { --seat-card-edge: #d9aa71; }
-:is(.hand-stack, .meld) > .card + .card { margin-top: calc(var(--strip-peek) - var(--strip-height)); }
+.meld > .card + .card,
+.hand-stack > .card:not([hidden]) ~ .card:not([hidden]) { margin-top: calc(var(--strip-peek) - var(--strip-height)); }
 .meld > .card:last-child { height: calc(var(--strip-peek) + var(--meld-tail, 2px)); }
 .discarded {
   display: grid; grid-template-columns: repeat(auto-fill, var(--strip-width)); grid-auto-rows: var(--strip-peek);
@@ -226,12 +227,13 @@ main:has(#table:not([hidden])) {
   display: flex; justify-content: center; gap: 4px;
   --strip-height: 85px;
   --strip-peek: 34px;
+  --four-card-peek: 36px;
 }
 .hand-stack {
   position: relative; flex: 1 1 0; min-width: 0; max-width: 44px;
   display: flex; flex-direction: column; align-self: flex-start;
 }
-.hand-stack:has(> .card:nth-child(4)) { --strip-peek: 36px; }
+.hand-stack:has(> .card:nth-child(4 of .card:not([hidden]))) { --strip-peek: var(--four-card-peek); }
 .hand-stack .group-score {
   position: absolute; bottom: 7px; left: 50%; transform: translateX(-50%); pointer-events: none;
   min-width: 17px; padding-inline: 3px; border-radius: 4px;
@@ -249,17 +251,20 @@ main:has(#table:not([hidden])) {
 .hand button.card:active { filter: brightness(1.13); }
 .hand button.card:focus-visible { outline-offset: -3px; }
 .hand [data-hand-card] { touch-action: none; cursor: grab; }
-.hand .dragged-stack { z-index: 2; }
 .hand .card.dragged-card {
-  z-index: 1; transform: translate(var(--drag-x), var(--drag-y)); transition: none;
+  position: absolute; top: 0; left: 0;
+  z-index: 2; transform: translate(var(--drag-x), var(--drag-y)); transition: none;
   opacity: .85; cursor: grabbing; pointer-events: none;
 }
+.hand .hand-drop-slot {
+  border: 2px dashed #ffe39d; background: #ffd37544; box-shadow: 0 0 8px #ffc66080;
+  pointer-events: none;
+}
+.hand-stack:has(> :is(.card[hidden], .hand-drop-slot)) .group-score { visibility: hidden; }
 .hand [data-drop]::after {
   content: ""; position: absolute; z-index: 1; pointer-events: none;
   background: #fff0ae; border-radius: 3px; box-shadow: 0 0 6px #ffc660;
 }
-.hand [data-drop="top"]::after { inset: -2px 0 auto; height: 4px; }
-.hand [data-drop="bottom"]::after { inset: auto 0 1px; height: 4px; }
 .hand [data-drop="left"]::after { inset: 0 auto 0 -5px; width: 4px; }
 .hand [data-drop="right"]::after { inset: 0 -5px 0 auto; width: 4px; }
 .felt.dragging-hand::before {
@@ -270,8 +275,8 @@ main:has(#table:not([hidden])) {
 .felt.dragging-hand .seat-0 > :not(.hand) { filter: brightness(.45); }
 .felt.dragging-hand .choosing-card .hand .card:not(button) { filter: none; }
 .felt.dragging-hand .hand-stack { flex: 0 0 var(--drag-column-width); width: var(--drag-column-width); }
-.felt.dragging-hand .hand-stack[data-drop="left"]:not(:first-child)::after { left: -26px; }
-.felt.dragging-hand .hand-stack[data-drop="right"]:not(:last-child)::after { right: -26px; }
+.felt.dragging-hand .hand-stack:not([hidden]) ~ .hand-stack[data-drop="left"]::after { left: -26px; }
+.felt.dragging-hand .hand-stack[data-drop="right"]:has(~ .hand-stack:not([hidden]))::after { right: -26px; }
 
 .center { position: absolute; top: 50%; left: 50%; width: 300px; transform: translateX(-50%); text-align: center; }
 .play-area { position: absolute; top: -135px; left: 0; right: 0; }
@@ -339,7 +344,7 @@ main:has(#table:not([hidden])) {
 .wide .hand {
   bottom: calc(-1 * var(--seat-bottom)); right: 0;
   width: auto; justify-content: start; gap: 8px;
-  --strip-width: 45.6px; --strip-height: 81.6px; --strip-font: 33.6px; --strip-peek: 56.4px;
+  --strip-width: 45.6px; --strip-height: 81.6px; --strip-font: 33.6px; --strip-peek: 56.4px; --four-card-peek: 43.2px;
 }
 .wide .hand:not(.opening-row) {
   --backs-width: calc((var(--hand-backs) + 1) * var(--seat-back-step));
@@ -358,7 +363,6 @@ main:has(#table:not([hidden])) {
 }
 .wide .hand-stack { flex: 0 1 auto; width: var(--strip-width); max-width: none; align-self: end; }
 .wide .hand-stack.loose { margin-left: 0; }
-.wide .hand-stack:has(> .card:nth-child(4)) { --strip-peek: 43.2px; }
 .card.hinted, .hand .card:is(.eat-preview, [aria-pressed="true"]) {
   background: linear-gradient(#fff7c8, #ffdf87);
   border-color: #9b581b;
