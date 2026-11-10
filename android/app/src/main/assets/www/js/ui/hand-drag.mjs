@@ -151,7 +151,8 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
         return { ...rect, element, column, cards, top, slotBoundaries };
       });
       const feltBounds = bounds(felt, portrait);
-      const area = { top: handTop - 24 * scale, cancel: (feltBounds.top + handTop) / 2, bottom: feltBounds.bottom };
+      const insertionTop = handTop - 24 * scale;
+      const area = { top: insertionTop, cancel: (feltBounds.top + insertionTop) / 2, bottom: feltBounds.bottom };
       const guides = document.createElement('div');
       guides.className = 'hand-drag-guides';
       guides.setAttribute('aria-hidden', 'true');
