@@ -256,18 +256,20 @@ main:has(#table:not([hidden])) {
   z-index: 2; transform: translate(var(--drag-x), var(--drag-y)); transition: none;
   opacity: .85; cursor: grabbing; pointer-events: none;
 }
-.hand .hand-drop-slot {
+.hand .hand-drop-slot,
+.hand [data-drop]::after {
   border: 2px solid #ffda72; background: #ffd37524;
   box-shadow: 0 0 10px #ffc247e0, inset 0 0 8px #ffd87570;
   pointer-events: none;
 }
 .hand-stack:has(> :is(.card[hidden], .hand-drop-slot)) .group-score { visibility: hidden; }
 .hand [data-drop]::after {
-  content: ""; position: absolute; z-index: 1; pointer-events: none;
-  background: #fff0ae; border-radius: 3px; box-shadow: 0 0 6px #ffc660;
+  content: ""; position: absolute; bottom: 0; z-index: 1; box-sizing: border-box;
+  width: 28px; height: var(--strip-height); border-radius: 4px;
 }
-.hand [data-drop="left"]::after { inset: 0 auto 0 -5px; width: 4px; }
-.hand [data-drop="right"]::after { inset: 0 -5px 0 auto; width: 4px; }
+.hand [data-drop="left"]::after { left: -32px; }
+.hand [data-drop="right"]::after { right: -32px; }
+.felt.dragging-hand { --drag-hand-gap: 48px; }
 .felt.dragging-hand::before {
   content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background: #0009; animation: appear .15s ease-out;
@@ -276,8 +278,11 @@ main:has(#table:not([hidden])) {
 .felt.dragging-hand .seat-0 > :not(.hand) { filter: brightness(.45); }
 .felt.dragging-hand .choosing-card .hand .card:not(button) { filter: none; }
 .felt.dragging-hand .hand-stack { flex: 0 0 var(--drag-column-width); width: var(--drag-column-width); }
-.felt.dragging-hand .hand-stack:not([hidden]) ~ .hand-stack[data-drop="left"]::after { left: -26px; }
-.felt.dragging-hand .hand-stack[data-drop="right"]:has(~ .hand-stack:not([hidden]))::after { right: -26px; }
+.felt.dragging-hand .hand-stack[data-drop="right"]:has(~ .hand-stack:not([hidden]))::after {
+  --gap-frame-width: min(var(--drag-column-width), 40px);
+  width: var(--gap-frame-width);
+  right: calc((var(--drag-hand-gap) + var(--gap-frame-width)) / -2);
+}
 
 .center { position: absolute; top: 50%; left: 50%; width: 300px; transform: translateX(-50%); text-align: center; }
 .play-area { position: absolute; top: -135px; left: 0; right: 0; }
@@ -360,7 +365,7 @@ main:has(#table:not([hidden])) {
   transform: translateX(max(-50%, calc(var(--hand-start) + var(--seat-inset) - var(--table-width) / 2)));
 }
 .wide .felt.dragging-hand .hand {
-  left: 0; max-width: none; gap: 48px; overflow: visible; transform: translateX(var(--hand-pan, 0px));
+  left: 0; max-width: none; gap: var(--drag-hand-gap); overflow: visible; transform: translateX(var(--hand-pan, 0px));
 }
 .wide .hand-stack { flex: 0 1 auto; width: var(--strip-width); max-width: none; align-self: end; }
 .wide .hand-stack.loose { margin-left: 0; }
