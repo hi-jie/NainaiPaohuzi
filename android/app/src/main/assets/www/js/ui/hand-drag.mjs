@@ -121,7 +121,7 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       const stacks = [...hand.children];
       const origin = drag.card.parentElement;
       const source = { column: stacks.indexOf(origin), index: [...origin.querySelectorAll(visibleCard)].indexOf(drag.card) };
-      const handTop = Math.min(...Array.from(hand.querySelectorAll(visibleCard), card => bounds(card, portrait).top));
+      const handTop = bounds(hand, portrait).top;
 
       const held = drag.card.cloneNode(true);
       held.classList.add('dragged-card');
