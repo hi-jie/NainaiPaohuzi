@@ -2,9 +2,9 @@ import { chooseAction } from './ai/player.mjs';
 import { setMusicPlaying } from './audio/music.mjs?v=5-d4b6275df60f';
 import { playAction } from './audio/player.mjs';
 import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
-import { Round } from './game/state-machine.mjs?v=66';
+import { Round } from './game/state-machine.mjs?v=85';
 import { presets } from './rules/presets.mjs';
-import { load, save } from './storage/save.mjs';
+import { load, save } from './storage/save.mjs?v=85';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=79';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=67';
 import { animateAction, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=80';
@@ -15,8 +15,10 @@ const table = document.querySelector('#table');
 const history = document.querySelector('#discard-history');
 const pauseMenu = document.querySelector('#pause-menu');
 const leaveMenu = document.querySelector('#leave-menu');
+const resumeMenu = document.querySelector('#resume-menu');
 const eatMenu = document.querySelector('#eat-menu');
 const startButton = document.querySelector('#start');
+const continueButton = document.querySelector('#continue-round');
 const score = document.querySelector('#score');
 const settings = document.querySelector('#settings');
 const settingsButton = document.querySelector('#open-settings');
@@ -47,12 +49,14 @@ modes.addEventListener('click', ({ target }) => {
   if (!target.dataset.mode) return;
   selectedMode = target.dataset.mode;
   modeTitle.textContent = presets[selectedMode].name;
+  startButton.textContent = data.round ? '开始新局' : '开始游戏';
   showFront(setup, startButton);
 });
 settingsButton.addEventListener('click', () => showFront(settings, settings.querySelector('[data-back-home]')));
 settings.querySelector('[data-back-home]').addEventListener('click', () => showHome(settingsButton));
 setup.querySelector('[data-back-home]').addEventListener('click', () => showHome());
 score.textContent = data.score;
+continueButton.hidden = !data.round;
 
 function startMusic() {
   setMusicPlaying(data.settings.music);
@@ -67,8 +71,14 @@ function showFront(screen, focus) {
   focus.focus({ preventScroll: true });
 }
 
-function showHome(focus = modes.querySelector(`[data-mode="${selectedMode}"]`)) {
+function showHome(focus = data.round ? continueButton : modes.querySelector(`[data-mode="${selectedMode}"]`)) {
   showFront(home, focus);
+}
+
+function saveRound() {
+  data.round = round.phase === 'finished' ? null : { state: round.toSave(), handLayout };
+  save(data);
+  continueButton.hidden = !data.round;
 }
 
 function paintRound(event) {
@@ -103,6 +113,7 @@ function scheduleTurn() {
 
 function beginPlay() {
   round.revealOpening();
+  saveRound();
   showRound();
 }
 
@@ -132,16 +143,31 @@ function resumeRound() {
   }
 }
 
+function showTable() {
+  home.hidden = true;
+  setup.hidden = true;
+  table.hidden = false;
+  fitTable();
+  startMusic();
+}
+
 function start(dealer = Math.floor(Math.random() * 3)) {
   const deck = cutDeck(shuffledDeck(Math.random), Math.random);
   round = new Round(data.settings, dealer, Math.random, deck, { deferOpening: true });
   handLayout = null;
-  setup.hidden = true;
-  table.hidden = false;
-  fitTable();
+  saveRound();
+  showTable();
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) beginPlay();
   else showOpening(0);
-  startMusic();
+}
+
+function continueSavedRound() {
+  round = Round.fromSave(data.round.state);
+  round.rules.sound = data.settings.sound;
+  handLayout = data.round.handLayout;
+  showTable();
+  if (round.openingHand) beginPlay();
+  else showRound();
 }
 
 function step(action) {
@@ -155,12 +181,12 @@ function step(action) {
       new Set(usedCards.map(card => Number(card.dataset.handCard))));
   }
   const event = round.events.length > before ? round.events.at(-1) : null;
-  if (event && round.rules.sound) playAction(event.type);
   if (round.phase === 'finished') {
     data.score += round.result.delta[0];
-    save(data);
     score.textContent = data.score;
   }
+  saveRound();
+  if (event && round.rules.sound) playAction(event.type);
   showRound(event);
 }
 
@@ -202,6 +228,7 @@ function updateEatSelection(choice) {
 
 function setHandLayout(layout, selectedId) {
   handLayout = layout;
+  saveRound();
   paintRound();
   if (selectedId !== undefined) {
     selectDiscard(table.querySelector(`[data-hand-card="${selectedId}"][data-select-card]`));
@@ -223,9 +250,9 @@ bindHandDrag(table, {
 
 startButton.addEventListener('click', () => {
   data.settings.mode = selectedMode;
-  save(data);
   start();
 });
+continueButton.addEventListener('click', continueSavedRound);
 for (const type of ['selectstart', 'contextmenu']) {
   table.addEventListener(type, event => {
     if (event.target.closest('[data-hand-card]')) event.preventDefault();
@@ -313,3 +340,8 @@ leaveMenu.addEventListener('close', () => {
   if (leaveMenu.returnValue === 'home') showHome();
   else resumeRound();
 });
+resumeMenu.addEventListener('close', () => {
+  if (resumeMenu.returnValue === 'resume') continueSavedRound();
+  else continueButton.focus({ preventScroll: true });
+});
+if (data.round) resumeMenu.showModal();

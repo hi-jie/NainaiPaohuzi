@@ -51,6 +51,15 @@ test('切牌保留整副牌，亮张前后沿用同一手牌', () => {
   }
 });
 
+test('开局动画中的存档恢复后沿用原庄家、手牌和牌墩', () => {
+  const round = new Round(defaultSettings, 2, () => 0.375, undefined, { deferOpening: true });
+  const restored = Round.fromSave(JSON.parse(JSON.stringify(round.toSave())));
+  assert.deepEqual(restored, round);
+  round.revealOpening();
+  restored.revealOpening();
+  assert.deepEqual(restored, round);
+});
+
 test('开局按逆时针发牌和提牌，补牌凑成的四张也继续提', () => {
   const hands = [
     [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 5],
@@ -146,6 +155,24 @@ test('吃碰响应未确认时箭头留在出牌者，确认后才指向接牌�
     assert.equal(round.phase, accepted === '过' ? 'draw' : 'discard');
     assert.equal(arrow(), accepted === '碰' ? 0 : 1);
   }
+});
+
+test('存档恢复当前响应、后续响应和过牌限制', () => {
+  const round = new Round(defaultSettings, 0);
+  round.players = [player([2, 2, 9]), player([0, 1, 8]), { ...player([]), discards: [2] }];
+  round.players[0].passedChi.add(1);
+  round.players[0].passedPeng.add(3);
+  round.players[0].passedHu = 9;
+  round.reveal(2, 2, 'discard');
+
+  const restored = Round.fromSave(JSON.parse(JSON.stringify(round.toSave())));
+  assert.deepEqual(restored, round);
+  restored.act(restored.options.find(action => action.type === '过'));
+  assert.deepEqual([...restored.players[0].passedPeng], [3, 2]);
+  assert.equal(restored.seat, 1);
+  restored.act(restored.options.find(action => action.type === '吃'));
+  assert.deepEqual(restored.players[1].groups, [{ type: '吃', cards: [0, 1, 2] }]);
+  assert.equal(restored.phase, 'discard');
 });
 
 test('胡牌优先于座次靠前的跑、碰和吃', () => {

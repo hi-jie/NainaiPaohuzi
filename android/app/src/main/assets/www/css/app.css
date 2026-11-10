@@ -76,6 +76,7 @@ button:active { filter: brightness(1.12); }
 }
 .title-tiles span:first-child { transform: translateY(5px) rotate(-12deg); }
 .title-tiles span:last-child { transform: translateY(5px) rotate(12deg); }
+#continue-round { font-size: 22px; }
 .modes { grid-column: 2; display: grid; align-content: center; gap: clamp(8px, calc(var(--screen-height) * .026), 16px); }
 .modes button, #start {
   min-height: clamp(46px, calc(var(--screen-height) * .16), 78px);
@@ -490,6 +491,7 @@ main:has(#table:not([hidden])) {
 .game-dialog .actions { flex-wrap: wrap; }
 .dialog-header { display: flex; align-items: center; justify-content: space-between; }
 #leave-description { margin: 6px 0 14px; }
+#resume-menu .actions { margin-top: 14px; }
 .pause-settings { display: flex; justify-content: center; flex-wrap: wrap; gap: 0 20px; margin: 8px 0 12px; }
 .pause-settings label { gap: 8px; }
 #discard-history[open] {

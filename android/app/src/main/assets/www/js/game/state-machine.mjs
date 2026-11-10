@@ -31,6 +31,22 @@ export class Round {
     if (!deferOpening) this.revealOpening();
   }
 
+  toSave() {
+    return {
+      ...this,
+      players: this.players.map(player => ({
+        ...player, passedChi: [...player.passedChi], passedPeng: [...player.passedPeng]
+      }))
+    };
+  }
+
+  static fromSave(state) {
+    const players = state.players.map(player => ({
+      ...player, passedChi: new Set(player.passedChi), passedPeng: new Set(player.passedPeng)
+    }));
+    return Object.assign(Object.create(Round.prototype), state, { players });
+  }
+
   revealOpening() {
     delete this.openingHand;
     this.waitForOpeningTi(0);
