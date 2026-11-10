@@ -1,9 +1,12 @@
 import { countCard, hasCards, huxi, sortCards, takeCards } from '../rules/cards.mjs';
+import { findMahjongHu } from '../rules/mahjong.mjs';
 
-export function arrangeHand(hand, patterns) {
+export function arrangeHand(hand, patterns, mahjong = false) {
+  const hu = mahjong && findMahjongHu(hand);
+  if (hu) return { stacks: hu.groups.map(({ cards }) => cards), loose: [] };
   let remaining = hand;
   const stacks = [];
-  for (const card of new Set(hand)) {
+  for (const card of mahjong ? [] : new Set(hand)) {
     const count = countCard(remaining, card);
     if (count >= 3) {
       const cards = Array(count).fill(card);
@@ -11,7 +14,7 @@ export function arrangeHand(hand, patterns) {
       remaining = takeCards(remaining, cards);
     }
   }
-  const preferred = [...patterns].sort((a, b) =>
+  const preferred = mahjong ? patterns : [...patterns].sort((a, b) =>
     huxi({ type: '吃', cards: b }) - huxi({ type: '吃', cards: a }));
   for (const cards of preferred) {
     while (hasCards(remaining, cards)) {
@@ -33,15 +36,15 @@ export function arrangeHand(hand, patterns) {
   return { stacks, loose };
 }
 
-export function createHandLayout(hand, patterns) {
-  const { stacks, loose } = arrangeHand(hand, patterns);
+export function createHandLayout(hand, patterns, mahjong = false) {
+  const { stacks, loose } = arrangeHand(hand, patterns, mahjong);
   let id = 0;
   return [...stacks, ...loose].map(column => column.map(card => ({ id: id++, card })));
 }
 
-export function handColumnGroup(column, patterns) {
+export function handColumnGroup(column, patterns, mahjong = false) {
   const cards = sortCards(column.map(({ card }) => card));
-  if (cards.length > 1 && cards.every(card => card === cards[0])) {
+  if (cards.length > 1 && (!mahjong || cards.length === 2) && cards.every(card => card === cards[0])) {
     return { type: ['对', '坎', '提'][cards.length - 2], cards };
   }
   if (cards.length === 3 && patterns.some(pattern => pattern.every((card, index) => card === cards[index]))) {
@@ -64,7 +67,7 @@ export function moveHandCard(layout, source, target) {
   return columns;
 }
 
-export function syncHandLayout(layout, hand, patterns, preferredIds) {
+export function syncHandLayout(layout, hand, patterns, preferredIds, mahjong = false) {
   const previous = layout.flat();
   const remaining = new Map();
   for (const card of hand) remaining.set(card, (remaining.get(card) ?? 0) + 1);
@@ -73,7 +76,7 @@ export function syncHandLayout(layout, hand, patterns, preferredIds) {
   for (const [card, count] of remaining) remove.set(card, (remove.get(card) ?? 0) - count);
 
   // When copies are interchangeable, use the previewed card or a loose card first.
-  const loose = layout.filter(column => !handColumnGroup(column, patterns)).flat();
+  const loose = layout.filter(column => !handColumnGroup(column, patterns, mahjong)).flat();
   const candidates = [...previous.filter(({ id }) => preferredIds.has(id)), ...loose, ...previous];
   const removed = new Set();
   for (const { id, card } of candidates) {

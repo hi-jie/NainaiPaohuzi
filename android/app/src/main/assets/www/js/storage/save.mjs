@@ -1,4 +1,4 @@
-import { defaultSettings, presets } from '../rules/presets.mjs?v=124';
+import { defaultSettings, presets } from '../rules/presets.mjs?v=141';
 
 const key = 'hengyang-paohuzi-v1';
 export function load() {
@@ -6,7 +6,7 @@ export function load() {
   const data = saved === null ? {} : JSON.parse(saved);
   const scores = Object.fromEntries(Object.keys(presets).map(mode => [mode, data.scores?.[mode] ?? 0]));
   return {
-    scores, legacyScore: data.legacyScore ?? data.score ?? 0,
+    scores,
     settings: { ...defaultSettings, ...data.settings }, round: data.round ?? null
   };
 }

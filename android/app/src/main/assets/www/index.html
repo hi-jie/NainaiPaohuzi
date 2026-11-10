@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#113f32">
   <title>衡阳跑胡子</title>
-  <link rel="stylesheet" href="./css/app.css?v=139">
-  <script type="module" src="./js/main.mjs?v=139-d4b6275df60f"></script>
+  <link rel="stylesheet" href="./css/app.css?v=144">
+  <script type="module" src="./js/main.mjs?v=141-d4b6275df60f"></script>
 </head>
 <body>
   <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -34,9 +34,14 @@
         <button class="icon-button" type="button" data-back-home aria-label="返回首页"><svg class="nav-icon" aria-hidden="true"><use href="#icon-back"/></svg></button>
         <h2 id="mode-title"></h2>
       </header>
-      <div class="menu-options" role="group" aria-label="本局规则">
+      <div id="paohuzi-options" class="menu-options" role="group" aria-label="本局规则">
         <label>一五十<input type="checkbox" name="oneFiveTen" role="switch"></label>
         <label>放炮胡<input type="checkbox" name="discardHu" role="switch"></label>
+      </div>
+      <div id="mahjong-seats" class="menu-options seat-picker" role="group" aria-label="玩家人数" hidden>
+        <button type="button" data-seats="3" aria-pressed="true">3 人</button>
+        <button type="button" data-seats="4" aria-pressed="false">4 人</button>
+        <button type="button" data-seats="5" aria-pressed="false">5 人</button>
       </div>
       <footer class="menu-footer"><button id="start" type="button" class="primary">开始游戏</button></footer>
     </section>

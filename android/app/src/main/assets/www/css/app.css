@@ -88,14 +88,20 @@ button:active { filter: brightness(1.12); }
 .title-tiles span:first-child { transform: translateY(5px) rotate(-12deg); }
 .title-tiles span:last-child { transform: translateY(5px) rotate(12deg); }
 .modes { grid-column: 2; display: grid; align-content: center; gap: clamp(8px, calc(var(--screen-height) * .026), 16px); }
+.modes button { min-height: clamp(42px, calc(var(--screen-height) * .125), 72px); }
 .modes button, #start {
-  min-height: clamp(46px, calc(var(--screen-height) * .16), 78px);
   font-size: clamp(22px, calc(var(--screen-height) * .065), 34px);
 }
+#start { min-height: clamp(46px, calc(var(--screen-height) * .16), 78px); }
 .menu-screen { grid-template-rows: auto 1fr auto; gap: 8px; }
 .menu-header { display: flex; align-items: center; gap: 16px; }
 .menu-header h2 { color: #ffe5a6; font-size: clamp(24px, calc(var(--screen-height) * .072), 38px); }
 .menu-options { width: min(100%, 480px); display: grid; gap: 8px; place-self: center; }
+.seat-picker { grid-template-columns: repeat(3, 1fr); }
+.seat-picker button { min-height: 58px; font-size: 24px; }
+.seat-picker button[aria-pressed="true"] {
+  color: #402517; background: linear-gradient(#fff0b8, #d29a4e);
+}
 .menu-options label {
   display: flex; justify-content: space-between; align-items: center; gap: 12px;
   min-height: 48px; padding: 8px 16px; border: 1px solid #bfa77585; border-radius: 10px;
@@ -417,8 +423,10 @@ main:has(#table:not([hidden])) {
 }
 .many-seats .seat {
   --side-seat-width: 203px;
-  --avatar-size: 33px;
   --seat-cards-width: 165px;
+}
+.many-seats:not(.mahjong) .seat {
+  --avatar-size: 33px;
   --seat-card-width: 17px; --seat-back-step: 5px; --meld-gap: 3px;
   --seat-backs-height: 18px; --seat-row-gap: 4px; --meld-row-height: 72px;
 }
@@ -432,6 +440,8 @@ main:has(#table:not([hidden])) {
 .many-seats .seat-heading { left: 0; right: auto; }
 .many-seats .seat-cards {
   left: var(--seat-card-offset); right: auto;
+}
+.many-seats:not(.mahjong) .seat-cards {
   --strip-height: 31px; --strip-font: 15.5px; --strip-peek: 18px;
 }
 .many-seats .groups { flex-direction: row; }
@@ -450,6 +460,17 @@ main:has(#table:not([hidden])) {
 .many-seats .hand-actions { left: calc(50% + 78px); }
 .many-seats .seat-3 .callout { right: 100%; top: 4px; }
 .many-seats .seat-4 .callout { left: 100%; top: 4px; }
+.mahjong .seat { --mahjong-back-row: var(--seat-backs-height); }
+.mahjong.many-seats .seat-4 { top: 62px; }
+.mahjong.five-seats .seat-1 { top: calc(50% - 33px); }
+.mahjong.showdown .seat { --mahjong-back-row: 28px; }
+.mahjong .seat-cards > .groups { display: none; }
+.mahjong .seat-cards { grid-template-rows: var(--mahjong-back-row) auto; }
+.mahjong .seat:not(.seat-0) :is(.seat-heading, .seat-cards) { top: 26px; }
+.mahjong .seat-0 .seat-cards { grid-template-rows: var(--mahjong-back-row) var(--discard-row-height); }
+.mahjong .seat-0 .seat-heading {
+  top: calc(100% - var(--seat-cards-bottom) - var(--discard-row-height) - var(--seat-row-gap) - var(--mahjong-back-row));
+}
 .wide .hand {
   bottom: calc(-1 * var(--seat-bottom)); right: 0;
   width: auto; justify-content: start; gap: 8px;

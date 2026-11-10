@@ -1,13 +1,14 @@
-import { chooseAction } from './ai/player.mjs';
+import { chooseAction } from './ai/player.mjs?v=141';
 import { setMusicPlaying } from './audio/music.mjs?v=100-d4b6275df60f';
 import { playAction } from './audio/player.mjs';
 import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
-import { Round } from './game/state-machine.mjs?v=124';
-import { presets } from './rules/presets.mjs?v=124';
-import { load, save } from './storage/save.mjs?v=124';
+import { Round } from './game/state-machine.mjs?v=141';
+import { MahjongRound } from './game/mahjong-round.mjs';
+import { presets } from './rules/presets.mjs?v=141';
+import { load, save } from './storage/save.mjs?v=141';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=116';
-import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=67';
-import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showWinningResult, showWinningTable } from './ui/table.mjs?v=139';
+import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=141';
+import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showWinningResult, showWinningTable } from './ui/table.mjs?v=141';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
@@ -22,7 +23,10 @@ const recordsButton = document.querySelector('#open-records');
 const settings = document.querySelector('#settings');
 const settingsButton = document.querySelector('#open-settings');
 const modeTitle = document.querySelector('#mode-title');
+const seatPicker = document.querySelector('#mahjong-seats');
+const paohuziOptions = document.querySelector('#paohuzi-options');
 const data = load();
+let mahjongSeats = data.settings.mahjongSeats ?? presets.mahjong.seats;
 let selectedMode = data.settings.mode;
 let round;
 let handLayout = null;
@@ -47,12 +51,16 @@ for (const field of settingFields) {
 modes.addEventListener('click', ({ target }) => {
   if (target.dataset.mode) showSetup(target.dataset.mode);
 });
+seatPicker.addEventListener('click', ({ target }) => {
+  if (!target.dataset.seats) return;
+  mahjongSeats = Number(target.dataset.seats);
+  updateSeatPicker();
+});
 settingsButton.addEventListener('click', () => showFront(settings, settings.querySelector('[data-back-home]')));
 settings.querySelector('[data-back-home]').addEventListener('click', () => showHome(settingsButton));
 setup.querySelector('[data-back-home]').addEventListener('click', () => showHome());
 recordsButton.addEventListener('click', () => {
   const scores = Object.entries(presets).map(([mode, { name }]) => [name, data.scores[mode]]);
-  if (data.legacyScore) scores.push(['旧版累计积分', data.legacyScore]);
   records.querySelector('.score-records').innerHTML = scores.map(([name, value]) =>
     `<div><dt>${name}</dt><dd>${value}</dd></div>`).join('');
   showFront(records, records.querySelector('[data-back-home]'));
@@ -79,7 +87,16 @@ function showHome(focus = modes.querySelector(`[data-mode="${selectedMode}"]`)) 
 function showSetup(mode) {
   selectedMode = mode;
   modeTitle.textContent = presets[mode].name;
+  seatPicker.hidden = mode !== 'mahjong';
+  paohuziOptions.hidden = mode === 'mahjong';
+  updateSeatPicker();
   showFront(setup, startButton);
+}
+
+function updateSeatPicker() {
+  for (const button of seatPicker.children) {
+    button.setAttribute('aria-pressed', Number(button.dataset.seats) === mahjongSeats);
+  }
 }
 
 function saveRound(keep = round.phase !== 'finished') {
@@ -96,8 +113,8 @@ function paintRound(event, motion, action) {
 
 function showRound(event, motion, action) {
   if (event?.type === '胡') {
-    showWinningTable(table, round, data.scores[round.rules.mode], event, motion.meld);
-    timer = setTimeout(() => showWinningResult(table, round, data.scores[round.rules.mode], event, motion.meld), 2200);
+    showWinningTable(table, round, data.scores[round.rules.mode], event, motion?.meld);
+    timer = setTimeout(() => showWinningResult(table, round, data.scores[round.rules.mode], event, motion?.meld), 2200);
     return;
   }
   paintRound(event, motion, action);
@@ -166,9 +183,12 @@ function showTable() {
   startMusic();
 }
 
-function start(dealer = Math.floor(Math.random() * presets[data.settings.mode].seats)) {
+function start(dealer) {
+  const mahjong = data.settings.mode === 'mahjong';
+  const seats = mahjong ? mahjongSeats : presets[data.settings.mode].seats;
+  const Game = mahjong ? MahjongRound : Round;
   const deck = cutDeck(shuffledDeck(Math.random), Math.random);
-  round = new Round(data.settings, dealer, Math.random, deck, { deferOpening: true });
+  round = new Game(data.settings, dealer ?? Math.floor(Math.random() * seats), Math.random, deck, { deferOpening: true });
   handLayout = null;
   saveRound();
   showTable();
@@ -177,9 +197,15 @@ function start(dealer = Math.floor(Math.random() * presets[data.settings.mode].s
 }
 
 function continueSavedRound() {
-  round = Round.fromSave(data.round.state);
+  const state = data.round.state;
+  const Game = state.rules.mode === 'mahjong' ? MahjongRound : Round;
+  round = Game.fromSave(state);
   selectedMode = round.rules.mode;
   data.settings.mode = selectedMode;
+  if (selectedMode === 'mahjong') {
+    mahjongSeats = round.rules.seats;
+    data.settings.mahjongSeats = mahjongSeats;
+  }
   round.rules.sound = data.settings.sound;
   handLayout = data.round.handLayout;
   showTable();
@@ -196,7 +222,7 @@ function step(action) {
   round.act(action);
   if (handLayout) {
     handLayout = syncHandLayout(handLayout, round.players[0].hand, round.rules.patterns,
-      new Set(usedCards.map(card => Number(card.dataset.handCard))));
+      new Set(usedCards.map(card => Number(card.dataset.handCard))), round.rules.mode === 'mahjong');
   }
   const event = round.events.length > before ? round.events.at(-1) : null;
   if (round.phase === 'finished') {
@@ -256,7 +282,7 @@ function setHandLayout(layout, selectedId) {
 bindHandDrag(table, {
   onStart: () => clearTimeout(timer),
   onDrop(source, target) {
-    const layout = handLayout ?? createHandLayout(round.players[0].hand, round.rules.patterns);
+    const layout = handLayout ?? createHandLayout(round.players[0].hand, round.rules.patterns, round.rules.mode === 'mahjong');
     const moved = moveHandCard(layout, source, target);
     if (moved !== layout) {
       setHandLayout(moved, table.querySelector('[data-select-card][aria-pressed="true"]')?.dataset.handCard);
@@ -267,6 +293,7 @@ bindHandDrag(table, {
 
 startButton.addEventListener('click', () => {
   data.settings.mode = selectedMode;
+  if (selectedMode === 'mahjong') data.settings.mahjongSeats = mahjongSeats;
   start();
 });
 for (const type of ['selectstart', 'contextmenu']) {
@@ -306,7 +333,7 @@ table.addEventListener('click', ({ target }) => {
   } else if (button.dataset.command === 'pause') {
     pauseMenu.showModal();
   } else if (button.dataset.command === 'again') {
-    start(round.result.winner ?? round.dealer);
+    start(round.result.nextDealer ?? round.result.winner ?? round.dealer);
   } else if (button.dataset.selectCard !== undefined) {
     selectDiscard(button);
   } else if (button.dataset.command === 'discard') {

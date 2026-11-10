@@ -1,6 +1,6 @@
 import { cardName, huxi, isRed } from '../rules/cards.mjs';
-import { nextSeat } from '../rules/actions.mjs?v=124';
-import { createHandLayout, handColumnGroup } from './hand.mjs?v=67';
+import { nextSeat } from '../rules/actions.mjs?v=141';
+import { createHandLayout, handColumnGroup } from './hand.mjs?v=141';
 
 const names = ['我', '电脑一', '电脑二', '电脑三', '电脑四'];
 
@@ -32,6 +32,7 @@ function revealedHand(hand, seat) {
 }
 
 function playerHand(round, layout, canDiscard, response, canDrag) {
+  const mahjong = round.rules.mode === 'mahjong';
   const matching = response?.type === '吃' ? [] : [...(response?.cards ?? [])];
   const cardView = ({ id, card }) => {
     const action = canDiscard ? round.options.findIndex(option => option.card === card) : -1;
@@ -40,14 +41,15 @@ function playerHand(round, layout, canDiscard, response, canDrag) {
     return tile(card, false, action === -1 ? undefined : action, match !== -1, canDrag ? id : undefined);
   };
   return layout.map(column => {
-    const group = handColumnGroup(column, round.rules.patterns);
-    const points = group ? huxi(group) : 0;
+    const group = handColumnGroup(column, round.rules.patterns, mahjong);
+    const points = group && !mahjong ? huxi(group) : 0;
     const score = points > 0 ? `<strong class="group-score"><span class="sr-only">胡息 </span>${points}</strong>` : '';
     return `<div class="hand-stack${group ? '' : ' loose'}">${column.map(cardView).join('')}${score}</div>`;
   }).join('');
 }
 
 function centerOffer(round) {
+  if (round.rules.mode === 'mahjong') return round.offer;
   if (round.phase === 'response') return round.offer;
   if (round.phase !== 'draw') return null;
   const last = round.events.at(-1);
@@ -59,6 +61,7 @@ function centerOffer(round) {
 
 function tableDiscards(round, seat) {
   const { discards } = round.players[seat];
+  if (round.rules.mode === 'mahjong') return discards;
   const offer = centerOffer(round);
   return offer?.source === seat && (offer.parked || offer.kind === 'discard')
     ? discards.slice(0, -1) : discards;
@@ -70,26 +73,28 @@ function totalHuxi(groups) {
 
 function seatView(round, seat, event, response, openingStage, actions = '', handLayout) {
   const { hand, groups } = round.players[seat];
+  const mahjong = round.rules.mode === 'mahjong';
   const discards = tableDiscards(round, seat);
   const showdown = event?.type === '胡';
   const spread = openingStage === 'deal' || openingStage === 'reveal';
   const arranging = openingStage === 'sort';
   const showHand = !openingStage || arranging;
-  const backs = showHand ? hand.length : spread && seat !== 0 ? round.rules.dealt : 0;
+  const backs = showHand || (mahjong && spread && seat !== 0) ? hand.length : spread && seat !== 0 ? round.rules.dealt : 0;
   const active = !openingStage && round.seat === seat && round.phase !== 'finished';
   const yourDiscard = seat === 0 && active && round.phase === 'discard';
-  const total = totalHuxi(groups);
-  const layout = seat === 0 && showHand && !showdown ? handLayout ?? createHandLayout(hand, round.rules.patterns) : null;
+  const layout = seat === 0 && showHand && !showdown ? handLayout ?? createHandLayout(hand, round.rules.patterns, mahjong) : null;
+  const reveal = mahjong && showdown && round.result.winner === seat
+    ? round.result.hu.groups.flatMap(group => group.cards) : hand;
   return `<section class="seat seat-${seat}${active ? ' active' : ''}${yourDiscard ? ' choosing-card' : ''}"${active ? ' aria-current="true"' : ''}>
     <div class="seat-heading">
       ${avatar(seat)}
       <span class="dealer" ${round.dealer === seat ? '' : 'inert aria-hidden="true"'}>庄</span>
-      ${showHand ? `<strong class="seat-score">${total}胡息</strong>` : ''}
+      ${showHand && !mahjong ? `<strong class="seat-score">${totalHuxi(groups)}胡息</strong>` : ''}
     </div>
     ${event?.seat === seat && !['摸', '出'].includes(event.type) ? `<span class="callout" aria-hidden="true">${event.type}</span>` : ''}
     <div class="seat-cards">
       <div class="groups">${showHand ? groups.map(group => meld(group, seat !== 0 && ['偎', '提'].includes(group.type), showdown)).join('') : ''}</div>
-      ${showdown ? revealedHand(hand, seat) : `<div class="seat-backs" aria-hidden="true">${'<span></span>'.repeat(backs)}</div>`}
+      ${showdown ? revealedHand(reveal, seat) : `<div class="seat-backs" aria-hidden="true">${'<span></span>'.repeat(backs)}</div>`}
       <div class="discarded" role="group" aria-label="${names[seat]}的弃牌，${discards.length}张">
         ${discards.map(card => tile(card)).join('')}
       </div>
@@ -111,10 +116,11 @@ function eatGroupNames(action) {
   return action.groups.map(group => group.map(cardName).join(''));
 }
 
-function actionButtons(options) {
+function actionButtons(options, mahjong) {
   const firstEat = options.findIndex(action => action.type === '吃');
   return options.map(({ type }, index) => {
-    if (type === '吃') {
+    if (type === '出') return '';
+    if (type === '吃' && !mahjong) {
       return index === firstEat ? '<button data-command="choose-eat" aria-haspopup="dialog">吃</button>' : '';
     }
     const label = shortActionLabel(type);
@@ -148,10 +154,10 @@ export function previewEat(table, action) {
   }
 }
 
-function resultView({ winner, hu, names: bonuses, tun, delta }, score) {
+function resultView({ winner, hu, names: bonuses, tun, delta, kind }, score) {
   const details = winner === null ? '' : `
     <div class="groups">${hu.groups.map(group => meld(group)).join('')}</div>
-    <p>${hu.huxi} 胡息 · ${tun} 囤 · ${bonuses.map(([name, multiple]) => `${name} ×${multiple}`).join('、')}</p>`;
+    <p>${kind ? (kind === 'self' ? '自摸' : '接炮') : `${hu.huxi} 胡息 · ${tun} 囤 · ${bonuses.map(([name, multiple]) => `${name} ×${multiple}`).join('、')}`}</p>`;
   return `<div class="settlement"><section class="panel result" aria-live="polite">
     <small>本局结算</small>
     <h2 class="avatar-label">${winner === null ? '黄庄' : `${avatar(winner)}胡牌`}</h2>
@@ -188,23 +194,26 @@ function openingPile(stage) {
 
 export function renderTable(round, score, event, openingStage = '', handLayout = null, winningMeld) {
   const { phase, seat, options } = round;
+  const mahjong = round.rules.mode === 'mahjong';
   const showdown = event?.type === '胡';
   const offer = showdown && winningMeld === undefined ? round.offer : centerOffer(round);
   const response = seat === 0 && phase === 'response' ? options[0] : null;
   const handHint = seat === 0 && phase === 'opening-ti' ? options[0] : response;
-  const arrowSeat = phase === 'response' ? offer.source : seat;
+  const arrowSeat = offer && ['response', 'claim'].includes(phase) ? offer.source : seat;
   const source = offer?.source ?? event?.seat ?? round.dealer;
   const visibleCard = offer?.card ?? round.opening;
-  const revealTile = ['reveal', 'sort'].includes(openingStage) && !round.hasOpeningTi;
+  const revealTile = !mahjong && ['reveal', 'sort'].includes(openingStage) && !round.hasOpeningTi;
   const flatDeck = !openingStage || ['reveal', 'sort'].includes(openingStage);
   const playing = !openingStage && phase !== 'finished';
   const myTurn = playing && seat === 0;
   let actions = '';
   if (openingStage) actions = '<button data-command="skip-opening">跳过动画</button>';
-  else if (myTurn && phase === 'discard') actions = '<button class="primary" data-command="discard" disabled>出牌</button>';
-  else if (myTurn && !options[0].forced) actions = actionButtons(options);
+  else if (myTurn && phase === 'discard') {
+    actions = '<button class="primary" data-command="discard" disabled>出牌</button>';
+    if (mahjong) actions += actionButtons(options, true);
+  } else if (myTurn && !options[0].forced) actions = actionButtons(options, mahjong);
   const lastLabel = offer?.kind === 'draw' ? '摸牌' : offer?.kind === 'discard' ? '出牌' : '庄家亮张';
-  return `<div class="felt${round.players.length > 3 ? ' many-seats' : ''}${round.players.length === 5 ? ' five-seats' : ''}${openingStage ? ' opening' : ''}${showdown ? ' showdown' : ''}"${openingStage ? ` data-stage="${openingStage}"` : ''}>
+  return `<div class="felt${mahjong ? ' mahjong' : ''}${round.players.length > 3 ? ' many-seats' : ''}${round.players.length === 5 ? ' five-seats' : ''}${openingStage ? ' opening' : ''}${showdown ? ' showdown' : ''}"${openingStage ? ` data-stage="${openingStage}"` : ''}>
     <div class="table-hud">
       ${phase !== 'finished' ? navButton('leave', 'back', '返回首页') + navButton('pause', 'settings', '设置') : ''}
       ${playing && handLayout ? '<button data-command="auto-hand">自动理牌</button>' : ''}
@@ -265,10 +274,11 @@ export function showWinningTable(table, round, score, event, winningMeld) {
   if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
     backs.forEach((positions, seat) => {
       table.querySelectorAll(`.seat-${seat} .reveal-slot`).forEach((slot, index) => {
-        slideFrom(table, slot, positions[index], 420, .62);
+        slideFrom(table, slot, positions[index] ?? positions.at(-1), 420, .62);
       });
     });
   }
+  if (round.rules.mode === 'mahjong') return;
   const patterns = round.rules.patterns;
   const totals = round.players.map(({ hand, groups }, seat) => {
     if (seat === event.seat) return round.result.hu.huxi;
@@ -320,7 +330,8 @@ export function showOpeningFrame(table, round, score, stage) {
     const seats = destinations.length;
     const portrait = matchMedia('(orientation: portrait)').matches;
     let seat = round.dealer;
-    for (let i = 0; i < round.rules.dealt * seats; i++, seat = nextSeat(seat, seats)) {
+    const total = positions.reduce((sum, cards) => sum + cards.length, 0);
+    for (let i = 0; i < total; i++, seat = nextSeat(seat, seats)) {
       const index = Math.floor(i / seats);
       const card = destinations[seat][index];
       const position = positions[seat][index];
@@ -343,6 +354,10 @@ function meldCard(area, groups, index, card) {
 }
 
 export function showWinningResult(table, round, score, event, winningMeld) {
+  if (round.rules.mode === 'mahjong') {
+    table.insertAdjacentHTML('beforeend', resultView(round.result, score));
+    return;
+  }
   const { card, seat } = event;
   const { groups } = round.players[seat];
   const winning = round.result.hu.groups;
@@ -383,9 +398,10 @@ function animateTransfer(table, card, destination, from, effect = 'move') {
   const start = local(from);
   const end = local(destination.getBoundingClientRect());
   const ghost = document.createElement('span');
-  ghost.className = `card flying-card${isRed(card) ? ' red' : ''}${win ? ' winning' : ''}`;
+  const concealed = effect === 'draw';
+  ghost.className = `card flying-card${concealed ? ' back' : isRed(card) ? ' red' : ''}${win ? ' winning' : ''}`;
   ghost.setAttribute('aria-hidden', 'true');
-  ghost.textContent = cardName(card);
+  if (!concealed) ghost.textContent = cardName(card);
   Object.assign(ghost.style, {
     left: `${start.x}px`, top: `${start.y}px`, width: `${deck.width}px`, height: `${deck.height}px`,
     fontSize: `${28 * Number(table.style.getPropertyValue('--table-scale'))}px`
@@ -413,6 +429,18 @@ function animateTransfer(table, card, destination, from, effect = 'move') {
 export function animateAction(table, round, event, motion, action) {
   const seatView = seat => table.querySelector(`.seat-${seat}`);
   const discard = seat => seatView(seat).querySelector('.discarded').lastElementChild;
+  if (round.rules.mode === 'mahjong' && action?.type === '摸' && motion) {
+    animateTransfer(table, motion.offer.card, discard(motion.offer.source), motion.from, 'discard');
+  }
+  if (round.rules.mode === 'mahjong' && ['吃', '摸'].includes(event?.type)) {
+    const seat = seatView(event.seat);
+    const destination = event.seat === 0
+      ? [...seat.querySelectorAll('.hand .card')].findLast(card => card.textContent === cardName(event.card))
+      : seat.querySelector('.seat-backs').lastElementChild;
+    const from = event.type === '摸' ? table.querySelector('.deck-tile').getBoundingClientRect() : motion.from;
+    animateTransfer(table, event.card, destination, from, event.type === '摸' ? 'draw' : 'move');
+    return;
+  }
   if (motion?.offer.parked) {
     const { offer: { card, source }, from } = motion;
     animateTransfer(table, card, discard(source), from, 'discard');

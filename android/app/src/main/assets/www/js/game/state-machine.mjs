@@ -1,7 +1,7 @@
 import { countCard, patterns, sortCards, takeCards } from '../rules/cards.mjs';
-import { canHuFrom, nextSeat, responses } from '../rules/actions.mjs?v=124';
+import { canHuFrom, nextSeat, responses } from '../rules/actions.mjs?v=141';
 import { findHu } from '../rules/hu.mjs?v=65';
-import { presets } from '../rules/presets.mjs?v=124';
+import { presets } from '../rules/presets.mjs?v=141';
 import { settle } from '../rules/scoring.mjs?v=124';
 import { shuffledDeck } from './deck.mjs';
 

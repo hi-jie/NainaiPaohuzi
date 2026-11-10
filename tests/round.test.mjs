@@ -11,6 +11,7 @@ import { settle } from '../android/app/src/main/assets/www/js/rules/scoring.mjs'
 import { handColumnGroup, moveHandCard, syncHandLayout } from '../android/app/src/main/assets/www/js/ui/hand.mjs';
 import { renderTable } from '../android/app/src/main/assets/www/js/ui/table.mjs';
 
+const paohuziModes = ['six', 'ten', 'fifteen'];
 const rules = { ...defaultSettings, ...presets.six, patterns: patterns(false) };
 const player = (hand, groups = []) => ({
   hand, groups, discards: [], passedChi: new Set(), passedPeng: new Set(), passedHu: -1
@@ -39,7 +40,7 @@ test('切牌保留整副牌，亮张前后沿用同一手牌', () => {
   assert.notDeepEqual(deck, shuffled);
   assert.deepEqual([...deck].sort(), [...shuffled].sort());
 
-  for (const mode of Object.keys(presets)) {
+  for (const mode of paohuziModes) {
     const settings = { ...defaultSettings, mode };
     const round = new Round(settings, 1, random, deck, { deferOpening: true });
     assert.equal(round.phase, undefined);
@@ -224,7 +225,7 @@ test('存档恢复当前响应、后续响应和过牌限制', () => {
 });
 
 test('三种玩法的跑和碰都优先于座次靠前的吃', () => {
-  for (const mode of Object.keys(presets)) {
+  for (const mode of paohuziModes) {
     for (const [action, hand] of [['碰', [2, 2, 9]], ['跑', [2, 2, 2, 9]]]) {
       const round = new Round({ ...defaultSettings, mode }, 0);
       const source = round.players.length - 1;
@@ -241,7 +242,8 @@ test('三种玩法的跑和碰都优先于座次靠前的吃', () => {
 });
 
 test('三种玩法自摸不加倍，其他名堂照常计分', () => {
-  for (const [mode, preset] of Object.entries(presets)) {
+  for (const mode of paohuziModes) {
+    const preset = presets[mode];
     const settings = { ...rules, ...preset, mode };
     const hu = { huxi: 15, red: 1 };
     const selfDraw = settle(0, { kind: 'draw', source: 0 }, hu, settings);
@@ -340,7 +342,7 @@ test('四人六胡抢点炮一家包三份，积分跌到负数仍可开局', ()
 });
 
 test('三种玩法都能打到胡牌或黄庄', () => {
-  for (const mode of Object.keys(presets)) {
+  for (const mode of paohuziModes) {
     let wins = 0;
     for (let seed = 1; seed <= 60; seed++) {
       let state = seed;

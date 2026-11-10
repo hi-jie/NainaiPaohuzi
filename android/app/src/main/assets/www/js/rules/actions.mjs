@@ -2,7 +2,7 @@ import { countCard, hasCards, takeCards } from './cards.mjs';
 import { findHu } from './hu.mjs?v=65';
 
 // Seat indices are bottom, left, right and (in four-player rounds) top.
-const nextByCount = { 3: [2, 0, 1], 4: [2, 0, 3, 1] };
+const nextByCount = { 3: [2, 0, 1], 4: [2, 0, 3, 1], 5: [2, 0, 3, 4, 1] };
 export const nextSeat = (seat, seats = 3) => nextByCount[seats][seat];
 
 export function canHuFrom(kind, rules) {
