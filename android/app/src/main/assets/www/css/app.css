@@ -161,6 +161,10 @@ main:has(#table:not([hidden])) {
   border-color: #fff4bb;
   background: radial-gradient(circle at 40% 25%, #fff8cb, #e6a13f);
   box-shadow: 0 0 0 3px #f9c65c, 0 0 17px 4px #ffcb6580;
+  animation: active-avatar-pulse 1.6s ease-in-out infinite;
+}
+@keyframes active-avatar-pulse {
+  50% { border-color: #f4c46c; box-shadow: 0 0 0 2px #eab858, 0 0 7px 1px #ffcb6540; }
 }
 .seat.active .seat-score { color: #ffe291; }
 .seat-score {
@@ -310,7 +314,9 @@ main:has(#table:not([hidden])) {
   content: ""; position: absolute; inset: 0;
   background: linear-gradient(#fff1a8, #edaa38);
   clip-path: polygon(0 0, 100% 50%, 0 100%);
+  animation: turn-arrow-float 1.6s ease-in-out infinite;
 }
+@keyframes turn-arrow-float { 50% { transform: translateX(5px); } }
 .turn-arrow.to-1 { left: calc(50% - 43px); transform: translateX(-50%) rotate(180deg); }
 .turn-arrow.to-0 { top: 76px; left: 50%; transform: translateX(-50%) rotate(90deg); }
 .landing { width: var(--strip-width); height: var(--strip-height); }
@@ -387,6 +393,7 @@ main:has(#table:not([hidden])) {
   from { filter: brightness(1.25); }
 }
 @media (prefers-reduced-motion: reduce) {
+  .seat.active .avatar, .turn-arrow::before { animation: none; }
   .felt.dragging-hand::before { animation: none; }
   .landing .card.hinted { animation: none; }
   .hand .card { transition: none; }
