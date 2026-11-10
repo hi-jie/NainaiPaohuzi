@@ -272,6 +272,12 @@ main:has(#table:not([hidden])) {
 .hand .card { position: relative; width: 100%; }
 .hand button.card { border-color: #fff6cc; }
 .choosing-card .hand .card:not(button), .discarded .card { filter: grayscale(1) brightness(.76); }
+.discarded .card.red {
+  --seat-card-edge: #747474;
+  background: linear-gradient(#bdbdbd 0 35%, #a9a9a9 82%, #9a9a9a);
+  color: #801d16;
+  filter: none;
+}
 .hand .card { transition: transform .12s ease-out; }
 .hand .card:is(.hinted, .eat-preview, [aria-pressed="true"]) { transform: translateY(-4px); }
 .hand button.card:active { filter: brightness(1.13); }
