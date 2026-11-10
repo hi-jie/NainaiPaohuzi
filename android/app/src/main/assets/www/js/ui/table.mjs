@@ -215,7 +215,7 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
         <div class="deck${!openingStage && round.deck.length > 1 ? ' stacked' : ''}">
           <span class="card back deck-tile" aria-hidden="true">字${openingPile(openingStage)}</span>
           ${!openingStage ? `<span class="deck-count">余 ${round.deck.length} 张</span>` : ''}
-          ${playing ? `<span class="turn-arrow to-${arrowSeat}" aria-hidden="true"></span>` : ''}
+          ${playing ? `<span class="turn-arrow to-${arrowSeat}" data-seat="${arrowSeat}" aria-hidden="true"></span>` : ''}
         </div>
         <div class="last-play from-${source}">
           <div class="landing">${revealTile && openingStage === 'reveal' ? '<i class="opening-back"></i>' : ''}
@@ -228,6 +228,24 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
     ${seatView(round, 0, event, handHint, openingStage, actions, handLayout)}
     </div>
     ${phase === 'finished' && !showdown ? resultView(round.result, score) : ''}`;
+}
+
+export function animateTurnArrow(arrow, previousSeat) {
+  if (!arrow || previousSeat === undefined || previousSeat === arrow.dataset.seat ||
+      matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const angles = [90, 180, 0];
+  const start = angles[previousSeat];
+  const sweep = (start - angles[arrow.dataset.seat] + 360) % 360;
+  const style = getComputedStyle(arrow);
+  const radiusX = parseFloat(style.getPropertyValue('--orbit-x'));
+  const radiusY = parseFloat(style.getPropertyValue('--orbit-y'));
+  const steps = Math.ceil(sweep / 10);
+  const frames = Array.from({ length: steps + 1 }, (_, i) => {
+    const angle = start - sweep * i / steps;
+    const rad = angle * Math.PI / 180;
+    return { transform: `translateX(-50%) translate(${radiusX * Math.cos(rad)}px, ${radiusY * Math.sin(rad)}px) rotate(${angle}deg)` };
+  });
+  arrow.animate(frames, { duration: 380, easing: 'ease-in-out' });
 }
 
 function tableOffset(table, from, to) {

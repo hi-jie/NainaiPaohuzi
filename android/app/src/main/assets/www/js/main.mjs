@@ -7,7 +7,7 @@ import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs?v=85';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=116';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=67';
-import { animateAction, animateHandSort, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showWinningResult, showWinningTable } from './ui/table.mjs?v=110';
+import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showWinningResult, showWinningTable } from './ui/table.mjs?v=118';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
@@ -80,7 +80,9 @@ function saveRound(keep = round.phase !== 'finished') {
 }
 
 function paintRound(event, motion, action) {
+  const previousSeat = table.querySelector('.turn-arrow')?.dataset.seat;
   table.innerHTML = renderTable(round, data.score, event, '', handLayout);
+  animateTurnArrow(table.querySelector('.turn-arrow'), previousSeat);
   if (event || motion) animateAction(table, round, event, motion, action);
 }
 

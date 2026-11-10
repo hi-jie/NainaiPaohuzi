@@ -322,8 +322,10 @@ main:has(#table:not([hidden])) {
 .deck.stacked::before { transform: translate(calc(-50% + 6px), -4px); }
 .deck.stacked::after { transform: translate(calc(-50% + 3px), -2px); }
 .turn-arrow {
-  position: absolute; top: 23px; left: calc(50% + 43px); width: 12px; height: 22px;
-  transform: translateX(-50%); pointer-events: none;
+  --orbit-x: 43px; --orbit-y: 53px;
+  --arrow-x: var(--orbit-x); --arrow-y: 0px; --arrow-angle: 0deg;
+  position: absolute; top: 23px; left: 50%; width: 12px; height: 22px;
+  transform: translateX(-50%) translate(var(--arrow-x), var(--arrow-y)) rotate(var(--arrow-angle)); pointer-events: none;
   filter: drop-shadow(0 0 4px #ffc45db0);
 }
 .turn-arrow::before {
@@ -333,8 +335,8 @@ main:has(#table:not([hidden])) {
   animation: turn-arrow-float 1.6s ease-in-out infinite;
 }
 @keyframes turn-arrow-float { 50% { transform: translateX(5px); } }
-.turn-arrow.to-1 { left: calc(50% - 43px); transform: translateX(-50%) rotate(180deg); }
-.turn-arrow.to-0 { top: 76px; left: 50%; transform: translateX(-50%) rotate(90deg); }
+.turn-arrow.to-1 { --arrow-x: calc(-1 * var(--orbit-x)); --arrow-angle: 180deg; }
+.turn-arrow.to-0 { --arrow-x: 0px; --arrow-y: var(--orbit-y); --arrow-angle: 90deg; }
 .landing { width: var(--strip-width); height: var(--strip-height); }
 .last-play.from-1 { left: calc(50% - 86px); }
 .last-play.from-2 { left: calc(50% + 86px); }
