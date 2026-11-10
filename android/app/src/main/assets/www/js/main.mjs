@@ -1,6 +1,7 @@
 import { chooseAction } from './ai/player.mjs?v=141';
 import { setMusicPlaying } from './audio/music.mjs?v=100-d4b6275df60f';
 import { playAction } from './audio/player.mjs';
+import { pickOpponents } from './data/opponents.mjs?v=172&avatars=019446441cfe';
 import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
 import { Round } from './game/state-machine.mjs?v=141';
 import { MahjongRound } from './game/mahjong-round.mjs';
@@ -8,7 +9,7 @@ import { presets } from './rules/presets.mjs?v=141';
 import { load, save } from './storage/save.mjs?v=171';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=116';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=141';
-import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showWinningResult, showWinningTable } from './ui/table.mjs?v=171';
+import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showWinningResult, showWinningTable } from './ui/table.mjs?v=172&avatars=019446441cfe';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
@@ -190,6 +191,7 @@ function start(dealer) {
   const Game = mahjong ? MahjongRound : Round;
   const deck = cutDeck(shuffledDeck(Math.random), Math.random);
   round = new Game(data.settings, dealer ?? Math.floor(Math.random() * seats), Math.random, deck, { deferOpening: true });
+  round.opponents = pickOpponents(round.players.length - 1);
   handLayout = null;
   saveRound();
   showTable();
@@ -209,6 +211,10 @@ function continueSavedRound() {
   }
   round.rules.sound = data.settings.sound;
   handLayout = data.round.handLayout;
+  if (!round.opponents) {
+    round.opponents = pickOpponents(round.players.length - 1);
+    saveRound();
+  }
   showTable();
   if (round.openingHand) beginPlay();
   else showRound();

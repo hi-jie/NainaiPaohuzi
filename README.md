@@ -43,6 +43,12 @@ adb install -r .\app\build\outputs\apk\debug\app-debug.apk
 
 进入游戏时默认随机播放，播完自动换曲。浏览器要求先点按时，会在第一次点击后播放。首页的设置页和牌局暂停窗口都能开关背景音乐。
 
+## 更新对家头像
+
+有新角色时，在项目根目录运行 `python scripts/update-opponents.py`。首次使用需安装 Pillow（`python -m pip install Pillow`）。
+
+脚本读取[米游社角色图鉴](https://baike.mihoyo.com/ys/obc/channel/map/189/25)，排除旅行者，保留已有角色的名字，并为新增角色起名。名单和 48×48 WebP 头像图集会一起更新。脚本只更新本地文件。
+
 ## 首版规则取值
 
 - 默认六胡抢，关闭一五十和放炮胡。开启一五十后，一五十 3 胡息、壹伍拾 6 胡息。

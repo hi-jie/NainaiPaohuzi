@@ -1,5 +1,6 @@
 import { cardName, huxi, isRed } from '../rules/cards.mjs';
 import { nextSeat } from '../rules/actions.mjs?v=141';
+import { getOpponent } from '../data/opponents.mjs?v=172&avatars=019446441cfe';
 import { createHandLayout, handColumnGroup } from './hand.mjs?v=141';
 
 const names = ['我', '电脑一', '电脑二', '电脑三', '电脑四'];
@@ -9,8 +10,13 @@ function navButton(command, icon, label) {
     <svg class="nav-icon" aria-hidden="true"><use href="#icon-${icon}"/></svg></button>`;
 }
 
-function avatar(seat) {
-  return `<span class="avatar avatar-${seat}" role="img" aria-label="${names[seat]}"></span>`;
+function opponentAt(round, seat) {
+  return getOpponent(round.opponents?.[seat - 1]);
+}
+
+function avatar(seat, opponent) {
+  const style = opponent ? ` style="${opponent.sprite}"` : '';
+  return `<span class="avatar avatar-${seat}${opponent ? ' has-portrait' : ''}"${style} role="img" aria-label="${opponent?.name ?? names[seat]}"></span>`;
 }
 
 function tile(card, hidden = false, selection, hinted = false, handId) {
@@ -26,8 +32,8 @@ function meld(group, concealed = false, reveal = false) {
   return `<span class="meld${concealed && reveal ? ' reveal-meld' : ''}" data-meld="${group.type}" data-cards="${group.cards.join(' ')}">${group.cards.map((card, index) => tile(card, concealed && !reveal && index > 0)).join('')}</span>`;
 }
 
-function revealedHand(hand, seat) {
-  return `<div class="revealed-hand" aria-label="${names[seat]}的手牌">${hand.map(card =>
+function revealedHand(hand, name) {
+  return `<div class="revealed-hand" aria-label="${name}的手牌">${hand.map(card =>
     `<span class="reveal-slot">${tile(card)}</span>`).join('')}</div>`;
 }
 
@@ -73,6 +79,8 @@ function totalHuxi(groups) {
 
 function seatView(round, seat, activeSeat, event, response, openingStage, actions = '', handLayout) {
   const { hand, groups } = round.players[seat];
+  const opponent = opponentAt(round, seat);
+  const name = opponent?.name ?? names[seat];
   const mahjong = round.rules.mode === 'mahjong';
   const discards = tableDiscards(round, seat);
   const showdown = event?.type === '胡';
@@ -89,21 +97,21 @@ function seatView(round, seat, activeSeat, event, response, openingStage, action
     : '';
   const reveal = mahjong && showdown && round.result.winner === seat
     ? round.result.hu.groups.flatMap(group => group.cards) : hand;
-  const discardArea = `<div class="discarded" role="group" aria-label="${names[seat]}的弃牌，${discards.length}张">
+  const discardArea = `<div class="discarded" role="group" aria-label="${name}的弃牌，${discards.length}张">
     ${discards.map((card, index) => seat === 0
       ? `<span class="discard-slot" style="z-index:${discards.length - index}">${tile(card)}</span>` : tile(card)).join('')}
   </div>`;
   return `<section class="seat seat-${seat}${active ? ' active' : ''}${yourDiscard ? ' choosing-card' : ''}"${active ? ' aria-current="true"' : ''}>
     <div class="seat-heading">
-      ${avatar(seat)}
-      <span class="seat-name">${seat === 0 ? '我' : '对家'}</span>
+      ${avatar(seat, opponent)}
+      <span class="seat-name">${opponent?.name ?? (seat === 0 ? '我' : '对家')}</span>
       <span class="dealer" ${round.dealer === seat ? '' : 'inert aria-hidden="true"'}>庄</span>
       ${showHand && !mahjong ? `<strong class="seat-score">${totalHuxi(groups)}胡息</strong>` : ''}
     </div>
     ${event?.seat === seat && !['摸', '出'].includes(event.type) ? `<span class="callout" aria-hidden="true">${event.type}</span>` : ''}
     <div class="seat-cards">
       <div class="groups">${showHand ? groups.map(group => meld(group, seat !== 0 && ['偎', '提'].includes(group.type), showdown)).join('') : ''}</div>
-      ${showdown ? revealedHand(reveal, seat) : `<div class="seat-backs" aria-hidden="true">${'<span></span>'.repeat(backs)}</div>`}
+      ${showdown ? revealedHand(reveal, name) : `<div class="seat-backs" aria-hidden="true">${'<span></span>'.repeat(backs)}</div>`}
       ${seat !== 0 ? discardArea : ''}
     </div>
     ${seat === 0 ? `<div class="seat-cards own-discards">${discardArea}</div>` : ''}
@@ -162,15 +170,20 @@ export function previewEat(table, action) {
   }
 }
 
-function resultView({ winner, hu, names: bonuses, tun, delta, kind }, score) {
+function resultView(round, score) {
+  const { winner, hu, names: bonuses, tun, delta, kind } = round.result;
   const details = winner === null ? '' : `
     <div class="groups">${hu.groups.map(group => meld(group)).join('')}</div>
     <p>${kind ? (kind === 'self' ? '自摸' : '接炮') : `${hu.huxi} 胡息 · ${tun} 囤 · ${bonuses.map(([name, multiple]) => `${name} ×${multiple}`).join('、')}`}</p>`;
   return `<div class="settlement"><section class="panel result" aria-live="polite">
     <small>本局结算</small>
-    <h2 class="avatar-label">${winner === null ? '黄庄' : `${avatar(winner)}胡牌`}</h2>
+    <h2 class="avatar-label">${winner === null ? '黄庄' : `${avatar(winner, opponentAt(round, winner))}胡牌`}</h2>
     ${details}
-    <div class="deltas">${delta.map((value, seat) => `<div>${avatar(seat)}<strong class="${value < 0 ? 'loss' : ''}">${value > 0 ? '+' : ''}${value}</strong></div>`).join('')}</div>
+    <div class="deltas">${delta.map((value, seat) => {
+      const opponent = opponentAt(round, seat);
+      return `<div>${avatar(seat, opponent)}<span class="result-player-name">${opponent?.name ?? names[seat]}</span>
+        <strong class="${value < 0 ? 'loss' : ''}">${value > 0 ? '+' : ''}${value}</strong></div>`;
+    }).join('')}</div>
     <p>累计积分 ${score}</p>
     <div class="actions"><button class="primary" data-command="again">再来一局</button>
     ${navButton('home', 'back', '返回首页')}</div>
@@ -246,7 +259,7 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
     </div>
     ${seatView(round, 0, activeSeat, event, handHint, openingStage, actions, handLayout)}
     </div>
-    ${phase === 'finished' && !showdown ? resultView(round.result, score) : ''}`;
+    ${phase === 'finished' && !showdown ? resultView(round, score) : ''}`;
 }
 
 export function animateTurnArrow(arrow, previousSeat) {
@@ -364,7 +377,7 @@ function meldCard(area, groups, index, card) {
 
 export function showWinningResult(table, round, score, event, winningMeld) {
   if (round.rules.mode === 'mahjong') {
-    table.insertAdjacentHTML('beforeend', resultView(round.result, score));
+    table.insertAdjacentHTML('beforeend', resultView(round, score));
     return;
   }
   const { card, seat } = event;
@@ -374,7 +387,7 @@ export function showWinningResult(table, round, score, event, winningMeld) {
     : meldCard(table.querySelector(`.seat-${seat} .groups`), groups, winningMeld, card);
   const from = source.getBoundingClientRect();
   source.style.visibility = 'hidden';
-  table.insertAdjacentHTML('beforeend', resultView(round.result, score));
+  table.insertAdjacentHTML('beforeend', resultView(round, score));
   const index = winningMeld ?? winning.findIndex((group, i) => i >= groups.length && group.cards.includes(card));
   const destination = meldCard(table.querySelector('.settlement .groups'), winning, index, card);
   animateTransfer(table, card, destination, from, 'win');
