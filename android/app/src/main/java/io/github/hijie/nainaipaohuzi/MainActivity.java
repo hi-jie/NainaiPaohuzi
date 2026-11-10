@@ -22,6 +22,7 @@ public class MainActivity extends Activity {
     private static final String GAME_URL = "https://appassets.androidplatform.net/assets/www/index.html";
     private FrameLayout root;
     private WebView game;
+    private boolean resumed;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +48,11 @@ public class MainActivity extends Activity {
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
         game.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                syncMusicForeground();
+            }
+
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 return loader.shouldInterceptRequest(request.getUrl());
@@ -80,6 +86,7 @@ public class MainActivity extends Activity {
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
+        if (resumed) syncMusicForeground();
         if (!hasFocus) return;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             WindowInsetsController bars = getWindow().getInsetsController();
@@ -90,6 +97,12 @@ public class MainActivity extends Activity {
                     View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                             | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         }
+    }
+
+    private void syncMusicForeground() {
+        boolean foreground = resumed && hasWindowFocus();
+        game.evaluateJavascript("window.paohuziForeground = " + foreground
+                + "; window.dispatchEvent(new Event('paohuzi-foreground-change'));", null);
     }
 
     @Override
@@ -121,6 +134,8 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onPause() {
+        resumed = false;
+        syncMusicForeground();
         game.onPause();
         game.pauseTimers();
         super.onPause();
@@ -131,6 +146,8 @@ public class MainActivity extends Activity {
         super.onResume();
         game.onResume();
         game.resumeTimers();
+        resumed = true;
+        syncMusicForeground();
     }
 
     @Override

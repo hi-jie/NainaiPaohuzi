@@ -4,6 +4,7 @@ const folder = new URL('../../media/audio/music/', import.meta.url);
 const audio = new Audio();
 audio.volume = 0.45;
 let current;
+let enabled = false;
 
 function play() {
   audio.play().catch(error => {
@@ -20,13 +21,24 @@ function nextTrack() {
   play();
 }
 
-export function setMusicPlaying(enabled) {
-  if (!enabled) {
-    audio.onended = null;
+function syncPlayback() {
+  const focused = window.paohuziForeground ?? document.hasFocus();
+  if (!enabled || document.hidden || !focused) {
     audio.pause();
-  } else if (tracks.length && audio.paused) {
-    audio.onended = nextTrack;
+  } else if (tracks.length) {
     if (!current || audio.ended) nextTrack();
-    else play();
+    else if (audio.paused) play();
   }
+}
+
+audio.addEventListener('ended', syncPlayback);
+document.addEventListener('visibilitychange', syncPlayback);
+for (const event of ['focus', 'blur', 'pageshow', 'paohuzi-foreground-change']) {
+  window.addEventListener(event, syncPlayback);
+}
+window.addEventListener('pagehide', () => audio.pause());
+
+export function setMusicPlaying(playing) {
+  enabled = playing;
+  syncPlayback();
 }
