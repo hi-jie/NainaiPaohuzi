@@ -193,12 +193,11 @@ function placeEatMenu() {
   }
 }
 
-function showEatPreview(choice) {
-  previewEat(table, round.options[Number(choice.dataset.action)]);
-  const confirm = table.querySelector('[data-command="choose-eat"]');
-  confirm.textContent = '确认吃';
-  confirm.removeAttribute('aria-haspopup');
-  placeEatMenu();
+function updateEatSelection(choice) {
+  previewEat(table, choice ? round.options[Number(choice.dataset.action)] : undefined);
+  const button = table.querySelector('[data-command="choose-eat"]');
+  button.textContent = choice ? '确认吃' : '选择吃法';
+  if (choice) button.removeAttribute('aria-haspopup');
 }
 
 function setHandLayout(layout, selectedId) {
@@ -207,8 +206,7 @@ function setHandLayout(layout, selectedId) {
   if (selectedId !== undefined) {
     selectDiscard(table.querySelector(`[data-hand-card="${selectedId}"][data-select-card]`));
   }
-  const choice = eatMenu.querySelector('.eat-choice[aria-pressed="true"]');
-  if (eatMenu.open && choice) showEatPreview(choice);
+  if (eatMenu.open) updateEatSelection(eatMenu.querySelector('.eat-choice[aria-pressed="true"]'));
 }
 
 bindHandDrag(table, {
@@ -248,6 +246,7 @@ table.addEventListener('click', ({ target }) => {
     } else {
       eatMenu.innerHTML = renderEatChoices(round.options, round.offer.card);
       eatMenu.show();
+      updateEatSelection(null);
       placeEatMenu();
     }
     return;
@@ -285,7 +284,7 @@ eatMenu.addEventListener('click', ({ target }) => {
   if (!choice) return;
   eatMenu.querySelector('.eat-choice[aria-pressed="true"]')?.setAttribute('aria-pressed', 'false');
   choice.setAttribute('aria-pressed', 'true');
-  showEatPreview(choice);
+  updateEatSelection(choice);
 });
 document.addEventListener('click', ({ target }) => {
   if (eatMenu.open && !eatMenu.contains(target) && !target.closest('[data-command="choose-eat"]')) eatMenu.close();
