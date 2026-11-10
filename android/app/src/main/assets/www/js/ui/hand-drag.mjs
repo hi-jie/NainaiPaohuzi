@@ -50,22 +50,39 @@ function animateReflow(hand, previous, portrait, scale, held) {
   }
 }
 
+function horizontalTargets(columns, halfGap) {
+  const first = columns[0];
+  return [
+    { x: first.left - halfGap, column: first.column, newColumn: true, marker: first.element, side: 'left' },
+    ...columns.flatMap((stack, index) => {
+      const next = columns[index + 1];
+      return [
+        { x: (stack.left + stack.right) / 2, stack },
+        {
+          x: next ? (stack.right + next.left) / 2 : stack.right + halfGap,
+          column: stack.column + 1, newColumn: true, marker: stack.element, side: 'right'
+        }
+      ];
+    })
+  ];
+}
+
 function findDrop(drag, x, y) {
-  const { columns, source, area, edge } = drag;
+  const { targets, source, area, edge } = drag;
   if (y < area.top - edge || y > area.bottom + edge ||
       x < area.left || x > area.right) return null;
   x -= panAt(drag, x);
 
-  const stack = columns.find(({ right }) => x <= right + edge);
-  if (!stack || x < stack.left + edge || x > stack.right - edge) {
-    const after = !stack || x > stack.right - edge;
-    const neighbour = stack ?? columns.at(-1);
-    return {
-      column: neighbour.column + Number(after), newColumn: true,
-      marker: neighbour.element, side: after ? 'right' : 'left'
-    };
-  }
+  const first = targets[0].x;
+  const last = targets.at(-1).x;
+  if (x < first - (targets[1].x - first) / 2 ||
+      x > last + (last - targets.at(-2).x) / 2) return null;
 
+  // Split the distance between each column center and the neighbouring gap center.
+  const target = targets.find(({ x: center }, index) =>
+    index === targets.length - 1 || x < (center + targets[index + 1].x) / 2);
+  const { stack } = target;
+  if (!stack) return target;
   if (stack.cards.length >= 4) return null;
   const index = stack.slotBoundaries.findIndex(boundary => y < boundary);
   const slot = index === -1 ? stack.cards.length : index;
@@ -181,6 +198,7 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
         : bounds(origin, portrait).left + gripX;
       Object.assign(drag, {
         hand, felt, held, slot, stacks, origin, columns, portrait, scale, panBounds, start, originX, originY,
+        targets: horizontalTargets(columns, halfGap),
         anchor: start.x - pivot,
         maxPan: panBounds.left - columns[0].left,
         minPan: panBounds.right - columns.at(-1).right,
