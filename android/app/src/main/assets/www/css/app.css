@@ -158,13 +158,13 @@ main:has(#table:not([hidden])) {
 .avatar-0 { background: radial-gradient(circle at 40% 25%, #ad8550, #64472b); }
 .avatar-label { display: flex; align-items: center; justify-content: center; gap: 6px; }
 .seat.active .avatar {
-  border-color: #fff4bb;
+  border-color: #fff6c7;
   background: radial-gradient(circle at 40% 25%, #fff8cb, #e6a13f);
-  box-shadow: 0 0 0 3px #f9c65c, 0 0 17px 4px #ffcb6580;
+  box-shadow: 0 0 0 4px #ffd678, 0 0 22px 5px #ffcb65b8;
   animation: active-avatar-pulse 1.6s ease-in-out infinite;
 }
 @keyframes active-avatar-pulse {
-  50% { border-color: #f4c46c; box-shadow: 0 0 0 2px #eab858, 0 0 7px 1px #ffcb6540; }
+  50% { border-color: #a97030; box-shadow: 0 0 0 1px #7c4d23, 0 0 5px 0 #ffcb651a; }
 }
 .seat.active .seat-score { color: #ffe291; }
 .seat-score {
