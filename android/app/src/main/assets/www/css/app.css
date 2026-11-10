@@ -39,7 +39,7 @@ main {
 h1, h2, h3, p { margin: 0; }
 button { font: inherit; color: #fff1cf; cursor: pointer; touch-action: manipulation; }
 button:focus-visible { outline: 3px solid #fff0b0; outline-offset: 3px; }
-button.primary, .front-screen button, .hand-actions button, .result button, .game-dialog button, #eat-menu button, .table-hud button {
+button.primary, .front-screen button, .hand-actions button, .result button, .game-dialog button, .table-hud button {
   min-height: 46px; padding: 6px 14px; border-radius: 12px; font-weight: 750;
   border: 1px solid #e5b66d; background: linear-gradient(#8f4d30, #562b21);
   box-shadow: 0 3px #342017, inset 0 1px #ffe0a44f;
@@ -465,13 +465,13 @@ main:has(#table:not([hidden])) {
 #eat-menu.two-columns .eat-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 #eat-menu.scroll-choices .eat-choices { overflow-y: auto; }
 #eat-menu .eat-choice {
+  appearance: none; min-height: 46px;
   display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 7px;
-  padding: 4px; border: 2px solid transparent; border-radius: var(--eat-choice-radius);
+  padding: 4px; border: 2px solid #624838; border-radius: var(--eat-choice-radius);
+  background: #392b24;
 }
 #eat-menu .eat-choice:focus-visible { outline: 1px dashed #c5ad91; outline-offset: -5px; }
-#eat-menu .eat-choice[aria-pressed="true"] {
-  border-color: #ffe1a0; box-shadow: 0 3px #342017, inset 0 0 10px #ffc75a65;
-}
+#eat-menu .eat-choice[aria-pressed="true"] { border-color: #ffe1a0; }
 .eat-group { display: flex; flex: none; gap: 1px; }
 .eat-source { display: flex; }
 .eat-source .card {
