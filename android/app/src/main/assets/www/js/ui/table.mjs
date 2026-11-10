@@ -64,6 +64,10 @@ function tableDiscards(round, seat) {
     ? discards.slice(0, -1) : discards;
 }
 
+function totalHuxi(groups) {
+  return groups.reduce((sum, group) => sum + huxi(group), 0);
+}
+
 function seatView(round, seat, event, response, openingStage, actions = '', handLayout) {
   const { hand, groups } = round.players[seat];
   const discards = tableDiscards(round, seat);
@@ -74,7 +78,7 @@ function seatView(round, seat, event, response, openingStage, actions = '', hand
   const backs = showHand ? hand.length : spread && seat !== 0 ? round.rules.dealt : 0;
   const active = !openingStage && round.seat === seat && round.phase !== 'finished';
   const yourDiscard = seat === 0 && active && round.phase === 'discard';
-  const total = groups.reduce((sum, group) => sum + huxi(group), 0);
+  const total = totalHuxi(groups);
   const layout = seat === 0 && showHand && !showdown ? handLayout ?? createHandLayout(hand, round.rules.patterns) : null;
   return `<section class="seat seat-${seat}${active ? ' active' : ''}${yourDiscard ? ' choosing-card' : ''}"${active ? ' aria-current="true"' : ''}>
     <div class="seat-heading">
@@ -258,12 +262,24 @@ export function showWinningTable(table, round, score, event, winningMeld) {
   const backs = round.players.map((_, seat) => Array.from(table.querySelectorAll(`.seat-${seat} .seat-backs span`),
     card => card.getBoundingClientRect()));
   table.innerHTML = renderTable(round, score - round.result.delta[0], event, '', null, winningMeld);
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  backs.forEach((positions, seat) => {
-    table.querySelectorAll(`.seat-${seat} .reveal-slot`).forEach((slot, index) => {
-      slideFrom(table, slot, positions[index], 420, .62);
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    backs.forEach((positions, seat) => {
+      table.querySelectorAll(`.seat-${seat} .reveal-slot`).forEach((slot, index) => {
+        slideFrom(table, slot, positions[index], 420, .62);
+      });
     });
+  }
+  const patterns = round.rules.patterns;
+  const totals = round.players.map(({ hand, groups }, seat) => {
+    if (seat === event.seat) return round.result.hu.huxi;
+    const handGroups = createHandLayout(hand, patterns).map(column => handColumnGroup(column, patterns)).filter(Boolean);
+    return totalHuxi(groups) + totalHuxi(handGroups);
   });
+  const scores = totals.map((_, seat) => table.querySelector(`.seat-${seat} .seat-score`));
+  const updateScores = () => scores.forEach((label, seat) => { label.textContent = `${totals[seat]}胡息`; });
+  const animations = [...table.querySelectorAll('.seat-cards')].flatMap(cards => cards.getAnimations({ subtree: true }));
+  if (animations.length) Promise.allSettled(animations.map(animation => animation.finished)).then(updateScores);
+  else updateScores();
 }
 
 export function showOpeningFrame(table, round, score, stage) {

@@ -132,7 +132,7 @@ main:has(#table:not([hidden])) {
   --avatar-size: 40.8px;
   --seat-card-offset: calc(var(--avatar-size) + 7px);
   --seat-cards-width: 250px;
-  --seat-card-width: 21.6px; --seat-back-step: 6px; --meld-gap: 6px; --discard-gap: 1px;
+  --seat-card-width: 21.6px; --seat-back-step: 6px; --meld-gap: 4px; --discard-gap: 1px;
   --seat-backs-height: 21.6px; --seat-row-gap: 4.8px; --meld-row-height: 100.8px;
 }
 .seat-1 { left: 23px; }
