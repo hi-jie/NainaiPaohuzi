@@ -289,14 +289,8 @@ main:has(#table:not([hidden])) {
 }
 .hand-stack:has(> :is(.card[hidden], .card.hand-drop-slot)) .group-score { visibility: hidden; }
 .hand .new-column-slot {
-  position: absolute; bottom: 0; z-index: 1;
-  width: var(--edge-frame-width); height: var(--strip-height); border-radius: 4px;
-}
-.hand [data-drop="left"] > .new-column-slot { left: calc(-1 * (var(--edge-frame-width) + var(--edge-frame-gap))); }
-.hand [data-drop="right"] > .new-column-slot { right: calc(-1 * (var(--edge-frame-width) + var(--edge-frame-gap))); }
-.felt.dragging-hand {
-  --drag-hand-gap: 48px;
-  --edge-frame-width: 40px; --edge-frame-gap: 6px;
+  flex: 0 1 auto; align-self: end;
+  width: var(--strip-width); height: var(--strip-height); border-radius: 4px;
 }
 .felt.dragging-hand::before {
   content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
@@ -305,13 +299,6 @@ main:has(#table:not([hidden])) {
 .felt.dragging-hand .seat-0 { z-index: 2; }
 .felt.dragging-hand .seat-0 > :not(.hand) { filter: brightness(.45); }
 .felt.dragging-hand .choosing-card .hand .card:not(button) { filter: none; }
-.felt.dragging-hand .hand-stack { flex: 0 0 var(--drag-column-width); width: var(--drag-column-width); }
-.felt.dragging-hand .hand-stack[data-drop="right"]:has(~ .hand-stack:not([hidden])) > .new-column-slot {
-  --gap-frame-width: min(var(--drag-column-width), 40px);
-  width: var(--gap-frame-width);
-  right: calc((var(--drag-hand-gap) + var(--gap-frame-width)) / -2);
-}
-
 .center { position: absolute; top: 50%; left: 50%; width: 300px; transform: translateX(-50%); text-align: center; }
 .play-area { position: absolute; top: -135px; left: 0; right: 0; }
 .deck, .last-play {
@@ -394,9 +381,6 @@ main:has(#table:not([hidden])) {
   --strip-font: min(33.6px, calc((var(--hand-width) - var(--hand-gaps) * var(--hand-gap)) / max(1, var(--hand-columns)) - 3px));
   left: 50%; right: auto; width: max-content; max-width: var(--hand-width); gap: var(--hand-gap);
   transform: translateX(max(-50%, calc(var(--hand-start) + var(--seat-inset) - var(--table-width) / 2)));
-}
-.wide .felt.dragging-hand .hand {
-  left: 0; max-width: none; gap: var(--drag-hand-gap); overflow: visible; transform: translateX(var(--hand-pan, 0px));
 }
 .wide .hand-stack { flex: 0 1 auto; width: var(--strip-width); max-width: none; align-self: end; }
 .wide .hand-stack.loose { margin-left: 0; }

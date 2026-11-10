@@ -6,11 +6,6 @@ function bounds(element, portrait) {
 const visibleCard = '[data-hand-card]:not([hidden])';
 const reflowItems = `${visibleCard}, .group-score, .hand-drop-slot`;
 
-function panAt(drag, x) {
-  const { panLimits, panRate, start, anchor } = drag;
-  return anchor + (start.x - Math.min(panLimits.right, Math.max(panLimits.left, x))) * panRate;
-}
-
 function reflowKey(item) {
   if (item.classList.contains('hand-drop-slot')) return 'drop-slot';
   return item.dataset.handCard ?? `score:${Array.from(item.parentElement.querySelectorAll('[data-hand-card]'),
@@ -46,41 +41,17 @@ function animateReflow(hand, previous, portrait, scale, held) {
   }
 }
 
-function horizontalTargets(columns, edgeCenter) {
-  const first = columns[0];
-  return [
-    { x: first.left - edgeCenter, column: first.column, newColumn: true, marker: first.element, side: 'left' },
-    ...columns.flatMap((stack, index) => {
-      const next = columns[index + 1];
-      return [
-        { x: (stack.left + stack.right) / 2, stack },
-        {
-          x: next ? (stack.right + next.left) / 2 : stack.right + edgeCenter,
-          column: stack.column + 1, newColumn: true, marker: stack.element, side: 'right'
-        }
-      ];
-    })
-  ];
-}
-
-function targetAt(drag, x) {
-  const { targets } = drag;
-  x -= panAt(drag, x);
-
-  // Give an existing column 55% of the distance to either neighbouring gap center.
-  return targets.find(({ x: center, stack }, index) => {
-    if (index === targets.length - 1) return true;
-    const share = stack ? .55 : .45;
-    return x < center + (targets[index + 1].x - center) * share;
-  });
-}
-
 function findDrop(drag, x, y) {
-  const { source, area, edge } = drag;
-  if (y < area.top - edge || y > area.bottom + edge) return null;
-  const target = targetAt(drag, x);
-  const { stack } = target;
-  if (!stack) return target;
+  const { source, columns, area } = drag;
+  if (y < area.cancel || y > area.bottom) return null;
+  const midpoint = column => (column.left + column.right) / 2;
+  if (y < area.top) {
+    const next = columns.find(column => x < midpoint(column));
+    return { column: next?.column ?? columns.length, newColumn: true, before: next?.element ?? drag.held };
+  }
+  if (x < columns[0].left || x > columns.at(-1).right) return null;
+  const stack = columns.find((column, index) => index === columns.length - 1 ||
+    x < (column.right + columns[index + 1].left) / 2);
   if (stack.cards.length >= 4) return null;
   const index = stack.slotBoundaries.findIndex(boundary => y < boundary);
   const slot = index === -1 ? stack.cards.length : index;
@@ -93,7 +64,7 @@ function findDrop(drag, x, y) {
 
 function showDrop(drag, drop, previous) {
   const old = drag.drop;
-  if (old?.column === drop?.column && old?.index === drop?.index && old?.marker === drop?.marker) {
+  if (old?.column === drop?.column && old?.index === drop?.index && old?.newColumn === drop?.newColumn) {
     if (previous) animateReflow(drag.hand, previous, drag.portrait, drag.scale, drag.held);
     return;
   }
@@ -102,15 +73,12 @@ function showDrop(drag, drop, previous) {
     previous = handPositions(drag.hand, drag.portrait);
     cancelReflow(drag.hand);
   }
-  delete old?.marker?.dataset.drop;
   drag.slot.remove();
   drag.drop = drop;
   drag.slot.classList.toggle('card', !drop?.newColumn);
   drag.slot.classList.toggle('new-column-slot', !!drop?.newColumn);
-  if (drop?.newColumn) {
-    drop.marker.dataset.drop = drop.side;
-    drop.marker.append(drag.slot);
-  }
+  drag.origin.hidden = !!drop?.newColumn && drag.emptySource;
+  if (drop?.newColumn) drag.hand.insertBefore(drag.slot, drop.before);
   else if (drop) drop.stack.insertBefore(drag.slot, drop.before);
   if (previous) animateReflow(drag.hand, previous, drag.portrait, drag.scale, drag.held);
 }
@@ -152,13 +120,8 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       const from = previous.get(drag.card.dataset.handCard);
       const stacks = [...hand.children];
       const origin = drag.card.parentElement;
-      const originBounds = bounds(origin, portrait);
-      const sourceAxis = (originBounds.left + originBounds.right) / 2;
       const source = { column: stacks.indexOf(origin), index: [...origin.querySelectorAll(visibleCard)].indexOf(drag.card) };
-      for (const stack of stacks) {
-        const { left, right } = bounds(stack, portrait);
-        stack.style.setProperty('--drag-column-width', `${(right - left) / scale}px`);
-      }
+      const handTop = Math.min(...Array.from(hand.querySelectorAll(visibleCard), card => bounds(card, portrait).top));
 
       const held = drag.card.cloneNode(true);
       held.classList.add('dragged-card');
@@ -172,13 +135,12 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       table.setPointerCapture(event.pointerId);
       felt.classList.add('dragging-hand');
       drag.card.hidden = true;
-      origin.hidden = stacks.length > 1 && !origin.querySelector(visibleCard);
+      const emptySource = !origin.querySelector(visibleCard);
       const style = getComputedStyle(hand);
       const height = parseFloat(style.getPropertyValue('--strip-height')) * scale;
       const peek = parseFloat(style.getPropertyValue('--strip-peek')) * scale;
       const fourPeek = parseFloat(style.getPropertyValue('--four-card-peek')) * scale;
       const columns = stacks.map((element, column) => {
-        if (element.hidden) return null;
         const rect = bounds(element, portrait);
         const cards = [...element.querySelectorAll(visibleCard)];
         const step = cards.length >= 3 ? fourPeek : peek;
@@ -187,74 +149,29 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
         centers.push(rect.bottom - height / 2);
         const slotBoundaries = centers.slice(0, -1).map((center, i) => (center + centers[i + 1]) / 2);
         return { ...rect, element, column, cards, top, slotBoundaries };
-      }).filter(Boolean);
-      const track = bounds(hand, portrait);
-      const gripX = start.x - from.left;
-      const originX = track.left + gripX;
-      const originY = track.top + start.y - from.top;
-      const frameWidth = parseFloat(style.getPropertyValue('--edge-frame-width')) * scale;
-      const frameGap = parseFloat(style.getPropertyValue('--edge-frame-gap')) * scale;
-      const targets = horizontalTargets(columns, frameWidth / 2 + frameGap);
-      const expandedAxis = targets.find(target => origin.hidden
-        ? target.newColumn && target.column >= source.column
-        : target.stack?.column === source.column).x;
-      const area = { ...bounds(felt, portrait), top: Math.min(...columns.map(stack => stack.top)) };
-      const rightMargin = area.right - bounds(hand.parentElement, portrait).right;
-      const frameClearance = rightMargin + frameWidth / 2;
-      const leftLimit = area.left + frameClearance;
-      const rightLimit = area.right - frameClearance;
-      const leftTravel = start.x - leftLimit;
-      const rightTravel = rightLimit - start.x;
-      const first = targets[0].x;
-      const last = targets.at(-1).x;
-      let anchor = sourceAxis - expandedAxis;
-      // A grab past a frame limit has no outward travel to bring that frame into view.
-      if (leftTravel <= 0) anchor = Math.max(anchor, leftLimit - first);
-      if (rightTravel <= 0) anchor = Math.min(anchor, rightLimit - last);
-      const leftDistance = Math.max(0, start.x - (first + anchor));
-      const rightDistance = Math.max(0, last + anchor - start.x);
-      // Pointer travel and the opposite hand motion together close the distance to a drop frame.
-      const panRate = Math.max(0,
-        leftTravel > 0 ? leftDistance / leftTravel - 1 : 0,
-        rightTravel > 0 ? rightDistance / rightTravel - 1 : 0);
-      const panLimits = {
-        left: start.x - leftDistance / (1 + panRate),
-        right: start.x + rightDistance / (1 + panRate)
-      };
-      Object.assign(drag, {
-        hand, felt, held, slot, stacks, origin, columns, portrait, scale, start, originX, originY,
-        targets, anchor, panRate, panLimits, pan: anchor, source, area,
-        edge: Math.min(12 * scale, (from.right - from.left) / 3)
       });
-      drag.region = targetAt(drag, start.x);
+      const feltBounds = bounds(felt, portrait);
+      const area = { top: handTop, cancel: (feltBounds.top + handTop) / 2, bottom: feltBounds.bottom };
+      Object.assign(drag, {
+        hand, felt, held, slot, origin, emptySource, columns, portrait, scale, source, area,
+        gripX: start.x - from.left, gripY: start.y - from.top
+      });
       hand.append(held);
       suppressClick = true;
     }
 
-    const { portrait, scale, held, hand, originX, originY } = drag;
+    const { portrait, scale, held, hand, gripX, gripY } = drag;
     const x = portrait ? event.clientY : event.clientX;
     const y = portrait ? -event.clientX : event.clientY;
-    const region = targetAt(drag, x);
-    if (region !== drag.region) {
-      const center = drag.start.x + (region.x + drag.anchor - drag.start.x) / (1 + drag.panRate);
-      const nextPan = panAt(drag, center);
-      if (nextPan !== drag.pan) {
-        previous ??= handPositions(hand, portrait);
-        cancelReflow(hand);
-        drag.pan = nextPan;
-      }
-      drag.region = region;
-    }
-    const { pan } = drag;
-    hand.style.setProperty('--hand-pan', `${pan / scale}px`);
-    held.style.setProperty('--drag-x', `${(x - pan - originX) / scale}px`);
-    held.style.setProperty('--drag-y', `${(y - originY) / scale}px`);
     showDrop(drag, findDrop(drag, x, y), previous);
+    const track = bounds(hand, portrait);
+    held.style.setProperty('--drag-x', `${(x - track.left - gripX) / scale}px`);
+    held.style.setProperty('--drag-y', `${(y - track.top - gripY) / scale}px`);
   });
 
   function end(event) {
     if (drag?.pointer !== event.pointerId) return;
-    const { card, columns, source, drop, portrait, scale, hand, felt, held, slot, stacks, origin } = drag;
+    const { card, columns, source, portrait, scale, hand, felt, held, slot, origin } = drag;
     const destination = columns && event.type === 'pointerup'
       ? findDrop(drag, portrait ? event.clientY : event.clientX, portrait ? -event.clientX : event.clientY)
       : null;
@@ -267,9 +184,6 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       card.hidden = false;
       origin.hidden = false;
       felt.classList.remove('dragging-hand');
-      hand.style.removeProperty('--hand-pan');
-      for (const stack of stacks) stack.style.removeProperty('--drag-column-width');
-      delete drop?.marker?.dataset.drop;
       if (destination) onDrop(source, destination);
       animateReflow(table.querySelector('.hand'), previous, portrait, scale);
     }
