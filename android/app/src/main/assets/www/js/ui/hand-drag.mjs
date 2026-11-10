@@ -152,8 +152,15 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       });
       const feltBounds = bounds(felt, portrait);
       const area = { top: handTop - 24 * scale, cancel: (feltBounds.top + handTop) / 2, bottom: feltBounds.bottom };
+      const guides = document.createElement('div');
+      guides.className = 'hand-drag-guides';
+      guides.setAttribute('aria-hidden', 'true');
+      guides.style.setProperty('--cancel-height', `${(area.cancel - feltBounds.top) / scale}px`);
+      guides.style.setProperty('--new-column-height', `${(area.top - area.cancel) / scale}px`);
+      guides.innerHTML = '<span>取消</span><span>新增列</span>';
+      felt.append(guides);
       Object.assign(drag, {
-        hand, felt, held, slot, origin, emptySource, columns, portrait, scale, source, area,
+        hand, felt, held, slot, guides, origin, emptySource, columns, portrait, scale, source, area,
         gripX: start.x - from.left, gripY: start.y - from.top
       });
       hand.append(held);
@@ -171,7 +178,7 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
 
   function end(event) {
     if (drag?.pointer !== event.pointerId) return;
-    const { card, columns, source, portrait, scale, hand, felt, held, slot, origin } = drag;
+    const { card, columns, source, portrait, scale, hand, felt, held, slot, guides, origin } = drag;
     const destination = columns && event.type === 'pointerup'
       ? findDrop(drag, portrait ? event.clientY : event.clientX, portrait ? -event.clientX : event.clientY)
       : null;
@@ -181,6 +188,7 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       cancelReflow(hand);
       slot.remove();
       held.remove();
+      guides.remove();
       card.hidden = false;
       origin.hidden = false;
       felt.classList.remove('dragging-hand');

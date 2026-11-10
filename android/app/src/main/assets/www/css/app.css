@@ -296,6 +296,15 @@ main:has(#table:not([hidden])) {
   content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background: #0009; animation: appear .15s ease-out;
 }
+.hand-drag-guides {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  display: grid; grid-template-rows: var(--cancel-height) var(--new-column-height);
+  color: #ffe8ad; font-size: 22px; font-weight: 750;
+}
+.hand-drag-guides span {
+  display: grid; place-items: center; border-bottom: 1px solid #ffe1a080;
+  text-shadow: 0 1px 4px #000;
+}
 .felt.dragging-hand .seat-0 { z-index: 2; }
 .felt.dragging-hand .seat-0 > :not(.hand) { filter: brightness(.45); }
 .felt.dragging-hand .choosing-card .hand .card:not(button) { filter: none; }
