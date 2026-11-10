@@ -181,7 +181,15 @@ function placeEatMenu() {
   const bottom = portrait ? frame.right - button.left : button.bottom - frame.top;
   eatMenu.style.setProperty('--eat-right', `${left - 10 * scale}px`);
   eatMenu.style.setProperty('--eat-bottom', `${bottom}px`);
-  eatMenu.style.setProperty('--eat-scale', scale);
+  const choices = eatMenu.querySelector('.eat-choices');
+  const scrollTop = choices.scrollTop;
+  eatMenu.classList.remove('two-columns', 'scroll-choices');
+  if (choices.scrollHeight <= choices.clientHeight) return;
+  eatMenu.classList.add('two-columns');
+  if (choices.scrollHeight > choices.clientHeight) {
+    eatMenu.classList.add('scroll-choices');
+    choices.scrollTop = scrollTop;
+  }
 }
 
 function showEatPreview(choice) {
@@ -238,8 +246,8 @@ table.addEventListener('click', ({ target }) => {
       if (choice) step(round.options[Number(choice.dataset.action)]);
     } else {
       eatMenu.innerHTML = renderEatChoices(round.options, round.offer.card);
-      placeEatMenu();
       eatMenu.show();
+      placeEatMenu();
     }
     return;
   }
