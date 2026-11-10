@@ -1,5 +1,5 @@
 import { countCard, patterns, sortCards, takeCards } from '../rules/cards.mjs';
-import { canHuFrom, nextSeat, responses } from '../rules/actions.mjs?v=65';
+import { canHuFrom, nextSeat, responses } from '../rules/actions.mjs?v=66';
 import { findHu } from '../rules/hu.mjs?v=65';
 import { presets } from '../rules/presets.mjs';
 import { settle } from '../rules/scoring.mjs?v=65';
@@ -41,16 +41,19 @@ export class Round {
   }
 
   waitForOpeningTi(fromSeat) {
-    for (let seat = fromSeat; seat < this.players.length; seat++) {
+    let seat = fromSeat;
+    do {
       const { hand } = this.players[seat];
       const options = openingQuads(hand)
         .map(card => ({ type: '提', card, cards: [card, card, card, card], forced: true }));
-      if (!options.length) continue;
-      this.phase = 'opening-ti';
-      this.seat = seat;
-      this.options = options;
-      return;
-    }
+      if (options.length) {
+        this.phase = 'opening-ti';
+        this.seat = seat;
+        this.options = options;
+        return;
+      }
+      seat = nextSeat(seat);
+    } while (seat !== 0);
     this.reveal(this.dealer, this.opening, 'opening');
   }
 

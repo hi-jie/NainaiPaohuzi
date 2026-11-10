@@ -35,31 +35,35 @@ test('切牌保留整副牌，亮张前后沿用同一手牌', () => {
   }
 });
 
-test('开局提牌逐组确认，补牌凑成的四张也要确认', () => {
+test('开局按逆时针发牌和提牌，补牌凑成的四张也继续提', () => {
   const hands = [
     [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 5],
     [6, 6, 6, 6, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13],
-    [3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+    [3, 4, 5, 8, 9, 10, 11, 12, 13, 14, 15, 15, 15, 15]
   ];
-  const first = hands[0].flatMap((_, index) => hands.map(hand => hand[index])).concat(18, 2, 19);
+  const first = hands[0].flatMap((_, index) => [0, 2, 1].map(seat => hands[seat][index])).concat(18, 2, 19);
   const rest = takeCards(types.flatMap(card => [card, card, card, card]), first);
   const round = new Round(defaultSettings, 0, Math.random, first.concat(rest).reverse(), { deferOpening: true });
-  assert.deepEqual(round.players[0].hand, hands[0]);
+  assert.deepEqual(round.players.map(({ hand }) => hand), hands.map(hand => [...hand].sort((a, b) => a - b)));
   assert.deepEqual(round.players[0].groups, []);
   assert.doesNotMatch(renderTable(round, 0, null, 'reveal'), /class="landing">\s*<[is]/);
   round.revealOpening();
   assert.equal(round.phase, 'opening-ti');
   assert.equal(round.seat, 0);
+  assert.doesNotMatch(renderTable(round, 0), /class="actions hand-actions"/);
   assert.deepEqual(round.options.map(({ type, card, forced }) => [type, card, forced]), [['提', 0, true], ['提', 1, true]]);
   const initialDeckSize = round.deck.length;
-  round.act(round.options[1]);
-  assert.deepEqual(round.players[0].groups.map(group => group.cards[0]), [1]);
+  round.act(round.options[0]);
+  assert.deepEqual(round.players[0].groups.map(group => group.cards[0]), [0]);
   assert.equal(round.deck.length, initialDeckSize);
   round.act(round.options[0]);
   assert.equal(round.deck.length, initialDeckSize - 1);
   assert.deepEqual(round.options.map(action => action.card), [2]);
   round.act(round.options[0]);
   assert.equal(round.deck.length, initialDeckSize - 2);
+  assert.equal(round.seat, 2);
+  round.act(round.options[0]);
+  assert.deepEqual(round.players[2].groups, [{ type: '提', cards: [15, 15, 15, 15] }]);
   assert.equal(round.seat, 1);
   assert.deepEqual(round.players[1].groups, []);
   round.act(round.options[0]);
@@ -90,16 +94,16 @@ test('关闭放炮胡后只可胡墩上摸出的牌，不限摸牌人', () => {
 
 test('吃和比的牌组互换顺序时只保留一种吃法', () => {
   const round = new Round(defaultSettings, 0);
-  round.players = [player([0, 1, 2, 3, 4, 9]), player([]), { ...player([]), discards: [2] }];
-  round.reveal(2, 2, 'discard');
+  round.players = [player([0, 1, 2, 3, 4, 9]), { ...player([]), discards: [2] }, player([])];
+  round.reveal(1, 2, 'discard');
   assert.deepEqual(round.options.map(action => action.type), ['吃', '过']);
   round.act(round.options[0]);
   assert.deepEqual(round.players[0].hand, [9]);
   assert.deepEqual(round.players[0].groups.map(group => group.cards), [[0, 1, 2], [2, 3, 4]]);
-  assert.deepEqual(round.players[2].discards, []);
+  assert.deepEqual(round.players[1].discards, []);
 
   const hand = [0, 1, 1, 2, 3, 3, 4];
-  const eats = responses(player(hand), 0, { card: 2, source: 2, kind: 'discard' }, rules)
+  const eats = responses(player(hand), 0, { card: 2, source: 1, kind: 'discard' }, rules)
     .filter(action => action.type === '吃');
   assert.deepEqual(eats.map(action => action.groups), [
     [[0, 1, 2], [1, 2, 3]], [[0, 1, 2], [2, 3, 4]],
@@ -110,30 +114,30 @@ test('吃和比的牌组互换顺序时只保留一种吃法', () => {
 test('吃碰响应未确认时箭头留在出牌者，确认后才指向接牌者', () => {
   for (const accepted of ['碰', '吃', '过']) {
     const round = new Round(defaultSettings, 0);
-    round.players = [player([2, 2, 9]), { ...player([]), discards: [2] }, player([0, 1, 8])];
+    round.players = [player([2, 2, 9]), player([0, 1, 8]), { ...player([]), discards: [2] }];
     const arrow = () => Number(renderTable(round, 0).match(/class="turn-arrow to-(\d)"/)[1]);
-    round.reveal(1, 2, 'discard');
+    round.reveal(2, 2, 'discard');
     assert.equal(round.seat, 0);
-    assert.equal(arrow(), 1);
+    assert.equal(arrow(), 2);
 
     if (accepted !== '碰') {
       round.act(round.options.find(action => action.type === '过'));
-      assert.equal(round.seat, 2);
-      assert.equal(arrow(), 1);
+      assert.equal(round.seat, 1);
+      assert.equal(arrow(), 2);
     }
 
     round.act(round.options.find(action => action.type === accepted));
     assert.equal(round.phase, accepted === '过' ? 'draw' : 'discard');
-    assert.equal(arrow(), accepted === '碰' ? 0 : 2);
+    assert.equal(arrow(), accepted === '碰' ? 0 : 1);
   }
 });
 
 test('胡牌优先于座次靠前的跑、碰和吃', () => {
   for (const [type, hand] of [['跑', [17, 17, 17]], ['碰', [17, 17]], ['吃', [15, 16]]]) {
     const round = new Round(defaultSettings, 0);
-    round.players = [player(waitingHand), player([]), player(hand)];
-    const offer = { source: 1, card: 17, kind: 'draw' };
-    assert.ok(responses(round.players[2], 2, offer, round.rules).some(action => action.type === type));
+    round.players = [player(waitingHand), player(hand), player([])];
+    const offer = { source: 2, card: 17, kind: 'draw' };
+    assert.ok(responses(round.players[1], 1, offer, round.rules).some(action => action.type === type));
     round.reveal(offer.source, offer.card, offer.kind);
     assert.equal(round.seat, 0);
     assert.equal(round.options[0].type, '胡');

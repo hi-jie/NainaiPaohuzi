@@ -2,10 +2,10 @@ import { chooseAction } from './ai/player.mjs';
 import { setMusicPlaying } from './audio/music.mjs?v=5-d4b6275df60f';
 import { playAction } from './audio/player.mjs';
 import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
-import { Round } from './game/state-machine.mjs?v=65';
+import { Round } from './game/state-machine.mjs?v=66';
 import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs';
-import { animateAction, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=63';
+import { animateAction, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=66';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
@@ -86,12 +86,11 @@ function fitTable() {
 new ResizeObserver(fitTable).observe(table);
 
 function scheduleTurn() {
-  if (round.phase !== 'finished' && round.seat !== 0) {
-    const action = round.options[0];
-    const thinking = round.phase === 'discard' ? 1450 : round.phase === 'draw' ? 950 : 1150;
-    const delay = action.forced ? 650 : thinking + Math.random() * 650;
-    timer = setTimeout(() => step(chooseAction(round)), delay);
-  }
+  const action = round.options[0];
+  if (!action || (round.seat === 0 && !action.forced)) return;
+  const thinking = round.phase === 'discard' ? 1450 : round.phase === 'draw' ? 950 : 1150;
+  const delay = action.forced ? 650 : thinking + Math.random() * 650;
+  timer = setTimeout(() => step(action.forced ? action : chooseAction(round)), delay);
 }
 
 function beginPlay() {

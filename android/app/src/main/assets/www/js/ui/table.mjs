@@ -1,4 +1,5 @@
 import { cardName, huxi, isRed } from '../rules/cards.mjs';
+import { nextSeat } from '../rules/actions.mjs?v=66';
 import { arrangeHand } from './hand.mjs?v=58';
 
 const names = ['我', '电脑一', '电脑二'];
@@ -82,11 +83,11 @@ function eatGroupNames(action) {
 
 function actionButtons(options) {
   const firstEat = options.findIndex(action => action.type === '吃');
-  return options.map(({ type, card }, index) => {
+  return options.map(({ type }, index) => {
     if (type === '吃') {
       return index === firstEat ? '<button data-command="choose-eat" aria-haspopup="dialog">吃</button>' : '';
     }
-    const label = type === '提' && card !== undefined ? `提 ${cardName(card)}` : shortActionLabel(type);
+    const label = shortActionLabel(type);
     return `<button class="${type === '过' ? 'pass' : 'primary guided'}" data-action="${index}">${label}</button>`;
   }).reverse().join('');
 }
@@ -173,7 +174,7 @@ function openingPile(stage) {
 export function renderTable(round, score, event, openingStage = '') {
   const { phase, seat, options, events } = round;
   const response = seat === 0 && phase === 'response' ? options[0] : null;
-  const handHint = seat === 0 && phase === 'opening-ti' ? { cards: options.flatMap(action => action.cards) } : response;
+  const handHint = seat === 0 && phase === 'opening-ti' ? options[0] : response;
   const arrowSeat = phase === 'response' ? round.offer.source : seat;
   const last = events.findLast(({ type }) => type === '出' || type === '摸');
   const source = last?.seat ?? round.dealer;
@@ -185,7 +186,7 @@ export function renderTable(round, score, event, openingStage = '') {
   let actions = '';
   if (openingStage) actions = '<button data-command="skip-opening">跳过动画</button>';
   else if (myTurn && phase === 'discard') actions = '<button class="primary" data-command="discard" disabled>出牌</button>';
-  else if (myTurn) actions = actionButtons(options);
+  else if (myTurn && !options[0].forced) actions = actionButtons(options);
   const lastLabel = last ? shortActionLabel(last.type) : '庄家亮张';
   return `<div class="felt${openingStage ? ' opening' : ''}"${openingStage ? ` data-stage="${openingStage}"` : ''}>
     <div class="table-hud">
@@ -250,8 +251,8 @@ export function showOpeningFrame(table, round, score, stage) {
       table.querySelectorAll('.seat-2 .seat-backs span')
     ];
     const positions = destinations.map(cards => Array.from(cards, card => card.getBoundingClientRect()));
-    for (let i = 0; i < round.rules.dealt * 3; i++) {
-      const seat = (round.dealer + i) % 3;
+    let seat = round.dealer;
+    for (let i = 0; i < round.rules.dealt * 3; i++, seat = nextSeat(seat)) {
       const index = Math.floor(i / 3);
       const card = destinations[seat][index];
       const [x, y] = tableOffset(table, deck, positions[seat][index]);

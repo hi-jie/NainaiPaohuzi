@@ -1,7 +1,8 @@
 import { countCard, hasCards, takeCards } from './cards.mjs';
 import { findHu } from './hu.mjs?v=65';
 
-export const nextSeat = seat => (seat + 1) % 3;
+// Seat 0 is at the bottom, seat 1 is on the left, and seat 2 is on the right.
+export const nextSeat = seat => (seat + 2) % 3;
 
 export function canHuFrom(kind, rules) {
   return kind === 'draw' || rules.discardHu;
