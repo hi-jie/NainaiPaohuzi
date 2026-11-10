@@ -106,7 +106,6 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       }
       previous = cardPositions(hand, portrait);
       const from = previous.get(drag.card.dataset.handCard);
-      const scrollLeft = hand.scrollLeft;
       for (const column of hand.children) {
         const { left, right } = bounds(column, portrait);
         column.style.setProperty('--drag-column-width', `${(right - left) / scale}px`);
@@ -132,7 +131,7 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       const originY = spread.top + start.y - from.top;
       const viewport = bounds(felt, portrait);
       Object.assign(drag, {
-        hand, felt, columns, portrait, scale, viewport, start, originX, originY, scrollLeft,
+        hand, felt, columns, portrait, scale, viewport, start, originX, originY,
         anchor: start.x - originX,
         maxPan: viewport.left + 14 * scale - columns[0].left,
         minPan: viewport.right - 14 * scale - columns.at(-1).right,
@@ -161,7 +160,7 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
 
   function end(event) {
     if (drag?.pointer !== event.pointerId) return;
-    const { card, columns, source, drop, portrait, scale, hand, felt, scrollLeft } = drag;
+    const { card, columns, source, drop, portrait, scale, hand, felt } = drag;
     const destination = columns && event.type === 'pointerup'
       ? findDrop(drag, portrait ? event.clientY : event.clientX, portrait ? -event.clientX : event.clientY)
       : null;
@@ -179,15 +178,8 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       card.style.removeProperty('--drag-x');
       card.style.removeProperty('--drag-y');
       delete drop?.marker.dataset.drop;
-      hand.scrollLeft = scrollLeft;
       if (destination) onDrop(source, destination);
-      const currentHand = table.querySelector('.hand');
-      if (currentHand !== hand) {
-        const column = currentHand.querySelector(`[data-hand-card="${card.dataset.handCard}"]`).parentElement;
-        currentHand.scrollLeft = clamp(currentHand.scrollLeft,
-          column.offsetLeft + column.offsetWidth - currentHand.clientWidth, column.offsetLeft);
-      }
-      animateReflow(currentHand, previous, portrait, scale);
+      animateReflow(table.querySelector('.hand'), previous, portrait, scale);
     }
     onEnd();
   }

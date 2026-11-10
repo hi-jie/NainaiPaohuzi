@@ -51,6 +51,7 @@ function seatView(round, seat, event, response, openingStage, actions = '', hand
   const active = !openingStage && round.seat === seat && round.phase !== 'finished';
   const yourDiscard = seat === 0 && active && round.phase === 'discard';
   const total = groups.reduce((sum, group) => sum + huxi(group), 0);
+  const layout = seat === 0 && showHand ? handLayout ?? createHandLayout(hand, round.rules.patterns) : null;
   return `<section class="seat seat-${seat}${active ? ' active' : ''}${yourDiscard ? ' choosing-card' : ''}"${active ? ' aria-current="true"' : ''}>
     <div class="seat-heading">
       ${avatar(seat)}
@@ -67,8 +68,9 @@ function seatView(round, seat, event, response, openingStage, actions = '', hand
     </div>
     ${actions ? `<div class="actions hand-actions">${actions}</div>` : ''}
     ${seat === 0 && spread ? openingHand(round.openingHand, openingStage === 'reveal') : ''}
-    ${seat === 0 && showHand ? `<div class="hand" aria-label="我的手牌">${playerHand(
-      round, handLayout ?? createHandLayout(hand, round.rules.patterns), yourDiscard, response, !openingStage && round.phase !== 'finished'
+    ${layout ? `<div class="hand" aria-label="我的手牌"
+      style="--hand-columns:${layout.length};--hand-backs:${backs};--hand-melds:${groups.length};--hand-discards:${discards.length}">${playerHand(
+      round, layout, yourDiscard, response, !openingStage && round.phase !== 'finished'
     )}</div>` : ''}
   </section>`;
 }
@@ -191,6 +193,7 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
   return `<div class="felt${openingStage ? ' opening' : ''}"${openingStage ? ` data-stage="${openingStage}"` : ''}>
     <div class="table-hud">
       ${phase !== 'finished' ? navButton('leave', 'back', '返回首页') + navButton('pause', 'settings', '设置') : ''}
+      ${playing && handLayout ? '<button data-command="auto-hand">自动理牌</button>' : ''}
       <span>${round.rules.name}</span><span>积分 ${score}</span>
     </div>
     ${seatView(round, 1, event, null, openingStage)}${seatView(round, 2, event, null, openingStage)}
@@ -210,10 +213,6 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
       </div>
     </div>
     ${seatView(round, 0, event, handHint, openingStage, actions, handLayout)}
-    ${playing && handLayout ? `<div class="hand-scroll" hidden>
-      <button data-command="hand-left" aria-label="查看左边手牌">‹</button>
-      <button data-command="hand-right" aria-label="查看右边手牌">›</button>
-    </div><button class="auto-hand" data-command="auto-hand">自动理牌</button>` : ''}
     </div>
     ${phase === 'finished' ? resultView(round.result, score) : ''}`;
 }

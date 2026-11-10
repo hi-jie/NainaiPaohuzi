@@ -39,7 +39,7 @@ main {
 h1, h2, h3, p { margin: 0; }
 button { font: inherit; color: #fff1cf; cursor: pointer; touch-action: manipulation; }
 button:focus-visible { outline: 3px solid #fff0b0; outline-offset: 3px; }
-button.primary, .front-screen button, .hand-actions button, .result button, .game-dialog button, #eat-menu button, .table-hud button, .auto-hand, .hand-scroll button {
+button.primary, .front-screen button, .hand-actions button, .result button, .game-dialog button, #eat-menu button, .table-hud button {
   min-height: 46px; padding: 6px 14px; border-radius: 12px; font-weight: 750;
   border: 1px solid #e5b66d; background: linear-gradient(#8f4d30, #562b21);
   box-shadow: 0 3px #342017, inset 0 1px #ffe0a44f;
@@ -131,6 +131,7 @@ main:has(#table:not([hidden])) {
   --avatar-size: 40.8px;
   --seat-card-offset: calc(var(--avatar-size) + 7px);
   --seat-cards-width: 250px;
+  --seat-card-width: 21.6px; --seat-back-step: 6px; --meld-gap: 6px; --discard-gap: 1px;
   --seat-backs-height: 21.6px; --seat-row-gap: 4.8px; --meld-row-height: 100.8px;
 }
 .seat-1 { left: 23px; }
@@ -171,13 +172,13 @@ main:has(#table:not([hidden])) {
 .seat .dealer { position: absolute; bottom: calc(100% + 4px); inset-inline: 0; width: max-content; margin-inline: auto; }
 .seat-2 .seat-heading { left: auto; right: 0; }
 .seat-backs { display: flex; }
-.seat-backs span { flex: none; width: 12px; height: 100%; }
-.seat-backs span + span { margin-left: -6px; }
+.seat-backs span { flex: none; width: calc(2 * var(--seat-back-step)); height: 100%; }
+.seat-backs span + span { margin-left: calc(-1 * var(--seat-back-step)); }
 .seat-cards {
   position: absolute; top: 0; left: var(--seat-card-offset); width: var(--seat-cards-width);
   display: grid;
   grid-template-rows: var(--meld-row-height) var(--seat-backs-height) auto; gap: var(--seat-row-gap);
-  --strip-width: 21.6px; --strip-height: 38.4px; --strip-font: 19.2px; --strip-peek: 24px;
+  --strip-width: var(--seat-card-width); --strip-height: 38.4px; --strip-font: 19.2px; --strip-peek: 24px;
   --seat-card-edge: #bd955d; --meld-tail: 2.4px;
 }
 .seat-0 .seat-cards {
@@ -185,7 +186,7 @@ main:has(#table:not([hidden])) {
   grid-template-rows: var(--meld-row-height) var(--seat-backs-height) var(--discard-row-height);
 }
 .seat-2 .seat-cards { left: auto; right: var(--seat-card-offset); }
-.seat .groups { display: flex; align-items: end; gap: 6px; }
+.seat .groups { display: flex; align-items: end; gap: var(--meld-gap); }
 .meld { display: flex; flex-direction: column; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .card {
@@ -209,7 +210,7 @@ main:has(#table:not([hidden])) {
 .meld > .card:last-child { height: calc(var(--strip-peek) + var(--meld-tail, 2px)); }
 .discarded {
   display: grid; grid-template-columns: repeat(auto-fill, var(--strip-width)); grid-auto-rows: var(--strip-peek);
-  align-items: start; column-gap: 1px;
+  align-items: start; column-gap: var(--discard-gap);
   padding: 0 0 calc(var(--strip-height) - var(--strip-peek)); border: 0; background: none;
 }
 .seat-0 .discarded { align-self: start; }
@@ -271,17 +272,6 @@ main:has(#table:not([hidden])) {
 .felt.dragging-hand .hand-stack { flex: 0 0 var(--drag-column-width); width: var(--drag-column-width); }
 .felt.dragging-hand .hand-stack[data-drop="left"]:not(:first-child)::after { left: -26px; }
 .felt.dragging-hand .hand-stack[data-drop="right"]:not(:last-child)::after { right: -26px; }
-.felt:has(> .auto-hand) { --auto-hand-width: 94px; --auto-hand-inset: 12px; }
-.auto-hand {
-  position: absolute; right: var(--auto-hand-inset); bottom: var(--auto-hand-inset);
-  width: var(--auto-hand-width); padding-inline: 8px; font-size: 18px; white-space: nowrap;
-}
-.hand-scroll {
-  position: absolute; right: var(--auto-hand-inset); bottom: calc(var(--auto-hand-inset) + 54px);
-  display: flex; gap: 6px;
-}
-.hand-scroll button { width: 44px; padding: 0; font-size: 32px; line-height: 1; }
-.hand-scroll button:disabled { opacity: .45; cursor: default; }
 
 .center { position: absolute; top: 50%; left: 50%; width: 300px; transform: translateX(-50%); text-align: center; }
 .play-area { position: absolute; top: -135px; left: 0; right: 0; }
@@ -352,19 +342,22 @@ main:has(#table:not([hidden])) {
   --strip-width: 45.6px; --strip-height: 81.6px; --strip-font: 33.6px; --strip-peek: 56.4px;
 }
 .wide .hand:not(.opening-row) {
-  --hand-start: calc(var(--seat-card-offset) + var(--seat-cards-width));
-  left: 50%; right: auto; width: max-content; max-width: calc(100% - var(--hand-start));
+  --backs-width: calc((var(--hand-backs) + 1) * var(--seat-back-step));
+  --melds-width: calc(var(--hand-melds) * (var(--seat-card-width) + var(--meld-gap)) - var(--meld-gap));
+  --discards-width: min(var(--seat-cards-width), calc(var(--hand-discards) * (var(--seat-card-width) + var(--discard-gap)) - var(--discard-gap)));
+  --hand-start: calc(var(--seat-card-offset) + max(var(--backs-width), var(--melds-width), var(--discards-width)) + 8px);
+  --hand-width: calc(var(--table-width) - 2 * var(--seat-inset) - var(--hand-start));
+  --hand-gaps: max(0, var(--hand-columns) - 1);
+  --hand-gap: clamp(1px, calc((var(--hand-width) - var(--hand-columns) * var(--strip-width)) / max(1, var(--hand-gaps))), 8px);
+  --strip-font: min(33.6px, calc((var(--hand-width) - var(--hand-gaps) * var(--hand-gap)) / max(1, var(--hand-columns)) - 3px));
+  left: 50%; right: auto; width: max-content; max-width: var(--hand-width); gap: var(--hand-gap);
   transform: translateX(max(-50%, calc(var(--hand-start) + var(--seat-inset) - var(--table-width) / 2)));
 }
-.wide .felt:has(> .auto-hand) .hand {
-  max-width: calc(100% - var(--hand-start) - var(--auto-hand-width) - var(--auto-hand-inset) - 8px + var(--seat-inset));
-  overflow: auto hidden; scrollbar-width: none;
-}
-.wide .felt:has(> .auto-hand) .hand-stack { flex-shrink: 0; }
 .wide .felt.dragging-hand .hand {
   left: 0; max-width: none; gap: 48px; overflow: visible; transform: translateX(var(--hand-pan, 0px));
 }
 .wide .hand-stack { flex: 0 1 auto; width: var(--strip-width); max-width: none; align-self: end; }
+.wide .hand-stack.loose { margin-left: 0; }
 .wide .hand-stack:has(> .card:nth-child(4)) { --strip-peek: 43.2px; }
 .card.hinted, .hand .card:is(.eat-preview, [aria-pressed="true"]) {
   background: linear-gradient(#fff7c8, #ffdf87);

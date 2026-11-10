@@ -5,9 +5,9 @@ import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
 import { Round } from './game/state-machine.mjs?v=66';
 import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs';
-import { bindHandDrag } from './ui/hand-drag.mjs?v=70';
+import { bindHandDrag } from './ui/hand-drag.mjs?v=71';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=67';
-import { animateAction, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=70';
+import { animateAction, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=71';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
@@ -72,11 +72,7 @@ function showHome(focus = modes.querySelector(`[data-mode="${selectedMode}"]`)) 
 }
 
 function paintRound(event) {
-  const scrollLeft = table.querySelector('.hand')?.scrollLeft ?? 0;
   table.innerHTML = renderTable(round, data.score, event, '', handLayout);
-  const hand = table.querySelector('.hand');
-  if (hand && handLayout) hand.scrollLeft = scrollLeft;
-  updateHandScroll();
   if (event) animateAction(table, event);
 }
 
@@ -92,23 +88,9 @@ function fitTable() {
   table.style.setProperty('--table-scale', scale);
   table.style.setProperty('--table-width', `${width / scale}px`);
   table.style.setProperty('--table-height', `${height / scale}px`);
-  updateHandScroll();
 }
 
 new ResizeObserver(fitTable).observe(table);
-
-function updateHandScroll() {
-  const controls = table.querySelector('.hand-scroll');
-  if (!controls || table.querySelector('.dragging-hand')) return;
-  const hand = table.querySelector('.hand');
-  const last = hand.lastElementChild;
-  const end = last ? last.offsetLeft + last.offsetWidth - hand.clientWidth : 0;
-  controls.hidden = end <= 1;
-  controls.firstElementChild.disabled = hand.scrollLeft <= 1;
-  controls.lastElementChild.disabled = hand.scrollLeft >= end - 1;
-}
-
-table.addEventListener('scroll', updateHandScroll, true);
 
 function scheduleTurn() {
   const action = round.options[0];
@@ -213,10 +195,7 @@ bindHandDrag(table, {
       setHandLayout(moved, table.querySelector('[data-select-card][aria-pressed="true"]')?.dataset.handCard);
     }
   },
-  onEnd() {
-    updateHandScroll();
-    scheduleTurn();
-  }
+  onEnd: scheduleTurn
 });
 
 startButton.addEventListener('click', () => {
@@ -234,13 +213,6 @@ table.addEventListener('click', ({ target }) => {
   if (!button) return;
   if (button.dataset.command === 'auto-hand') {
     setHandLayout(null);
-    return;
-  }
-  if (['hand-left', 'hand-right'].includes(button.dataset.command)) {
-    const hand = table.querySelector('.hand');
-    const direction = button.dataset.command === 'hand-left' ? -1 : 1;
-    const behavior = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth';
-    hand.scrollBy({ left: direction * hand.clientWidth * .75, behavior });
     return;
   }
   if (button.dataset.command === 'choose-eat') {
