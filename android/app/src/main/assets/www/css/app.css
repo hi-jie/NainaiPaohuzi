@@ -76,9 +76,8 @@ button:active { filter: brightness(1.12); }
 }
 .title-tiles span:first-child { transform: translateY(5px) rotate(-12deg); }
 .title-tiles span:last-child { transform: translateY(5px) rotate(12deg); }
-#continue-round { font-size: 22px; }
 .modes { grid-column: 2; display: grid; align-content: center; gap: clamp(8px, calc(var(--screen-height) * .026), 16px); }
-.modes button, #start {
+.modes button, .menu-footer button {
   min-height: clamp(46px, calc(var(--screen-height) * .16), 78px);
   font-size: clamp(22px, calc(var(--screen-height) * .065), 34px);
 }
@@ -98,7 +97,7 @@ button:active { filter: brightness(1.12); }
 .menu-options input::before { content: ""; display: block; width: 20px; height: 20px; border-radius: 50%; background: #fff0cc; }
 .menu-options input:checked { background: #c48a3e; }
 .menu-options input:checked::before { transform: translateX(20px); }
-.menu-footer { display: flex; justify-content: flex-end; }
+.menu-footer { display: flex; justify-content: flex-end; gap: 8px; }
 #start { min-width: 155px; }
 .pause-settings label { min-height: 44px; display: flex; align-items: center; gap: 4px; cursor: pointer; }
 .pause-settings input { width: 22px; height: 22px; margin: 0; accent-color: var(--gold); }
@@ -491,7 +490,6 @@ main:has(#table:not([hidden])) {
 .game-dialog .actions { flex-wrap: wrap; }
 .dialog-header { display: flex; align-items: center; justify-content: space-between; }
 #leave-description { margin: 6px 0 14px; }
-#resume-menu .actions { margin-top: 14px; }
 .pause-settings { display: flex; justify-content: center; flex-wrap: wrap; gap: 0 20px; margin: 8px 0 12px; }
 .pause-settings label { gap: 8px; }
 #discard-history[open] {

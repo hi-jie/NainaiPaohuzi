@@ -15,7 +15,6 @@ const table = document.querySelector('#table');
 const history = document.querySelector('#discard-history');
 const pauseMenu = document.querySelector('#pause-menu');
 const leaveMenu = document.querySelector('#leave-menu');
-const resumeMenu = document.querySelector('#resume-menu');
 const eatMenu = document.querySelector('#eat-menu');
 const startButton = document.querySelector('#start');
 const continueButton = document.querySelector('#continue-round');
@@ -52,7 +51,6 @@ settingsButton.addEventListener('click', () => showFront(settings, settings.quer
 settings.querySelector('[data-back-home]').addEventListener('click', () => showHome(settingsButton));
 setup.querySelector('[data-back-home]').addEventListener('click', () => showHome());
 score.textContent = data.score;
-continueButton.hidden = !data.round;
 
 function startMusic() {
   setMusicPlaying(data.settings.music);
@@ -67,7 +65,7 @@ function showFront(screen, focus) {
   focus.focus({ preventScroll: true });
 }
 
-function showHome(focus = data.round ? continueButton : modes.querySelector(`[data-mode="${selectedMode}"]`)) {
+function showHome(focus = modes.querySelector(`[data-mode="${selectedMode}"]`)) {
   showFront(home, focus);
 }
 
@@ -75,13 +73,13 @@ function showSetup(mode) {
   selectedMode = mode;
   modeTitle.textContent = presets[mode].name;
   startButton.textContent = data.round ? '开始新局' : '开始游戏';
-  showFront(setup, startButton);
+  continueButton.hidden = !data.round;
+  showFront(setup, data.round ? continueButton : startButton);
 }
 
 function saveRound(keep = round.phase !== 'finished') {
   data.round = keep ? { state: round.toSave(), handLayout } : null;
   save(data);
-  continueButton.hidden = !data.round;
 }
 
 function paintRound(event) {
@@ -346,9 +344,3 @@ leaveMenu.addEventListener('close', () => {
     showHome();
   } else resumeRound();
 });
-resumeMenu.addEventListener('close', () => {
-  if (resumeMenu.returnValue === 'resume') continueSavedRound();
-  else if (resumeMenu.returnValue === 'new') showSetup(data.settings.mode);
-  else continueButton.focus({ preventScroll: true });
-});
-if (data.round) resumeMenu.showModal();
