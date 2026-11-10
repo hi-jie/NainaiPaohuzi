@@ -43,7 +43,7 @@ function animateReflow(hand, previous, portrait, scale, held) {
 }
 
 function findDrop(drag, x, y) {
-  const { columns, source, area, viewport, edge, limit } = drag;
+  const { columns, source, area, viewport, edge } = drag;
   if (y < area.top - edge || y > area.bottom + edge ||
       x < viewport.left || x > viewport.right) return null;
   x -= panAt(drag, x);
@@ -51,7 +51,6 @@ function findDrop(drag, x, y) {
   const column = columns.findIndex(({ right }) => x <= right + edge);
   const stack = columns[column];
   if (!stack || x < stack.left + edge || x > stack.right - edge) {
-    if (columns.length >= limit && columns[source.column].cards.length > 1) return null;
     const after = !stack || x > stack.right - edge;
     const index = stack ? column : columns.length - 1;
     return {
@@ -107,12 +106,7 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       }
       previous = cardPositions(hand, portrait);
       const from = previous.get(drag.card.dataset.handCard);
-      const seatCards = hand.parentElement.querySelector('.seat-cards');
-      const autoHand = table.querySelector('.auto-hand');
-      const handEnd = autoHand ? autoHand.offsetLeft - hand.parentElement.offsetLeft - 8 : hand.parentElement.clientWidth;
-      const available = handEnd - seatCards.offsetLeft - seatCards.offsetWidth;
-      const gap = parseFloat(getComputedStyle(hand).columnGap);
-      const width = parseFloat(getComputedStyle(hand).getPropertyValue('--strip-width'));
+      const scrollLeft = hand.scrollLeft;
       for (const column of hand.children) {
         const { left, right } = bounds(column, portrait);
         column.style.setProperty('--drag-column-width', `${(right - left) / scale}px`);
@@ -138,14 +132,13 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       const originY = spread.top + start.y - from.top;
       const viewport = bounds(felt, portrait);
       Object.assign(drag, {
-        hand, felt, columns, portrait, scale, viewport, start, originX, originY,
+        hand, felt, columns, portrait, scale, viewport, start, originX, originY, scrollLeft,
         anchor: start.x - originX,
         maxPan: viewport.left + 14 * scale - columns[0].left,
         minPan: viewport.right - 14 * scale - columns.at(-1).right,
         source: { column, index },
         area: { top: Math.min(...columns.map(stack => stack.top)), bottom: viewport.bottom },
-        edge: Math.min(12 * scale, (columns[column].right - columns[column].left) / 3),
-        limit: Math.max(columns.length, Math.floor((available + gap) / (width + gap + 3)))
+        edge: Math.min(12 * scale, (columns[column].right - columns[column].left) / 3)
       });
       table.setPointerCapture(event.pointerId);
       drag.card.classList.add('dragged-card');
@@ -168,7 +161,7 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
 
   function end(event) {
     if (drag?.pointer !== event.pointerId) return;
-    const { card, columns, source, drop, portrait, scale, hand, felt } = drag;
+    const { card, columns, source, drop, portrait, scale, hand, felt, scrollLeft } = drag;
     const destination = columns && event.type === 'pointerup'
       ? findDrop(drag, portrait ? event.clientY : event.clientX, portrait ? -event.clientX : event.clientY)
       : null;
@@ -186,8 +179,15 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       card.style.removeProperty('--drag-x');
       card.style.removeProperty('--drag-y');
       delete drop?.marker.dataset.drop;
+      hand.scrollLeft = scrollLeft;
       if (destination) onDrop(source, destination);
-      animateReflow(table.querySelector('.hand'), previous, portrait, scale);
+      const currentHand = table.querySelector('.hand');
+      if (currentHand !== hand) {
+        const column = currentHand.querySelector(`[data-hand-card="${card.dataset.handCard}"]`).parentElement;
+        currentHand.scrollLeft = clamp(currentHand.scrollLeft,
+          column.offsetLeft + column.offsetWidth - currentHand.clientWidth, column.offsetLeft);
+      }
+      animateReflow(currentHand, previous, portrait, scale);
     }
     onEnd();
   }

@@ -210,7 +210,10 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
       </div>
     </div>
     ${seatView(round, 0, event, handHint, openingStage, actions, handLayout)}
-    ${playing && handLayout ? '<button class="auto-hand" data-command="auto-hand">自动理牌</button>' : ''}
+    ${playing && handLayout ? `<div class="hand-scroll" hidden>
+      <button data-command="hand-left" aria-label="查看左边手牌">‹</button>
+      <button data-command="hand-right" aria-label="查看右边手牌">›</button>
+    </div><button class="auto-hand" data-command="auto-hand">自动理牌</button>` : ''}
     </div>
     ${phase === 'finished' ? resultView(round.result, score) : ''}`;
 }
