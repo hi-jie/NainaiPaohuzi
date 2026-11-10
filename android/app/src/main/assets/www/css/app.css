@@ -201,7 +201,8 @@ main:has(#table:not([hidden])) {
   color: #281a13; font: 800 var(--strip-font)/1 var(--card-font);
 }
 .card.red { color: #ad281b; }
-.card.back, .opening-back, .seat-backs span, .deck.stacked::before, .deck.stacked::after {
+.card.back, .opening-back, .seat-backs span, .deck.stacked::before, .deck.stacked::after,
+:is(.reveal-slot .card, .reveal-meld .card + .card)::after {
   color: #efcb8e; background: repeating-linear-gradient(45deg, #75382e 0 3px, #8c4437 3px 6px);
   border: 1px solid #d9aa71; border-radius: 4px;
 }
@@ -226,6 +227,30 @@ main:has(#table:not([hidden])) {
   width: min(100%, calc(5 * var(--strip-width) + 4px + (var(--table-width) - 864px) / 2));
 }
 .seat-2 .seat-backs { justify-content: flex-end; }
+.showdown .seat-cards {
+  grid-template-rows: var(--meld-row-height) minmax(var(--seat-backs-height), auto) auto;
+}
+.showdown .seat-0 .seat-cards {
+  grid-template-rows: var(--meld-row-height) minmax(var(--seat-backs-height), auto) var(--discard-row-height);
+}
+.revealed-hand {
+  --strip-height: 28px; --strip-font: 17px;
+  display: grid; min-width: 0; grid-template-columns: repeat(11, var(--strip-width));
+  grid-auto-rows: var(--strip-height); gap: 1px;
+}
+.seat-2 .revealed-hand { direction: rtl; }
+.seat-0 .revealed-hand {
+  grid-template: var(--strip-height) / none; grid-auto-flow: column; grid-auto-columns: var(--strip-width);
+}
+:is(.reveal-slot .card, .reveal-meld .card + .card) {
+  position: relative; animation: showdown-flip .42s ease-in-out both;
+}
+:is(.reveal-slot .card, .reveal-meld .card + .card)::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  animation: showdown-back .42s steps(1, end) both;
+}
+@keyframes showdown-flip { 50% { transform: scaleX(0); } }
+@keyframes showdown-back { 50%, 100% { opacity: 0; } }
 .hand {
   position: absolute; top: var(--hand-top); left: 0; width: 374px;
   display: flex; justify-content: center; gap: 4px;
@@ -394,6 +419,8 @@ main:has(#table:not([hidden])) {
 }
 @media (prefers-reduced-motion: reduce) {
   .seat.active .avatar, .turn-arrow::before { animation: none; }
+  :is(.reveal-slot .card, .reveal-meld .card + .card) { animation: none; }
+  :is(.reveal-slot .card, .reveal-meld .card + .card)::after { display: none; }
   .felt.dragging-hand::before { animation: none; }
   .landing .card.hinted { animation: none; }
   .hand .card { transition: none; }

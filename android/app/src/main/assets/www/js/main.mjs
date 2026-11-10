@@ -7,7 +7,7 @@ import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs?v=85';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=79';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=67';
-import { animateAction, captureOfferMotion, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=90';
+import { animateAction, captureOfferMotion, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable, showWinningResult, showWinningTable } from './ui/table.mjs?v=98';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
@@ -86,6 +86,11 @@ function paintRound(event, motion, action) {
 }
 
 function showRound(event, motion, action) {
+  if (event?.type === '胡') {
+    showWinningTable(table, round, data.score, event, motion.meld);
+    timer = setTimeout(() => showWinningResult(table, round, data.score, event, motion.meld), 2200);
+    return;
+  }
   paintRound(event, motion, action);
   scheduleTurn();
 }

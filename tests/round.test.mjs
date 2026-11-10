@@ -195,6 +195,10 @@ test('放炮胡只取走本次打出的那一张，先前同名弃牌仍保留',
   assert.deepEqual(round.players[1].discards, [17]);
   assert.ok(round.result.hu.groups.some(group => group.cards.includes(17)));
   assert.doesNotMatch(renderTable(round, 0), /class="landing">\s*<span/);
+  const reveal = renderTable(round, 0, round.events.at(-1));
+  assert.match(reveal, /class="callout"[^>]*>胡</);
+  assert.equal([...reveal.matchAll(/class="revealed-hand"/g)].length, 3);
+  assert.doesNotMatch(reveal, /class="(?:hand|settlement)"/);
 });
 
 test('存档恢复当前响应、后续响应和过牌限制', () => {
