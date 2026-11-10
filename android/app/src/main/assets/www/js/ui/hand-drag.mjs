@@ -50,16 +50,16 @@ function animateReflow(hand, previous, portrait, scale, held) {
   }
 }
 
-function horizontalTargets(columns, halfGap) {
+function horizontalTargets(columns, edgeCenter) {
   const first = columns[0];
   return [
-    { x: first.left - halfGap, column: first.column, newColumn: true, marker: first.element, side: 'left' },
+    { x: first.left - edgeCenter, column: first.column, newColumn: true, marker: first.element, side: 'left' },
     ...columns.flatMap((stack, index) => {
       const next = columns[index + 1];
       return [
         { x: (stack.left + stack.right) / 2, stack },
         {
-          x: next ? (stack.right + next.left) / 2 : stack.right + halfGap,
+          x: next ? (stack.right + next.left) / 2 : stack.right + edgeCenter,
           column: stack.column + 1, newColumn: true, marker: stack.element, side: 'right'
         }
       ];
@@ -68,15 +68,14 @@ function horizontalTargets(columns, halfGap) {
 }
 
 function findDrop(drag, x, y) {
-  const { targets, source, area, edge } = drag;
+  const { targets, source, area, edge, edgeReach } = drag;
   if (y < area.top - edge || y > area.bottom + edge ||
       x < area.left || x > area.right) return null;
   x -= panAt(drag, x);
 
   const first = targets[0].x;
   const last = targets.at(-1).x;
-  if (x < first - (targets[1].x - first) / 2 ||
-      x > last + (last - targets.at(-2).x) / 2) return null;
+  if (x < first - edgeReach || x > last + edgeReach) return null;
 
   // Give an existing column 55% of the distance to either neighbouring gap center.
   const target = targets.find(({ x: center, stack }, index) => {
@@ -195,16 +194,21 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       const originX = track.left + gripX;
       const originY = track.top + start.y - from.top;
       const halfGap = parseFloat(style.columnGap) * scale / 2;
+      const frameWidth = parseFloat(style.getPropertyValue('--edge-frame-width')) * scale;
+      const frameGap = parseFloat(style.getPropertyValue('--edge-frame-gap')) * scale;
+      const frameInset = parseFloat(style.getPropertyValue('--edge-frame-inset')) * scale;
+      const edgeSpace = frameWidth + frameGap + frameInset;
       const nextStack = columns.find(column => column.column > source.column);
       const pivot = origin.hidden
         ? (nextStack ? nextStack.left - halfGap : columns.at(-1).right + halfGap)
         : bounds(origin, portrait).left + gripX;
       Object.assign(drag, {
         hand, felt, held, slot, stacks, origin, columns, portrait, scale, panBounds, start, originX, originY,
-        targets: horizontalTargets(columns, halfGap),
+        targets: horizontalTargets(columns, frameWidth / 2 + frameGap),
+        edgeReach: frameWidth / 2 + frameInset + frameGap,
         anchor: start.x - pivot,
-        maxPan: panBounds.left - columns[0].left,
-        minPan: panBounds.right - columns.at(-1).right,
+        maxPan: panBounds.left + edgeSpace - columns[0].left,
+        minPan: panBounds.right - edgeSpace - columns.at(-1).right,
         source,
         area: { ...bounds(felt, portrait), top: Math.min(...columns.map(stack => stack.top)) },
         edge: Math.min(12 * scale, (from.right - from.left) / 3)

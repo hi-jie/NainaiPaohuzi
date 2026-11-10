@@ -265,11 +265,14 @@ main:has(#table:not([hidden])) {
 .hand-stack:has(> :is(.card[hidden], .hand-drop-slot)) .group-score { visibility: hidden; }
 .hand [data-drop]::after {
   content: ""; position: absolute; bottom: 0; z-index: 1; box-sizing: border-box;
-  width: 28px; height: var(--strip-height); border-radius: 4px;
+  width: var(--edge-frame-width); height: var(--strip-height); border-radius: 4px;
 }
-.hand [data-drop="left"]::after { left: -32px; }
-.hand [data-drop="right"]::after { right: -32px; }
-.felt.dragging-hand { --drag-hand-gap: 48px; }
+.hand [data-drop="left"]::after { left: calc(-1 * (var(--edge-frame-width) + var(--edge-frame-gap))); }
+.hand [data-drop="right"]::after { right: calc(-1 * (var(--edge-frame-width) + var(--edge-frame-gap))); }
+.felt.dragging-hand {
+  --drag-hand-gap: 48px;
+  --edge-frame-width: 40px; --edge-frame-gap: 6px; --edge-frame-inset: 8px;
+}
 .felt.dragging-hand::before {
   content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background: #0009; animation: appear .15s ease-out;
