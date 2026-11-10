@@ -46,11 +46,7 @@ for (const field of settingFields) {
   });
 }
 modes.addEventListener('click', ({ target }) => {
-  if (!target.dataset.mode) return;
-  selectedMode = target.dataset.mode;
-  modeTitle.textContent = presets[selectedMode].name;
-  startButton.textContent = data.round ? '开始新局' : '开始游戏';
-  showFront(setup, startButton);
+  if (target.dataset.mode) showSetup(target.dataset.mode);
 });
 settingsButton.addEventListener('click', () => showFront(settings, settings.querySelector('[data-back-home]')));
 settings.querySelector('[data-back-home]').addEventListener('click', () => showHome(settingsButton));
@@ -75,8 +71,15 @@ function showHome(focus = data.round ? continueButton : modes.querySelector(`[da
   showFront(home, focus);
 }
 
-function saveRound() {
-  data.round = round.phase === 'finished' ? null : { state: round.toSave(), handLayout };
+function showSetup(mode) {
+  selectedMode = mode;
+  modeTitle.textContent = presets[mode].name;
+  startButton.textContent = data.round ? '开始新局' : '开始游戏';
+  showFront(setup, startButton);
+}
+
+function saveRound(keep = round.phase !== 'finished') {
+  data.round = keep ? { state: round.toSave(), handLayout } : null;
   save(data);
   continueButton.hidden = !data.round;
 }
@@ -337,11 +340,15 @@ pauseMenu.addEventListener('close', () => {
   resumeRound();
 });
 leaveMenu.addEventListener('close', () => {
-  if (leaveMenu.returnValue === 'home') showHome();
-  else resumeRound();
+  const choice = leaveMenu.returnValue;
+  if (choice === 'save' || choice === 'discard') {
+    saveRound(choice === 'save');
+    showHome();
+  } else resumeRound();
 });
 resumeMenu.addEventListener('close', () => {
   if (resumeMenu.returnValue === 'resume') continueSavedRound();
+  else if (resumeMenu.returnValue === 'new') showSetup(data.settings.mode);
   else continueButton.focus({ preventScroll: true });
 });
 if (data.round) resumeMenu.showModal();

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#113f32">
   <title>衡阳跑胡子</title>
   <link rel="stylesheet" href="./css/app.css?v=85">
-  <script type="module" src="./js/main.mjs?v=85-d4b6275df60f"></script>
+  <script type="module" src="./js/main.mjs?v=86-d4b6275df60f"></script>
 </head>
 <body>
   <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -68,18 +68,19 @@
   </dialog>
   <dialog id="leave-menu" class="game-dialog" aria-labelledby="leave-title" aria-describedby="leave-description">
     <h2 id="leave-title">返回首页？</h2>
-    <p id="leave-description">返回首页会保存本局，下次可以继续。</p>
+    <p id="leave-description">不保存会放弃本局。</p>
     <form method="dialog">
       <div class="actions">
-        <button class="primary" value="resume" autofocus>继续打牌</button>
-        <button value="home">保存并返回</button>
+        <button value="resume" autofocus>继续打牌</button>
+        <button value="discard">不保存</button>
+        <button class="primary" value="save">保存并返回</button>
       </div>
     </form>
   </dialog>
   <dialog id="resume-menu" class="game-dialog" aria-labelledby="resume-title">
     <h2 id="resume-title">继续上次对局？</h2>
     <form method="dialog" class="actions">
-      <button value="later">暂不继续</button>
+      <button value="new">开始新局</button>
       <button class="primary" value="resume" autofocus>继续上局</button>
     </form>
   </dialog>
