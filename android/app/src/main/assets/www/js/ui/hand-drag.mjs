@@ -190,14 +190,25 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       const expandedAxis = targets.find(target => origin.hidden
         ? target.newColumn && target.column >= source.column
         : target.stack?.column === source.column).x;
-      const anchor = sourceAxis - expandedAxis;
       const area = { ...bounds(felt, portrait), top: Math.min(...columns.map(stack => stack.top)) };
-      const leftDistance = Math.max(0, start.x - (targets[0].x + anchor));
-      const rightDistance = Math.max(0, targets.at(-1).x + anchor - start.x);
+      const rightMargin = area.right - bounds(hand.parentElement, portrait).right;
+      const frameClearance = rightMargin + frameWidth / 2;
+      const leftLimit = area.left + frameClearance;
+      const rightLimit = area.right - frameClearance;
+      const leftTravel = start.x - leftLimit;
+      const rightTravel = rightLimit - start.x;
+      const first = targets[0].x;
+      const last = targets.at(-1).x;
+      let anchor = sourceAxis - expandedAxis;
+      // A grab past a frame limit has no outward travel to bring that frame into view.
+      if (leftTravel <= 0) anchor = Math.max(anchor, leftLimit - first);
+      if (rightTravel <= 0) anchor = Math.min(anchor, rightLimit - last);
+      const leftDistance = Math.max(0, start.x - (first + anchor));
+      const rightDistance = Math.max(0, last + anchor - start.x);
       // Pointer travel and the opposite hand motion together close the distance to a drop frame.
       const panRate = Math.max(0,
-        leftDistance / (start.x - area.left - edgeReach) - 1,
-        rightDistance / (area.right - edgeReach - start.x) - 1);
+        leftTravel > 0 ? leftDistance / leftTravel - 1 : 0,
+        rightTravel > 0 ? rightDistance / rightTravel - 1 : 0);
       const panLimits = {
         left: start.x - leftDistance / (1 + panRate),
         right: start.x + rightDistance / (1 + panRate)
