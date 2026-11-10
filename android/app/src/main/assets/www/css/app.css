@@ -437,7 +437,7 @@ main:has(#table:not([hidden])) {
   100% { transform: scaleX(1); }
 }
 
-.settlement { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; background: #080e0ad1; animation: appear .24s .36s both; }
+.settlement { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; background: #080e0ad1; animation: appear .16s .14s both; }
 .result, #discard-history, .game-dialog, #eat-menu {
   width: min(calc(100% - 18px), 530px); text-align: center; padding: 10px;
   border: 3px solid #ad7947; border-radius: 17px; color: #fff0c8;

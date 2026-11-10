@@ -7,7 +7,7 @@ import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs?v=85';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=79';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=67';
-import { animateAction, captureOfferMotion, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=89';
+import { animateAction, captureOfferMotion, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=90';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');

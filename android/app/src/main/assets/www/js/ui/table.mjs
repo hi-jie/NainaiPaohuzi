@@ -42,9 +42,20 @@ function playerHand(round, layout, canDiscard, response, canDrag) {
   }).join('');
 }
 
+function centerOffer(round) {
+  if (round.phase === 'response') return round.offer;
+  if (round.phase !== 'draw') return null;
+  const last = round.events.at(-1);
+  if (last?.type === '摸' || last?.type === '出') {
+    return { source: last.seat, card: last.card, kind: last.type === '摸' ? 'draw' : 'discard', parked: true };
+  }
+  return null;
+}
+
 function tableDiscards(round, seat) {
   const { discards } = round.players[seat];
-  return round.phase === 'response' && round.offer.kind === 'discard' && round.offer.source === seat
+  const offer = centerOffer(round);
+  return offer?.source === seat && (offer.parked || offer.kind === 'discard')
     ? discards.slice(0, -1) : discards;
 }
 
@@ -180,10 +191,10 @@ function openingPile(stage) {
 
 export function renderTable(round, score, event, openingStage = '', handLayout = null) {
   const { phase, seat, options } = round;
-  const offer = phase === 'response' ? round.offer : null;
-  const response = seat === 0 && offer ? options[0] : null;
+  const offer = centerOffer(round);
+  const response = seat === 0 && phase === 'response' ? options[0] : null;
   const handHint = seat === 0 && phase === 'opening-ti' ? options[0] : response;
-  const arrowSeat = offer?.source ?? seat;
+  const arrowSeat = phase === 'response' ? offer.source : seat;
   const source = offer?.source ?? event?.seat ?? round.dealer;
   const visibleCard = offer?.card ?? round.opening;
   const revealTile = ['reveal', 'sort'].includes(openingStage) && !round.hasOpeningTi;
@@ -284,13 +295,12 @@ function meldCard(area, groups, index, card) {
 }
 
 export function captureOfferMotion(table, round) {
-  const { phase, offer, seat } = round;
-  const flying = table.querySelector('.flying-card');
-  if (phase === 'response') {
-    const card = flying ?? table.querySelector('.landing .card');
-    return { offer, from: card.getBoundingClientRect() };
-  }
+  const { phase, seat } = round;
+  const center = centerOffer(round);
+  if (center) return { offer: center, from: table.querySelector('.landing .card').getBoundingClientRect() };
   if (phase === 'after-meld') {
+    const { offer } = round;
+    const flying = table.querySelector('.flying-card');
     const { type } = round.events.at(-1);
     const { groups } = round.players[seat];
     const index = groups.findIndex(group => group.type === type && group.cards[0] === offer.card);
@@ -299,8 +309,9 @@ export function captureOfferMotion(table, round) {
   }
 }
 
-function flyCard(table, card, destination, from, { via, win = false } = {}) {
+function animateTransfer(table, card, destination, from, effect = 'move') {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const win = effect === 'win';
   const frame = table.getBoundingClientRect();
   const portrait = matchMedia('(orientation: portrait)').matches;
   const local = rect => portrait
@@ -319,30 +330,41 @@ function flyCard(table, card, destination, from, { via, win = false } = {}) {
   });
   const transform = ({ x, y, width, height }) =>
     `translate(${x - start.x}px, ${y - start.y}px) scale(${width / deck.width}, ${height / deck.height})`;
+  const origin = transform(start);
+  const target = transform(end);
+  const frames = effect === 'discard' ? [
+    { transform: origin, opacity: 1 },
+    { transform: `${origin} scale(.85)`, opacity: 0, offset: .42 },
+    { transform: `${target} scale(.85)`, opacity: 0, offset: .43 },
+    { transform: `${target} scale(1.08)`, opacity: 1, offset: .8 },
+    { transform: target, opacity: 1 }
+  ] : [{ transform: origin }, { transform: target }];
   destination.style.visibility = 'hidden';
   table.append(ghost);
-  const frames = [{ transform: transform(start) }];
-  if (via) {
-    const pause = transform(local(via));
-    frames.push({ transform: pause, offset: .32 }, { transform: pause, offset: .65 });
-  }
-  frames.push({ transform: transform(end) });
-  ghost.animate(frames, { duration: via ? 760 : win ? 600 : 380, fill: 'both', easing: 'ease-in-out' }).onfinish = () => {
+  ghost.animate(frames,
+    { duration: win ? 300 : 220, fill: 'both', easing: 'ease-in-out' }).onfinish = () => {
     destination.style.visibility = '';
     ghost.remove();
   };
 }
 
 export function animateAction(table, round, event, motion, action) {
-  const landing = table.querySelector('.landing');
   const seatView = seat => table.querySelector(`.seat-${seat}`);
   const discard = seat => seatView(seat).querySelector('.discarded').lastElementChild;
+  if (motion?.offer.parked) {
+    const { offer: { card, source }, from } = motion;
+    animateTransfer(table, card, discard(source), from, 'discard');
+  }
   if (event?.type === '摸' || event?.type === '出') {
-    const { card, seat, type } = event;
-    const origin = type === '摸' ? table.querySelector('.deck-tile') : seatView(seat).querySelector('.avatar');
-    const center = landing.querySelector('.card');
-    flyCard(table, card, center ?? discard(seat), origin.getBoundingClientRect(),
-      { via: center ? null : landing.getBoundingClientRect() });
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const origin = event.type === '摸' ? table.querySelector('.deck-tile') : seatView(event.seat);
+    const card = table.querySelector('.landing .card');
+    const [x, y] = tableOffset(table, origin.getBoundingClientRect(), card.getBoundingClientRect());
+    card.animate([
+      { transform: `translate(${x}px, ${y}px) scale(.72)`, opacity: .3 },
+      { transform: 'scale(1.08)', opacity: 1, offset: .78 },
+      { transform: 'scale(1)', opacity: 1 }
+    ], { duration: 220, easing: 'cubic-bezier(.2,.72,.28,1)' });
   } else if (event?.type === '胡') {
     const { card, seat } = event;
     const { groups } = round.players[seat];
@@ -350,24 +372,24 @@ export function animateAction(table, round, event, motion, action) {
     const index = motion.meld ?? winning.findIndex((group, i) => i >= groups.length && group.cards.includes(card));
     if (motion.meld !== undefined) meldCard(seatView(seat).querySelector('.groups'), groups, index, card).style.visibility = 'hidden';
     const destination = meldCard(table.querySelector('.settlement .groups'), winning, index, card);
-    flyCard(table, card, destination, motion.from, { win: true });
+    animateTransfer(table, card, destination, motion.from, 'win');
   } else if (event?.fromHand) {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const seat = seatView(event.seat);
     const origin = event.seat === 0 ? seat.querySelector('.hand') : seat.querySelector('.avatar');
-    slideFrom(table, seat.querySelector('.groups').lastElementChild, origin.getBoundingClientRect(), 380, .72);
+    slideFrom(table, seat.querySelector('.groups').lastElementChild, origin.getBoundingClientRect(), 220, .72);
   } else if (event) {
     const { card, seat } = event;
     const { groups } = round.players[seat];
     const index = action.previous >= 0 ? action.previous : groups.length - (action.groups?.length ?? 1);
     const destination = meldCard(seatView(seat).querySelector('.groups'), groups, index, card);
-    flyCard(table, card, destination, motion.from);
-  } else if (motion && motion.meld === undefined && round.phase !== 'response' && round.phase !== 'opening-ti') {
-    const { offer: { source, card, kind }, from } = motion;
+    animateTransfer(table, card, destination, motion.from);
+  } else if (motion?.offer.kind === 'opening' && motion.meld === undefined && round.phase !== 'response' && round.phase !== 'opening-ti') {
+    const { offer: { source, card }, from } = motion;
     const seat = seatView(source);
-    const destination = kind !== 'opening' ? discard(source) : source === 0
+    const destination = source === 0
       ? [...seat.querySelectorAll('.hand .card')].findLast(tile => tile.textContent === cardName(card))
       : seat.querySelector('.seat-backs').lastElementChild;
-    flyCard(table, card, destination, from);
+    animateTransfer(table, card, destination, from);
   }
 }

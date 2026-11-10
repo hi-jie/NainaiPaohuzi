@@ -157,19 +157,31 @@ test('吃碰响应未确认时箭头留在出牌者，确认后才指向接牌�
   }
 });
 
-test('等吃期间牌只在墩旁，吃完进入落地牌，过后进入弃牌', () => {
+test('等吃期间牌只在墩旁，吃完进入落地牌，过后等下一张才进弃牌', () => {
   for (const kind of ['draw', 'discard']) {
     for (const decision of ['吃', '过']) {
       const round = new Round(defaultSettings, 0);
-      round.players = [player([0, 1, 8]), player([]), player([])];
-      if (kind === 'discard') round.players[1].discards.push(2);
-      round.reveal(1, 2, kind);
+      round.players = [player([0, 1, 8]), player(kind === 'discard' ? [2] : []), player([])];
+      round.deck = kind === 'draw' ? [9, 2] : [9];
+      if (kind === 'draw') round.waitForDraw(1);
+      else round.waitForDiscard(1);
+      round.act(round.options[0]);
       assert.match(renderTable(round, 0), /class="landing">\s*<span[^>]*>三</);
       assert.match(renderHistory(round, 1, 'discards'), /共 0 张/);
       round.act(round.options.find(action => action.type === decision));
-      assert.doesNotMatch(renderTable(round, 0), /class="landing">\s*<span/);
-      assert.match(renderHistory(round, 1, 'discards'), decision === '吃' ? /共 0 张/ : /共 1 张/);
-      if (decision === '吃') assert.deepEqual(round.players[0].groups, [{ type: '吃', cards: [0, 1, 2] }]);
+      assert.match(renderHistory(round, 1, 'discards'), /共 0 张/);
+      if (decision === '吃') {
+        assert.doesNotMatch(renderTable(round, 0), /class="landing">\s*<span/);
+        assert.deepEqual(round.players[0].groups, [{ type: '吃', cards: [0, 1, 2] }]);
+      } else {
+        assert.match(renderTable(round, 0), /class="landing">\s*<span[^>]*>三</);
+        const restored = Round.fromSave(JSON.parse(JSON.stringify(round.toSave())));
+        assert.match(renderTable(restored, 0), /class="landing">\s*<span[^>]*>三</);
+        assert.match(renderHistory(restored, 1, 'discards'), /共 0 张/);
+        round.act(round.options[0]);
+        assert.match(renderTable(round, 0), /class="landing">\s*<span[^>]*>十</);
+        assert.match(renderHistory(round, 1, 'discards'), /共 1 张/);
+      }
     }
   }
 });
