@@ -151,7 +151,7 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
         return { ...rect, element, column, cards, top, slotBoundaries };
       });
       const feltBounds = bounds(felt, portrait);
-      const area = { top: handTop, cancel: (feltBounds.top + handTop) / 2, bottom: feltBounds.bottom };
+      const area = { top: handTop - 24 * scale, cancel: (feltBounds.top + handTop) / 2, bottom: feltBounds.bottom };
       Object.assign(drag, {
         hand, felt, held, slot, origin, emptySource, columns, portrait, scale, source, area,
         gripX: start.x - from.left, gripY: start.y - from.top
