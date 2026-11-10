@@ -5,10 +5,13 @@ import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
 import { Round } from './game/state-machine.mjs?v=141';
 import { MahjongRound } from './game/mahjong-round.mjs';
 import { presets } from './rules/presets.mjs?v=141';
-import { load, save } from './storage/save.mjs?v=141';
+import { grades, rankForScore, ranks } from './rules/ranks.mjs';
+import { load, save } from './storage/save.mjs?v=162';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=116';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=141';
-import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showWinningResult, showWinningTable } from './ui/table.mjs?v=141';
+import { bindRankPanel, rankBadge } from './ui/rank-panel.mjs?v=169';
+import { animateRankResult } from './ui/rank-result.mjs';
+import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showWinningResult, showWinningTable } from './ui/table.mjs?v=170';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
@@ -25,6 +28,7 @@ const settingsButton = document.querySelector('#open-settings');
 const modeTitle = document.querySelector('#mode-title');
 const seatPicker = document.querySelector('#mahjong-seats');
 const paohuziOptions = document.querySelector('#paohuzi-options');
+const showRanks = bindRankPanel(setup.querySelector('.rank-panel'));
 const data = load();
 let mahjongSeats = data.settings.mahjongSeats ?? presets.mahjong.seats;
 let selectedMode = data.settings.mode;
@@ -61,8 +65,15 @@ settings.querySelector('[data-back-home]').addEventListener('click', () => showH
 setup.querySelector('[data-back-home]').addEventListener('click', () => showHome());
 recordsButton.addEventListener('click', () => {
   const scores = Object.entries(presets).map(([mode, { name }]) => [name, data.scores[mode]]);
-  records.querySelector('.score-records').innerHTML = scores.map(([name, value]) =>
-    `<div><dt>${name}</dt><dd>${value}</dd></div>`).join('');
+  records.querySelector('.score-records').innerHTML = scores.map(([name, value]) => {
+    const { rank, grade } = rankForScore(value);
+    const info = ranks[rank];
+    return `<div class="record-card" style="--record-accent:${info.color}">
+      <dt>${name}</dt>
+      <dd>${rankBadge(info, grade + 1)}<span class="record-rank">${info.name}・${grades[grade]}</span>
+        <span class="record-score"><strong>${value}</strong> 分</span></dd>
+    </div>`;
+  }).join('');
   showFront(records, records.querySelector('[data-back-home]'));
 });
 records.querySelector('[data-back-home]').addEventListener('click', () => showHome(recordsButton));
@@ -91,6 +102,7 @@ function showSetup(mode) {
   paohuziOptions.hidden = mode === 'mahjong';
   updateSeatPicker();
   showFront(setup, startButton);
+  showRanks(data.scores[mode], data.peakScores[mode]);
 }
 
 function updateSeatPicker() {
@@ -112,12 +124,17 @@ function paintRound(event, motion, action) {
 }
 
 function showRound(event, motion, action) {
+  const score = data.scores[round.rules.mode];
   if (event?.type === '胡') {
-    showWinningTable(table, round, data.scores[round.rules.mode], event, motion?.meld);
-    timer = setTimeout(() => showWinningResult(table, round, data.scores[round.rules.mode], event, motion?.meld), 2200);
+    showWinningTable(table, round, score, event, motion?.meld);
+    timer = setTimeout(() => {
+      showWinningResult(table, round, score, event, motion?.meld);
+      animateRankResult(table.querySelector('.settlement'), score, round.result.delta[0]);
+    }, 2200);
     return;
   }
   paintRound(event, motion, action);
+  if (round.phase === 'finished') animateRankResult(table.querySelector('.settlement'), score, round.result.delta[0]);
   scheduleTurn();
 }
 
@@ -226,7 +243,9 @@ function step(action) {
   }
   const event = round.events.length > before ? round.events.at(-1) : null;
   if (round.phase === 'finished') {
-    data.scores[round.rules.mode] += round.result.delta[0];
+    const { mode } = round.rules;
+    data.scores[mode] += round.result.delta[0];
+    data.peakScores[mode] = Math.max(data.peakScores[mode], data.scores[mode]);
   }
   saveRound();
   if (event && round.rules.sound) playAction(event.type);

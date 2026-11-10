@@ -141,24 +141,28 @@ test('吃和比的牌组互换顺序时只保留一种吃法', () => {
   ]);
 });
 
-test('吃碰响应未确认时箭头留在出牌者，确认后才指向接牌者', () => {
+test('吃碰响应未确认时头像和箭头留在出牌者，确认后同步切换', () => {
   for (const accepted of ['碰', '吃', '过']) {
     const round = new Round(defaultSettings, 0);
     round.players = [player([2, 2, 9]), player([0, 1, 8]), player([]), { ...player([]), discards: [2] }];
-    const arrow = () => Number(renderTable(round, 0).match(/class="turn-arrow to-(\d)"/)[1]);
+    const assertTurn = seat => {
+      const html = renderTable(round, 0);
+      assert.equal(Number(html.match(/class="turn-arrow to-(\d)"/)[1]), seat);
+      assert.deepEqual([...html.matchAll(/class="seat seat-(\d) active\b/g)].map(match => Number(match[1])), [seat]);
+    };
     round.reveal(3, 2, 'discard');
     assert.equal(round.seat, 0);
-    assert.equal(arrow(), 3);
+    assertTurn(3);
 
     if (accepted !== '碰') {
       round.act(round.options.find(action => action.type === '过'));
       assert.equal(round.seat, 1);
-      assert.equal(arrow(), 3);
+      assertTurn(3);
     }
 
     round.act(round.options.find(action => action.type === accepted));
     assert.equal(round.phase, accepted === '过' ? 'draw' : 'discard');
-    assert.equal(arrow(), accepted === '碰' ? 0 : 1);
+    assertTurn(accepted === '碰' ? 0 : 1);
   }
 });
 
