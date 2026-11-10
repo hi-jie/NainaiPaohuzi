@@ -5,9 +5,9 @@ import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
 import { Round } from './game/state-machine.mjs?v=66';
 import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs';
-import { bindHandDrag } from './ui/hand-drag.mjs?v=67';
+import { bindHandDrag } from './ui/hand-drag.mjs?v=68';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=67';
-import { animateAction, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=67';
+import { animateAction, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=68';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');

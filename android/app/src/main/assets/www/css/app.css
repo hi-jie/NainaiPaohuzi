@@ -39,7 +39,7 @@ main {
 h1, h2, h3, p { margin: 0; }
 button { font: inherit; color: #fff1cf; cursor: pointer; touch-action: manipulation; }
 button:focus-visible { outline: 3px solid #fff0b0; outline-offset: 3px; }
-button.primary, .front-screen button, .hand-actions button, .result button, .game-dialog button, #eat-menu button, .table-hud button {
+button.primary, .front-screen button, .hand-actions button, .result button, .game-dialog button, #eat-menu button, .table-hud button, .auto-hand {
   min-height: 46px; padding: 6px 14px; border-radius: 12px; font-weight: 750;
   border: 1px solid #e5b66d; background: linear-gradient(#8f4d30, #562b21);
   box-shadow: 0 3px #342017, inset 0 1px #ffe0a44f;
@@ -261,7 +261,11 @@ main:has(#table:not([hidden])) {
 .hand [data-drop="bottom"]::after { inset: auto 0 1px; height: 4px; }
 .hand [data-drop="left"]::after { inset: 0 auto 0 -5px; width: 4px; }
 .hand [data-drop="right"]::after { inset: 0 -5px 0 auto; width: 4px; }
-.table-hud [data-command="auto-hand"]:disabled { opacity: .5; cursor: default; }
+.felt:has(> .auto-hand) { --auto-hand-width: 94px; --auto-hand-inset: 12px; }
+.auto-hand {
+  position: absolute; right: var(--auto-hand-inset); bottom: var(--auto-hand-inset);
+  width: var(--auto-hand-width); padding-inline: 8px; font-size: 18px; white-space: nowrap;
+}
 
 .center { position: absolute; top: 50%; left: 50%; width: 300px; transform: translateX(-50%); text-align: center; }
 .play-area { position: absolute; top: -135px; left: 0; right: 0; }
@@ -335,6 +339,9 @@ main:has(#table:not([hidden])) {
   --hand-start: calc(var(--seat-card-offset) + var(--seat-cards-width));
   left: 50%; right: auto; width: max-content; max-width: calc(100% - var(--hand-start));
   transform: translateX(max(-50%, calc(var(--hand-start) + var(--seat-inset) - var(--table-width) / 2)));
+}
+.wide .felt:has(> .auto-hand) .hand {
+  max-width: calc(100% - var(--hand-start) - var(--auto-hand-width) - var(--auto-hand-inset) - 8px + var(--seat-inset));
 }
 .wide .hand-stack { flex: 0 1 auto; width: var(--strip-width); max-width: none; align-self: end; }
 .wide .hand-stack:has(> .card:nth-child(4)) { --strip-peek: 43.2px; }

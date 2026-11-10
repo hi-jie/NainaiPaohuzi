@@ -74,7 +74,9 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       const column = columns.findIndex(({ element }) => element === drag.card.parentElement);
       const index = columns[column].cards.findIndex(({ element }) => element === drag.card);
       const seatCards = hand.parentElement.querySelector('.seat-cards');
-      const available = hand.parentElement.clientWidth - seatCards.offsetLeft - seatCards.offsetWidth;
+      const autoHand = table.querySelector('.auto-hand');
+      const handEnd = autoHand ? autoHand.offsetLeft - hand.parentElement.offsetLeft - 8 : hand.parentElement.clientWidth;
+      const available = handEnd - seatCards.offsetLeft - seatCards.offsetWidth;
       const gap = parseFloat(getComputedStyle(hand).columnGap);
       const width = parseFloat(getComputedStyle(hand).getPropertyValue('--strip-width'));
       Object.assign(drag, {

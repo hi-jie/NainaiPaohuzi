@@ -191,7 +191,6 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
   return `<div class="felt${openingStage ? ' opening' : ''}"${openingStage ? ` data-stage="${openingStage}"` : ''}>
     <div class="table-hud">
       ${phase !== 'finished' ? navButton('leave', 'back', '返回首页') + navButton('pause', 'settings', '设置') : ''}
-      ${playing ? `<button data-command="auto-hand"${handLayout ? '' : ' disabled'}>自动理牌</button>` : ''}
       <span>${round.rules.name}</span><span>积分 ${score}</span>
     </div>
     ${seatView(round, 1, event, null, openingStage)}${seatView(round, 2, event, null, openingStage)}
@@ -211,6 +210,7 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
       </div>
     </div>
     ${seatView(round, 0, event, handHint, openingStage, actions, handLayout)}
+    ${playing && handLayout ? '<button class="auto-hand" data-command="auto-hand">自动理牌</button>' : ''}
     </div>
     ${phase === 'finished' ? resultView(round.result, score) : ''}`;
 }
