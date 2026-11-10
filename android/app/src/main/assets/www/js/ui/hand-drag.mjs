@@ -6,15 +6,15 @@ function bounds(element, portrait) {
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 function panAt(drag, x) {
-  const { viewport, start, anchor, minPan, maxPan } = drag;
+  const { panBounds, start, anchor, minPan, maxPan } = drag;
   if (maxPan <= minPan) return clamp(anchor, maxPan, minPan);
   const pivot = clamp(anchor, minPan, maxPan);
   if (x < start.x) {
-    const progress = clamp((start.x - x) / (start.x - viewport.left), 0, 1);
+    const progress = clamp((start.x - x) / (start.x - panBounds.left), 0, 1);
     return pivot + (maxPan - pivot) * progress;
   }
   if (x > start.x) {
-    const progress = clamp((x - start.x) / (viewport.right - start.x), 0, 1);
+    const progress = clamp((x - start.x) / (panBounds.right - start.x), 0, 1);
     return pivot + (minPan - pivot) * progress;
   }
   return pivot;
@@ -43,9 +43,9 @@ function animateReflow(hand, previous, portrait, scale, held) {
 }
 
 function findDrop(drag, x, y) {
-  const { columns, source, area, viewport, edge } = drag;
+  const { columns, source, area, edge } = drag;
   if (y < area.top - edge || y > area.bottom + edge ||
-      x < viewport.left || x > viewport.right) return null;
+      x < area.left || x > area.right) return null;
   x -= panAt(drag, x);
 
   const column = columns.findIndex(({ right }) => x <= right + edge);
@@ -108,16 +108,13 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       const from = previous.get(drag.card.dataset.handCard);
       const right = bounds(hand.parentElement, portrait).right;
       const width = parseFloat(getComputedStyle(hand).maxWidth) * scale;
-      const viewport = { left: right - width, right };
+      const panBounds = { left: right - width, right };
       for (const column of hand.children) {
         const { left, right } = bounds(column, portrait);
         column.style.setProperty('--drag-column-width', `${(right - left) / scale}px`);
       }
 
       felt.classList.add('dragging-hand');
-      const track = bounds(hand, portrait);
-      hand.style.setProperty('--hand-clip-start', `${(viewport.left - track.left) / scale}px`);
-      hand.style.setProperty('--hand-clip-end', `${(track.right - viewport.right) / scale}px`);
       const columns = [...hand.children].map(element => {
         const rect = bounds(element, portrait);
         const cards = [...element.querySelectorAll('[data-hand-card]')].map(card => ({
@@ -136,14 +133,12 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       const originX = spread.left + start.x - from.left;
       const originY = spread.top + start.y - from.top;
       Object.assign(drag, {
-        hand, felt, columns, portrait, scale, viewport, start, originX, originY,
-        gripMin: viewport.left + start.x - from.left,
-        gripMax: viewport.right - (from.right - start.x),
+        hand, felt, columns, portrait, scale, panBounds, start, originX, originY,
         anchor: start.x - originX,
-        maxPan: viewport.left + 14 * scale - columns[0].left,
-        minPan: viewport.right - 14 * scale - columns.at(-1).right,
+        maxPan: panBounds.left - columns[0].left,
+        minPan: panBounds.right - columns.at(-1).right,
         source: { column, index },
-        area: { top: Math.min(...columns.map(stack => stack.top)), bottom: track.bottom },
+        area: { ...bounds(felt, portrait), top: Math.min(...columns.map(stack => stack.top)) },
         edge: Math.min(12 * scale, (columns[column].right - columns[column].left) / 3)
       });
       table.setPointerCapture(event.pointerId);
@@ -156,9 +151,8 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
     const x = portrait ? event.clientY : event.clientX;
     const y = portrait ? -event.clientX : event.clientY;
     const pan = panAt(drag, x);
-    const heldX = clamp(x, drag.gripMin, drag.gripMax);
     hand.style.setProperty('--hand-pan', `${pan / scale}px`);
-    card.style.setProperty('--drag-x', `${(heldX - pan - originX) / scale}px`);
+    card.style.setProperty('--drag-x', `${(x - pan - originX) / scale}px`);
     card.style.setProperty('--drag-y', `${(y - originY) / scale}px`);
     if (previous) animateReflow(hand, previous, portrait, scale, card);
     delete drag.drop?.marker.dataset.drop;
@@ -180,8 +174,6 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       }
       felt.classList.remove('dragging-hand');
       hand.style.removeProperty('--hand-pan');
-      hand.style.removeProperty('--hand-clip-start');
-      hand.style.removeProperty('--hand-clip-end');
       for (const column of columns) column.element.style.removeProperty('--drag-column-width');
       card.classList.remove('dragged-card');
       card.parentElement.classList.remove('dragged-stack');

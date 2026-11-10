@@ -355,10 +355,6 @@ main:has(#table:not([hidden])) {
 }
 .wide .felt.dragging-hand .hand {
   left: 0; max-width: none; gap: 48px; overflow: visible; transform: translateX(var(--hand-pan, 0px));
-  clip-path: inset(
-    -100vmax calc(var(--hand-clip-end) + var(--hand-pan, 0px))
-    -100vmax calc(var(--hand-clip-start) - var(--hand-pan, 0px))
-  );
 }
 .wide .hand-stack { flex: 0 1 auto; width: var(--strip-width); max-width: none; align-self: end; }
 .wide .hand-stack.loose { margin-left: 0; }
