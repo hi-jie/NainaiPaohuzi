@@ -7,18 +7,8 @@ const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const visibleCard = '[data-hand-card]:not([hidden])';
 
 function panAt(drag, x) {
-  const { panBounds, start, anchor, minPan, maxPan } = drag;
-  if (maxPan <= minPan) return clamp(anchor, maxPan, minPan);
-  const pivot = clamp(anchor, minPan, maxPan);
-  if (x < start.x) {
-    const progress = clamp((start.x - x) / (start.x - panBounds.left), 0, 1);
-    return pivot + (maxPan - pivot) * progress;
-  }
-  if (x > start.x) {
-    const progress = clamp((x - start.x) / (panBounds.right - start.x), 0, 1);
-    return pivot + (minPan - pivot) * progress;
-  }
-  return pivot;
+  const { panLimits, panRate, start, anchor } = drag;
+  return anchor + (start.x - clamp(x, panLimits.left, panLimits.right)) * panRate;
 }
 
 function cardPositions(hand, portrait) {
@@ -150,11 +140,10 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       cancelReflow(hand);
       previous = cardPositions(hand, portrait);
       const from = previous.get(drag.card.dataset.handCard);
-      const right = bounds(hand.parentElement, portrait).right;
-      const width = parseFloat(getComputedStyle(hand).maxWidth) * scale;
-      const panBounds = { left: right - width, right };
       const stacks = [...hand.children];
       const origin = drag.card.parentElement;
+      const originBounds = bounds(origin, portrait);
+      const sourceAxis = (originBounds.left + originBounds.right) / 2;
       const source = { column: stacks.indexOf(origin), index: [...origin.querySelectorAll(visibleCard)].indexOf(drag.card) };
       for (const stack of stacks) {
         const { left, right } = bounds(stack, portrait);
@@ -193,24 +182,29 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       const gripX = start.x - from.left;
       const originX = track.left + gripX;
       const originY = track.top + start.y - from.top;
-      const halfGap = parseFloat(style.columnGap) * scale / 2;
       const frameWidth = parseFloat(style.getPropertyValue('--edge-frame-width')) * scale;
       const frameGap = parseFloat(style.getPropertyValue('--edge-frame-gap')) * scale;
       const frameInset = parseFloat(style.getPropertyValue('--edge-frame-inset')) * scale;
-      const edgeSpace = frameWidth + frameGap + frameInset;
-      const nextStack = columns.find(column => column.column > source.column);
-      const pivot = origin.hidden
-        ? (nextStack ? nextStack.left - halfGap : columns.at(-1).right + halfGap)
-        : bounds(origin, portrait).left + gripX;
+      const edgeReach = frameWidth / 2 + frameInset;
+      const targets = horizontalTargets(columns, frameWidth / 2 + frameGap);
+      const expandedAxis = targets.find(target => origin.hidden
+        ? target.newColumn && target.column >= source.column
+        : target.stack?.column === source.column).x;
+      const anchor = sourceAxis - expandedAxis;
+      const area = { ...bounds(felt, portrait), top: Math.min(...columns.map(stack => stack.top)) };
+      const leftDistance = Math.max(0, start.x - (targets[0].x + anchor));
+      const rightDistance = Math.max(0, targets.at(-1).x + anchor - start.x);
+      // Pointer travel and the opposite hand motion together close the distance to a drop frame.
+      const panRate = Math.max(0,
+        leftDistance / (start.x - area.left - edgeReach) - 1,
+        rightDistance / (area.right - edgeReach - start.x) - 1);
+      const panLimits = {
+        left: start.x - leftDistance / (1 + panRate),
+        right: start.x + rightDistance / (1 + panRate)
+      };
       Object.assign(drag, {
-        hand, felt, held, slot, stacks, origin, columns, portrait, scale, panBounds, start, originX, originY,
-        targets: horizontalTargets(columns, frameWidth / 2 + frameGap),
-        edgeReach: frameWidth / 2 + frameInset + frameGap,
-        anchor: start.x - pivot,
-        maxPan: panBounds.left + edgeSpace - columns[0].left,
-        minPan: panBounds.right - edgeSpace - columns.at(-1).right,
-        source,
-        area: { ...bounds(felt, portrait), top: Math.min(...columns.map(stack => stack.top)) },
+        hand, felt, held, slot, stacks, origin, columns, portrait, scale, start, originX, originY,
+        targets, edgeReach, anchor, panRate, panLimits, source, area,
         edge: Math.min(12 * scale, (from.right - from.left) / 3)
       });
       hand.append(held);
