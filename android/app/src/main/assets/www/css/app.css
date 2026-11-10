@@ -21,6 +21,7 @@
   --safe-bottom: env(safe-area-inset-bottom);
   --safe-left: env(safe-area-inset-left);
   --gold: #efcc80;
+  -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
 }
 * {
@@ -270,10 +271,7 @@ main:has(#table:not([hidden])) {
 }
 .hand-stack.loose { margin-left: 3px; }
 .hand .card { position: relative; width: 100%; }
-.hand button.card {
-  border-color: #fff6cc;
-  -webkit-tap-highlight-color: transparent;
-}
+.hand button.card { border-color: #fff6cc; }
 .choosing-card .hand .card:not(button) { filter: grayscale(1) brightness(.76); }
 .hand .card { transition: transform .12s ease-out; }
 .hand .card:is(.hinted, .eat-preview, [aria-pressed="true"]) { transform: translateY(-4px); }
