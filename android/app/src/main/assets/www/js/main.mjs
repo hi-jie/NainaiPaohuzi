@@ -181,6 +181,7 @@ function placeEatMenu() {
   const bottom = portrait ? frame.right - button.left : button.bottom - frame.top;
   eatMenu.style.setProperty('--eat-right', `${left - 10 * scale}px`);
   eatMenu.style.setProperty('--eat-bottom', `${bottom}px`);
+  eatMenu.style.setProperty('--eat-scale', Math.max(1, scale));
   const choices = eatMenu.querySelector('.eat-choices');
   const scrollTop = choices.scrollTop;
   eatMenu.classList.remove('two-columns', 'scroll-choices');

@@ -463,7 +463,11 @@ main:has(#table:not([hidden])) {
   background: linear-gradient(#fff2b5, #e3ad4f);
   border-color: #a16226; box-shadow: inset 0 0 0 1px #995319;
 }
-.eat-choice { --strip-width: 22px; --strip-height: 39px; --strip-font: 17px; }
+.eat-choice {
+  --strip-width: calc(22px * var(--eat-scale));
+  --strip-height: calc(39px * var(--eat-scale));
+  --strip-font: calc(17px * var(--eat-scale));
+}
 .result small { color: #f4d4a5; font-size: 16px; }
 .result p { margin: 3px 0; }
 .result .groups, #discard-history .groups {
