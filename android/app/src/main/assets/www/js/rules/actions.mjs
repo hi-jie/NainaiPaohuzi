@@ -1,8 +1,9 @@
 import { countCard, hasCards, takeCards } from './cards.mjs';
 import { findHu } from './hu.mjs?v=65';
 
-// Seat 0 is at the bottom, seat 1 is on the left, and seat 2 is on the right.
-export const nextSeat = seat => (seat + 2) % 3;
+// Seat indices are bottom, left, right and (in four-player rounds) top.
+const nextByCount = { 3: [2, 0, 1], 4: [2, 0, 3, 1] };
+export const nextSeat = (seat, seats = 3) => nextByCount[seats][seat];
 
 export function canHuFrom(kind, rules) {
   return kind === 'draw' || rules.discardHu;
@@ -65,7 +66,7 @@ export function responses(player, seat, { card, source, kind }, rules) {
   if (!self && count === 2 && !player.passedPeng.has(card)) {
     actions.push({ type: '碰', cards: [card, card], priority: 3 });
   }
-  if ((ownDraw || seat === nextSeat(source)) && !player.passedChi.has(card)) {
+  if ((ownDraw || seat === nextSeat(source, rules.seats)) && !player.passedChi.has(card)) {
     actions.push(...eatOptions(player, card, rules));
   }
   return actions;

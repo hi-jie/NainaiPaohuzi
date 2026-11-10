@@ -20,12 +20,10 @@ export function settle(winner, offer, hu, rules) {
 
   const tun = tunForHuxi(hu.huxi, rules);
   const unit = names.reduce((value, [, multiplier]) => value * multiplier, tun);
-  const delta = [-unit, -unit, -unit];
-  delta[winner] = 2 * unit;
-  if (offer.kind === 'discard') {
-    for (const seat of [0, 1, 2]) {
-      if (seat !== winner) delta[seat] = seat === offer.source ? -2 * unit : 0;
-    }
-  }
+  const seats = rules.seats ?? 3;
+  const payout = (seats - 1) * unit;
+  const delta = Array(seats).fill(offer.kind === 'discard' ? 0 : -unit);
+  if (offer.kind === 'discard') delta[offer.source] = -payout;
+  delta[winner] = payout;
   return { winner, hu, tun, names, delta, offer };
 }

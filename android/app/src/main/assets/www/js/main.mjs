@@ -2,12 +2,12 @@ import { chooseAction } from './ai/player.mjs';
 import { setMusicPlaying } from './audio/music.mjs?v=100-d4b6275df60f';
 import { playAction } from './audio/player.mjs';
 import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
-import { Round } from './game/state-machine.mjs?v=117';
-import { presets } from './rules/presets.mjs';
-import { load, save } from './storage/save.mjs?v=85';
+import { Round } from './game/state-machine.mjs?v=124';
+import { presets } from './rules/presets.mjs?v=124';
+import { load, save } from './storage/save.mjs?v=124';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=116';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=67';
-import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showWinningResult, showWinningTable } from './ui/table.mjs?v=118';
+import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showWinningResult, showWinningTable } from './ui/table.mjs?v=139';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
@@ -17,7 +17,8 @@ const leaveMenu = document.querySelector('#leave-menu');
 const resumeMenu = document.querySelector('#resume-menu');
 const eatMenu = document.querySelector('#eat-menu');
 const startButton = document.querySelector('#start');
-const score = document.querySelector('#score');
+const records = document.querySelector('#records');
+const recordsButton = document.querySelector('#open-records');
 const settings = document.querySelector('#settings');
 const settingsButton = document.querySelector('#open-settings');
 const modeTitle = document.querySelector('#mode-title');
@@ -49,7 +50,14 @@ modes.addEventListener('click', ({ target }) => {
 settingsButton.addEventListener('click', () => showFront(settings, settings.querySelector('[data-back-home]')));
 settings.querySelector('[data-back-home]').addEventListener('click', () => showHome(settingsButton));
 setup.querySelector('[data-back-home]').addEventListener('click', () => showHome());
-score.textContent = data.score;
+recordsButton.addEventListener('click', () => {
+  const scores = Object.entries(presets).map(([mode, { name }]) => [name, data.scores[mode]]);
+  if (data.legacyScore) scores.push(['旧版累计积分', data.legacyScore]);
+  records.querySelector('.score-records').innerHTML = scores.map(([name, value]) =>
+    `<div><dt>${name}</dt><dd>${value}</dd></div>`).join('');
+  showFront(records, records.querySelector('[data-back-home]'));
+});
+records.querySelector('[data-back-home]').addEventListener('click', () => showHome(recordsButton));
 
 function startMusic() {
   setMusicPlaying(data.settings.music);
@@ -60,7 +68,7 @@ document.addEventListener('click', startMusic, { once: true });
 
 function showFront(screen, focus) {
   table.hidden = true;
-  for (const page of [home, setup, settings]) page.hidden = page !== screen;
+  for (const page of [home, setup, settings, records]) page.hidden = page !== screen;
   focus.focus({ preventScroll: true });
 }
 
@@ -81,15 +89,15 @@ function saveRound(keep = round.phase !== 'finished') {
 
 function paintRound(event, motion, action) {
   const previousSeat = table.querySelector('.turn-arrow')?.dataset.seat;
-  table.innerHTML = renderTable(round, data.score, event, '', handLayout);
+  table.innerHTML = renderTable(round, data.scores[round.rules.mode], event, '', handLayout);
   animateTurnArrow(table.querySelector('.turn-arrow'), previousSeat);
   if (event || motion) animateAction(table, round, event, motion, action);
 }
 
 function showRound(event, motion, action) {
   if (event?.type === '胡') {
-    showWinningTable(table, round, data.score, event, motion.meld);
-    timer = setTimeout(() => showWinningResult(table, round, data.score, event, motion.meld), 2200);
+    showWinningTable(table, round, data.scores[round.rules.mode], event, motion.meld);
+    timer = setTimeout(() => showWinningResult(table, round, data.scores[round.rules.mode], event, motion.meld), 2200);
     return;
   }
   paintRound(event, motion, action);
@@ -134,7 +142,7 @@ function scheduleOpening(stageIndex, delay) {
 function showOpening(stageIndex) {
   const { name, duration } = openingStages[stageIndex];
   const command = document.activeElement.closest('.opening button')?.dataset.command ?? 'skip-opening';
-  showOpeningFrame(table, round, data.score, name);
+  showOpeningFrame(table, round, data.scores[round.rules.mode], name);
   table.querySelector(`[data-command="${command}"]`).focus({ preventScroll: true });
   openingEnds = performance.now() + duration;
   scheduleOpening(stageIndex, duration);
@@ -158,7 +166,7 @@ function showTable() {
   startMusic();
 }
 
-function start(dealer = Math.floor(Math.random() * 3)) {
+function start(dealer = Math.floor(Math.random() * presets[data.settings.mode].seats)) {
   const deck = cutDeck(shuffledDeck(Math.random), Math.random);
   round = new Round(data.settings, dealer, Math.random, deck, { deferOpening: true });
   handLayout = null;
@@ -170,6 +178,8 @@ function start(dealer = Math.floor(Math.random() * 3)) {
 
 function continueSavedRound() {
   round = Round.fromSave(data.round.state);
+  selectedMode = round.rules.mode;
+  data.settings.mode = selectedMode;
   round.rules.sound = data.settings.sound;
   handLayout = data.round.handLayout;
   showTable();
@@ -190,8 +200,7 @@ function step(action) {
   }
   const event = round.events.length > before ? round.events.at(-1) : null;
   if (round.phase === 'finished') {
-    data.score += round.result.delta[0];
-    score.textContent = data.score;
+    data.scores[round.rules.mode] += round.result.delta[0];
   }
   saveRound();
   if (event && round.rules.sound) playAction(event.type);

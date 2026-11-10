@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#113f32">
   <title>衡阳跑胡子</title>
-  <link rel="stylesheet" href="./css/app.css?v=123">
-  <script type="module" src="./js/main.mjs?v=118-d4b6275df60f"></script>
+  <link rel="stylesheet" href="./css/app.css?v=139">
+  <script type="module" src="./js/main.mjs?v=139-d4b6275df60f"></script>
 </head>
 <body>
   <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -20,7 +20,7 @@
   <main>
     <section id="home" class="front-screen" aria-labelledby="home-title">
       <header class="home-top">
-        <p class="home-score">积分 <strong id="score">0</strong></p>
+        <button id="open-records" type="button">积分记录</button>
         <button id="open-settings" class="icon-button" type="button" aria-label="设置"><svg class="nav-icon" aria-hidden="true"><use href="#icon-settings"/></svg></button>
       </header>
       <div class="home-brand">
@@ -49,6 +49,13 @@
         <label>方言音效<input type="checkbox" name="sound" role="switch"></label>
         <label>背景音乐<input type="checkbox" name="music" role="switch"></label>
       </div>
+    </section>
+    <section id="records" class="front-screen menu-screen" hidden aria-labelledby="records-title">
+      <header class="menu-header">
+        <button class="icon-button" type="button" data-back-home aria-label="返回首页"><svg class="nav-icon" aria-hidden="true"><use href="#icon-back"/></svg></button>
+        <h2 id="records-title">积分记录</h2>
+      </header>
+      <dl class="score-records"></dl>
     </section>
     <section id="table" class="wide" hidden aria-label="牌桌"></section>
     <dialog id="eat-menu" aria-label="选择吃法"></dialog>

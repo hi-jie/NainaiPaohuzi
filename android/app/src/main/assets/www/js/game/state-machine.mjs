@@ -1,8 +1,8 @@
 import { countCard, patterns, sortCards, takeCards } from '../rules/cards.mjs';
-import { canHuFrom, nextSeat, responses } from '../rules/actions.mjs?v=66';
+import { canHuFrom, nextSeat, responses } from '../rules/actions.mjs?v=124';
 import { findHu } from '../rules/hu.mjs?v=65';
-import { presets } from '../rules/presets.mjs';
-import { settle } from '../rules/scoring.mjs?v=117';
+import { presets } from '../rules/presets.mjs?v=124';
+import { settle } from '../rules/scoring.mjs?v=124';
 import { shuffledDeck } from './deck.mjs';
 
 function openingQuads(hand) {
@@ -14,16 +14,16 @@ export class Round {
     this.rules = { ...settings, ...presets[settings.mode], patterns: patterns(settings.oneFiveTen) };
     this.dealer = dealer;
     this.deck = [...deck];
-    this.players = Array.from({ length: 3 }, () => ({
+    this.players = Array.from({ length: this.rules.seats }, () => ({
       hand: [], groups: [], discards: [], passedChi: new Set(), passedPeng: new Set(), passedHu: -1
     }));
     this.events = [];
     this.discardCount = 0;
 
     let seat = dealer;
-    for (let turn = 0; turn < 3 * this.rules.dealt; turn++) {
+    for (let turn = 0; turn < this.players.length * this.rules.dealt; turn++) {
       this.players[seat].hand.push(this.deck.pop());
-      seat = nextSeat(seat);
+      seat = nextSeat(seat, this.players.length);
     }
     if (deferOpening) this.openingHand = [...this.players[0].hand];
     this.opening = this.deck.pop();
@@ -68,7 +68,7 @@ export class Round {
         this.options = options;
         return;
       }
-      seat = nextSeat(seat);
+      seat = nextSeat(seat, this.players.length);
     } while (seat !== 0);
     this.reveal(this.dealer, this.opening, 'opening');
   }
@@ -81,7 +81,7 @@ export class Round {
     this.phase = 'discard';
     this.seat = seat;
     this.options = this.discardOptions(seat);
-    if (!this.options.length) this.waitForDraw(nextSeat(seat));
+    if (!this.options.length) this.waitForDraw(nextSeat(seat, this.players.length));
   }
 
   discardOptions(seat) {
@@ -99,12 +99,14 @@ export class Round {
   reveal(source, card, kind) {
     this.offer = { source, card, kind, first: kind === 'discard' && this.discardCount === 1 };
     this.queue = [];
-    for (const seat of [source, nextSeat(source), nextSeat(nextSeat(source))]) {
+    let seat = source;
+    do {
       const choices = responses(this.players[seat], seat, this.offer, this.rules);
       for (const priority of new Set(choices.map(choice => choice.priority))) {
         this.queue.push({ seat, priority, choices: choices.filter(choice => choice.priority === priority) });
       }
-    }
+      seat = nextSeat(seat, this.players.length);
+    } while (seat !== source);
     this.queue.sort((a, b) => a.priority - b.priority);
     this.advanceResponse();
   }
@@ -127,7 +129,7 @@ export class Round {
       this.waitForDiscard(source);
     } else {
       if (kind === 'draw') this.players[source].discards.push(card);
-      this.waitForDraw(nextSeat(source));
+      this.waitForDraw(nextSeat(source, this.players.length));
     }
   }
 
@@ -149,7 +151,7 @@ export class Round {
     }
     if (type === '摸') {
       if (!this.deck.length) {
-        this.finish({ winner: null, delta: [0, 0, 0] });
+        this.finish({ winner: null, delta: this.players.map(() => 0) });
         return;
       }
       const card = this.deck.pop();
@@ -212,7 +214,7 @@ export class Round {
 
   finishMeld(repeatQuad) {
     this.offer = null;
-    if (repeatQuad) this.waitForDraw(nextSeat(this.seat));
+    if (repeatQuad) this.waitForDraw(nextSeat(this.seat, this.players.length));
     else this.waitForDiscard(this.seat);
   }
 

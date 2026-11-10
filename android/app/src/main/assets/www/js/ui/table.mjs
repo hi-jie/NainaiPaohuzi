@@ -1,8 +1,8 @@
 import { cardName, huxi, isRed } from '../rules/cards.mjs';
-import { nextSeat } from '../rules/actions.mjs?v=66';
+import { nextSeat } from '../rules/actions.mjs?v=124';
 import { createHandLayout, handColumnGroup } from './hand.mjs?v=67';
 
-const names = ['我', '电脑一', '电脑二'];
+const names = ['我', '电脑一', '电脑二', '电脑三', '电脑四'];
 
 function navButton(command, icon, label) {
   return `<button class="icon-button" data-command="${command}" aria-label="${label}"${command === 'home' ? '' : ' aria-haspopup="dialog"'}>
@@ -196,6 +196,7 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
   const source = offer?.source ?? event?.seat ?? round.dealer;
   const visibleCard = offer?.card ?? round.opening;
   const revealTile = ['reveal', 'sort'].includes(openingStage) && !round.hasOpeningTi;
+  const flatDeck = !openingStage || ['reveal', 'sort'].includes(openingStage);
   const playing = !openingStage && phase !== 'finished';
   const myTurn = playing && seat === 0;
   let actions = '';
@@ -203,18 +204,18 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
   else if (myTurn && phase === 'discard') actions = '<button class="primary" data-command="discard" disabled>出牌</button>';
   else if (myTurn && !options[0].forced) actions = actionButtons(options);
   const lastLabel = offer?.kind === 'draw' ? '摸牌' : offer?.kind === 'discard' ? '出牌' : '庄家亮张';
-  return `<div class="felt${openingStage ? ' opening' : ''}${showdown ? ' showdown' : ''}"${openingStage ? ` data-stage="${openingStage}"` : ''}>
+  return `<div class="felt${round.players.length > 3 ? ' many-seats' : ''}${round.players.length === 5 ? ' five-seats' : ''}${openingStage ? ' opening' : ''}${showdown ? ' showdown' : ''}"${openingStage ? ` data-stage="${openingStage}"` : ''}>
     <div class="table-hud">
       ${phase !== 'finished' ? navButton('leave', 'back', '返回首页') + navButton('pause', 'settings', '设置') : ''}
       ${playing && handLayout ? '<button data-command="auto-hand">自动理牌</button>' : ''}
-      <span>${round.rules.name}</span><span>积分 ${score}</span>
+      <div class="table-score"><span>${round.rules.name}</span><span>积分 ${score}</span></div>
     </div>
-    ${seatView(round, 1, event, null, openingStage)}${seatView(round, 2, event, null, openingStage)}
+    ${round.players.slice(1).map((_, index) => seatView(round, index + 1, event, null, openingStage)).join('')}
     <div class="center">
       <div class="play-area">
-        <div class="deck${!openingStage && round.deck.length > 1 ? ' stacked' : ''}">
-          <span class="card back deck-tile" aria-hidden="true">字${openingPile(openingStage)}</span>
-          ${!openingStage ? `<span class="deck-count">余 ${round.deck.length} 张</span>` : ''}
+        <div class="deck${flatDeck && round.deck.length > 1 ? ' stacked' : ''}">
+          <span class="card back deck-tile" aria-hidden="true">${openingPile(openingStage)}</span>
+          ${!openingStage ? `<span class="deck-count" aria-label="牌墩剩余 ${round.deck.length} 张">${round.deck.length}</span>` : ''}
           ${playing ? `<span class="turn-arrow to-${arrowSeat}" data-seat="${arrowSeat}" aria-hidden="true"></span>` : ''}
         </div>
         <div class="last-play from-${source}">
@@ -233,18 +234,12 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
 export function animateTurnArrow(arrow, previousSeat) {
   if (!arrow || previousSeat === undefined || previousSeat === arrow.dataset.seat ||
       matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const angles = [90, 180, 0];
+  const angles = [90, 180, 0, arrow.closest('.five-seats') ? 315 : 270, 225];
   const start = angles[previousSeat];
   const sweep = (start - angles[arrow.dataset.seat] + 360) % 360;
-  const style = getComputedStyle(arrow);
-  const radiusX = parseFloat(style.getPropertyValue('--orbit-x'));
-  const radiusY = parseFloat(style.getPropertyValue('--orbit-y'));
-  const steps = Math.ceil(sweep / 10);
-  const frames = Array.from({ length: steps + 1 }, (_, i) => {
-    const angle = start - sweep * i / steps;
-    const rad = angle * Math.PI / 180;
-    return { transform: `translateX(-50%) translate(${radiusX * Math.cos(rad)}px, ${radiusY * Math.sin(rad)}px) rotate(${angle}deg)` };
-  });
+  const frames = [start, start - sweep].map(angle => ({
+    transform: `translate(-50%, -50%) rotate(${angle}deg) translateX(var(--orbit-radius))`
+  }));
   arrow.animate(frames, { duration: 380, easing: 'ease-in-out' });
 }
 
@@ -319,16 +314,21 @@ export function showOpeningFrame(table, round, score, stage) {
   } else if (stage === 'deal') {
     const destinations = [
       table.querySelectorAll('.opening-card'),
-      table.querySelectorAll('.seat-1 .seat-backs span'),
-      table.querySelectorAll('.seat-2 .seat-backs span')
+      ...round.players.slice(1).map((_, index) => table.querySelectorAll(`.seat-${index + 1} .seat-backs span`))
     ];
     const positions = destinations.map(cards => Array.from(cards, card => card.getBoundingClientRect()));
+    const seats = destinations.length;
+    const portrait = matchMedia('(orientation: portrait)').matches;
     let seat = round.dealer;
-    for (let i = 0; i < round.rules.dealt * 3; i++, seat = nextSeat(seat)) {
-      const index = Math.floor(i / 3);
+    for (let i = 0; i < round.rules.dealt * seats; i++, seat = nextSeat(seat, seats)) {
+      const index = Math.floor(i / seats);
       const card = destinations[seat][index];
-      const [x, y] = tableOffset(table, deck, positions[seat][index]);
-      const origin = `translate(${x}px, ${y}px) scale(${seat === 0 ? 1.55 : 2.6})`;
+      const position = positions[seat][index];
+      const [x, y] = tableOffset(table, deck, position);
+      const widthScale = deck.width / position.width;
+      const heightScale = deck.height / position.height;
+      const scale = portrait ? [heightScale, widthScale] : [widthScale, heightScale];
+      const origin = `translate(${x}px, ${y}px) scale(${scale.join(', ')})`;
       card.animate([
         { transform: origin, opacity: 0 },
         { transform: origin, opacity: 1, offset: .05 },
