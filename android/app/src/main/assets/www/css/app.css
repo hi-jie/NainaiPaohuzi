@@ -257,7 +257,8 @@ main:has(#table:not([hidden])) {
   opacity: .85; cursor: grabbing; pointer-events: none;
 }
 .hand .hand-drop-slot {
-  border: 2px dashed #ffe39d; background: #ffd37544; box-shadow: 0 0 8px #ffc66080;
+  border: 2px solid #ffda72; background: #ffd37524;
+  box-shadow: 0 0 10px #ffc247e0, inset 0 0 8px #ffd87570;
   pointer-events: none;
 }
 .hand-stack:has(> :is(.card[hidden], .hand-drop-slot)) .group-score { visibility: hidden; }
