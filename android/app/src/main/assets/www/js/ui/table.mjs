@@ -90,9 +90,9 @@ function seatView(round, seat, event, response, openingStage, actions = '', hand
     <div class="seat-cards">
       <div class="groups">${showHand ? groups.map(group => meld(group, seat !== 0 && ['偎', '提'].includes(group.type), showdown)).join('') : ''}</div>
       ${showdown ? revealedHand(hand, seat) : `<div class="seat-backs" aria-hidden="true">${'<span></span>'.repeat(backs)}</div>`}
-      <button class="discarded" data-history="${seat}" data-view="discards" ${discards.length ? '' : 'disabled'} ${showdown ? 'inert' : ''} aria-label="${names[seat]}的弃牌，${discards.length}张">
+      <div class="discarded" role="group" aria-label="${names[seat]}的弃牌，${discards.length}张">
         ${discards.map(card => tile(card)).join('')}
-      </button>
+      </div>
     </div>
     ${actions ? `<div class="actions hand-actions">${actions}</div>` : ''}
     ${seat === 0 && spread ? openingHand(round.openingHand, openingStage === 'reveal') : ''}
@@ -146,19 +146,6 @@ export function previewEat(table, action) {
     card.classList.toggle('eat-preview', index !== -1);
     if (index !== -1) needed.splice(index, 1);
   }
-}
-
-export function renderHistory(round, seat, view) {
-  const player = round.players[seat];
-  const discards = tableDiscards(round, seat);
-  const content = view === 'groups'
-    ? `<div class="groups">${player.groups.map(group => meld(group, seat !== 0 && ['偎', '提'].includes(group.type))).join('')}</div>`
-    : `<p class="history-count">共 ${discards.length} 张</p>
-    <div class="history-cards" role="region" aria-label="按出现顺序排列的弃牌" tabindex="0">
-      ${discards.map(card => tile(card)).join('')}
-    </div>`;
-  return `<h2 class="avatar-label">${avatar(seat)}${view === 'groups' ? '落地牌' : '弃牌'}</h2>${content}
-    <form method="dialog"><button class="primary" autofocus>关闭</button></form>`;
 }
 
 function resultView({ winner, hu, names: bonuses, tun, delta }, score) {

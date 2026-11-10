@@ -9,7 +9,7 @@ import { findHu } from '../android/app/src/main/assets/www/js/rules/hu.mjs';
 import { defaultSettings, presets } from '../android/app/src/main/assets/www/js/rules/presets.mjs';
 import { settle } from '../android/app/src/main/assets/www/js/rules/scoring.mjs';
 import { handColumnGroup, moveHandCard, syncHandLayout } from '../android/app/src/main/assets/www/js/ui/hand.mjs';
-import { renderHistory, renderTable } from '../android/app/src/main/assets/www/js/ui/table.mjs';
+import { renderTable } from '../android/app/src/main/assets/www/js/ui/table.mjs';
 
 const rules = { ...defaultSettings, ...presets.six, patterns: patterns(false) };
 const player = (hand, groups = []) => ({
@@ -167,9 +167,9 @@ test('等吃期间牌只在墩旁，吃完进入落地牌，过后等下一张�
       else round.waitForDiscard(1);
       round.act(round.options[0]);
       assert.match(renderTable(round, 0), /class="landing">\s*<span[^>]*>三</);
-      assert.match(renderHistory(round, 1, 'discards'), /共 0 张/);
+      assert.match(renderTable(round, 0), /电脑一的弃牌，0张/);
       round.act(round.options.find(action => action.type === decision));
-      assert.match(renderHistory(round, 1, 'discards'), /共 0 张/);
+      assert.match(renderTable(round, 0), /电脑一的弃牌，0张/);
       if (decision === '吃') {
         assert.doesNotMatch(renderTable(round, 0), /class="landing">\s*<span/);
         assert.deepEqual(round.players[0].groups, [{ type: '吃', cards: [0, 1, 2] }]);
@@ -177,10 +177,10 @@ test('等吃期间牌只在墩旁，吃完进入落地牌，过后等下一张�
         assert.match(renderTable(round, 0), /class="landing">\s*<span[^>]*>三</);
         const restored = Round.fromSave(JSON.parse(JSON.stringify(round.toSave())));
         assert.match(renderTable(restored, 0), /class="landing">\s*<span[^>]*>三</);
-        assert.match(renderHistory(restored, 1, 'discards'), /共 0 张/);
+        assert.match(renderTable(restored, 0), /电脑一的弃牌，0张/);
         round.act(round.options[0]);
         assert.match(renderTable(round, 0), /class="landing">\s*<span[^>]*>十</);
-        assert.match(renderHistory(round, 1, 'discards'), /共 1 张/);
+        assert.match(renderTable(round, 0), /电脑一的弃牌，1张/);
       }
     }
   }

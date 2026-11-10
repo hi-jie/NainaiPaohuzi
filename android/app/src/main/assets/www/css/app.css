@@ -221,7 +221,6 @@ main:has(#table:not([hidden])) {
   padding: 0 0 calc(var(--strip-height) - var(--strip-peek)); border: 0; background: none;
 }
 .seat-0 .discarded { align-self: start; }
-.discarded:disabled { visibility: hidden; }
 .seat-2 .groups { flex-direction: row-reverse; }
 .seat-2 .discarded {
   direction: rtl; justify-self: end;
@@ -469,7 +468,7 @@ main:has(#table:not([hidden])) {
 }
 
 .settlement { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; background: #080e0ad1; animation: appear .16s .14s both; }
-.result, #discard-history, .game-dialog, #eat-menu {
+.result, .game-dialog, #eat-menu {
   width: min(calc(100% - 18px), 530px); text-align: center; padding: 10px;
   border: 3px solid #ad7947; border-radius: 17px; color: #fff0c8;
   background: radial-gradient(ellipse at top, #65412c, #30241a); box-shadow: 0 12px 35px #0009;
@@ -516,7 +515,7 @@ main:has(#table:not([hidden])) {
 }
 .result small { color: #f4d4a5; font-size: 16px; }
 .result p { margin: 3px 0; }
-.result .groups, #discard-history .groups {
+.result .groups {
   display: flex; justify-content: center; align-items: end; gap: 4px; flex-wrap: wrap; margin: 4px 0;
   --strip-width: 24px; --strip-height: 43px; --strip-font: 18px; --strip-peek: 20px;
 }
@@ -524,7 +523,7 @@ main:has(#table:not([hidden])) {
 .deltas div { background: #241b14; border-radius: 7px; padding: 2px; }
 .deltas strong { display: block; color: #ffe399; }
 .deltas .loss { color: #ffc2ae; }
-#discard-history::backdrop, .game-dialog::backdrop { background: #050d09bd; }
+.game-dialog::backdrop { background: #050d09bd; }
 .game-dialog { width: min(calc(var(--screen-width) - 24px), 390px); padding: 16px; }
 .game-dialog h2 { font-size: 24px; color: #ffe096; }
 .game-dialog .actions { flex-wrap: wrap; }
@@ -532,24 +531,9 @@ main:has(#table:not([hidden])) {
 #leave-description, #resume-description { margin: 6px 0 14px; }
 .pause-settings { display: flex; justify-content: center; flex-wrap: wrap; gap: 0 20px; margin: 8px 0 12px; }
 .pause-settings label { gap: 8px; }
-#discard-history[open] {
-  display: flex; flex-direction: column; width: min(calc(var(--screen-width) - 24px), 530px); overflow: hidden;
-}
-#discard-history, .game-dialog {
+.game-dialog {
   max-width: calc(var(--screen-width) - 24px); max-height: calc(var(--screen-height) - 24px);
 }
-#discard-history h2 { font-size: 24px; color: #ffe096; }
-.history-count { margin-top: 4px; color: #f4d4a5; }
-.history-cards {
-  display: grid; grid-template-columns: repeat(auto-fill, var(--strip-width)); grid-auto-rows: var(--strip-peek);
-  justify-content: center; align-content: start; column-gap: 8px; min-height: 0;
-  margin: 8px 0 12px; padding: 10px 10px calc(10px + var(--strip-height) - var(--strip-peek));
-  overflow-y: auto; overscroll-behavior: contain;
-  border-radius: 10px; background: #174d3d; box-shadow: inset 0 0 12px #082e25;
-  --strip-width: 38px; --strip-height: 68px; --strip-font: 28px; --strip-peek: 36px;
-}
-#discard-history form { flex: none; }
-#discard-history button { min-width: 110px; }
 @media (orientation: portrait) {
   :root {
     --screen-width: 100dvh;
@@ -559,7 +543,7 @@ main:has(#table:not([hidden])) {
     --safe-bottom: env(safe-area-inset-left);
     --safe-left: env(safe-area-inset-top);
   }
-  main, #discard-history, .game-dialog {
+  main, .game-dialog {
     position: fixed; inset: 50% auto auto 50%; margin: 0;
     transform: translate(-50%, -50%) rotate(90deg);
   }

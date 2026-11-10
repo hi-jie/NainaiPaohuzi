@@ -7,12 +7,11 @@ import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs?v=85';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=108';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=67';
-import { animateAction, animateHandSort, captureOfferMotion, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable, showWinningResult, showWinningTable } from './ui/table.mjs?v=109';
+import { animateAction, animateHandSort, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showWinningResult, showWinningTable } from './ui/table.mjs?v=110';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
 const table = document.querySelector('#table');
-const history = document.querySelector('#discard-history');
 const pauseMenu = document.querySelector('#pause-menu');
 const leaveMenu = document.querySelector('#leave-menu');
 const resumeMenu = document.querySelector('#resume-menu');
@@ -285,12 +284,6 @@ table.addEventListener('click', ({ target }) => {
     return;
   }
   eatMenu.close();
-  if (button.dataset.history !== undefined) {
-    clearTimeout(timer);
-    history.innerHTML = renderHistory(round, Number(button.dataset.history), button.dataset.view);
-    history.showModal();
-    return;
-  }
   clearTimeout(timer);
   if (button.dataset.command === 'home') {
     showHome();
@@ -337,7 +330,6 @@ eatMenu.addEventListener('close', () => {
     button.setAttribute('aria-haspopup', 'dialog');
   }
 });
-history.addEventListener('close', scheduleTurn);
 pauseMenu.addEventListener('close', () => {
   round.rules.sound = data.settings.sound;
   resumeRound();
