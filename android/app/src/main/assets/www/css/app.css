@@ -297,7 +297,7 @@ main:has(#table:not([hidden])) {
 .hand [data-drop="right"] > .new-column-slot { right: calc(-1 * (var(--edge-frame-width) + var(--edge-frame-gap))); }
 .felt.dragging-hand {
   --drag-hand-gap: 48px;
-  --edge-frame-width: 40px; --edge-frame-gap: 6px; --edge-frame-inset: 8px;
+  --edge-frame-width: 40px; --edge-frame-gap: 6px;
 }
 .felt.dragging-hand::before {
   content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;

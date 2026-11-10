@@ -64,12 +64,8 @@ function horizontalTargets(columns, edgeCenter) {
 }
 
 function targetAt(drag, x) {
-  const { targets, edgeReach } = drag;
+  const { targets } = drag;
   x -= panAt(drag, x);
-
-  const first = targets[0].x;
-  const last = targets.at(-1).x;
-  if (x < first - edgeReach || x > last + edgeReach) return null;
 
   // Give an existing column 55% of the distance to either neighbouring gap center.
   return targets.find(({ x: center, stack }, index) => {
@@ -81,10 +77,8 @@ function targetAt(drag, x) {
 
 function findDrop(drag, x, y) {
   const { source, area, edge } = drag;
-  if (y < area.top - edge || y > area.bottom + edge ||
-      x < area.left || x > area.right) return null;
+  if (y < area.top - edge || y > area.bottom + edge) return null;
   const target = targetAt(drag, x);
-  if (!target) return null;
   const { stack } = target;
   if (!stack) return target;
   if (stack.cards.length >= 4) return null;
@@ -200,8 +194,6 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       const originY = track.top + start.y - from.top;
       const frameWidth = parseFloat(style.getPropertyValue('--edge-frame-width')) * scale;
       const frameGap = parseFloat(style.getPropertyValue('--edge-frame-gap')) * scale;
-      const frameInset = parseFloat(style.getPropertyValue('--edge-frame-inset')) * scale;
-      const edgeReach = frameWidth / 2 + frameInset;
       const targets = horizontalTargets(columns, frameWidth / 2 + frameGap);
       const expandedAxis = targets.find(target => origin.hidden
         ? target.newColumn && target.column >= source.column
@@ -231,7 +223,7 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       };
       Object.assign(drag, {
         hand, felt, held, slot, stacks, origin, columns, portrait, scale, start, originX, originY,
-        targets, edgeReach, anchor, panRate, panLimits, pan: anchor, source, area,
+        targets, anchor, panRate, panLimits, pan: anchor, source, area,
         edge: Math.min(12 * scale, (from.right - from.left) / 3)
       });
       drag.region = targetAt(drag, start.x);
@@ -243,7 +235,7 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
     const x = portrait ? event.clientY : event.clientX;
     const y = portrait ? -event.clientX : event.clientY;
     const region = targetAt(drag, x);
-    if (region && region !== drag.region) {
+    if (region !== drag.region) {
       const center = drag.start.x + (region.x + drag.anchor - drag.start.x) / (1 + drag.panRate);
       const nextPan = panAt(drag, center);
       if (nextPan !== drag.pan) {
