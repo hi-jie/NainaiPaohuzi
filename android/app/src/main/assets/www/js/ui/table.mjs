@@ -1,6 +1,6 @@
 import { cardName, huxi, isRed } from '../rules/cards.mjs';
 import { nextSeat } from '../rules/actions.mjs?v=66';
-import { arrangeHand } from './hand.mjs?v=58';
+import { createHandLayout, handColumnGroup } from './hand.mjs?v=67';
 
 const names = ['我', '电脑一', '电脑二'];
 
@@ -13,38 +13,36 @@ function avatar(seat) {
   return `<span class="avatar avatar-${seat}" role="img" aria-label="${names[seat]}"></span>`;
 }
 
-function tile(card, hidden = false, selection, hinted = false) {
+function tile(card, hidden = false, selection, hinted = false, handId) {
   const classes = `card${hidden ? ' back' : isRed(card) ? ' red' : ''}${hinted ? ' hinted' : ''}`;
+  const handAttribute = handId === undefined ? '' : ` data-hand-card="${handId}"`;
   if (selection !== undefined) {
-    return `<button class="${classes}" data-select-card="${selection}" aria-pressed="false" aria-label="选择${cardName(card)}">${cardName(card)}</button>`;
+    return `<button class="${classes}"${handAttribute} data-select-card="${selection}" aria-pressed="false" aria-label="选择${cardName(card)}">${cardName(card)}</button>`;
   }
-  return `<span class="${classes}">${hidden ? '◆' : cardName(card)}</span>`;
+  return `<span class="${classes}"${handAttribute}>${hidden ? '◆' : cardName(card)}</span>`;
 }
 
 function meld(group, hide = false) {
   return `<span class="meld" data-meld="${group.type}" data-cards="${group.cards.join(' ')}">${group.cards.map((card, index) => tile(card, hide && index > 0)).join('')}</span>`;
 }
 
-function playerHand(round, hand, canDiscard, response) {
+function playerHand(round, layout, canDiscard, response, canDrag) {
   const matching = response?.type === '吃' ? [] : [...(response?.cards ?? [])];
-  const cardView = card => {
+  const cardView = ({ id, card }) => {
     const action = canDiscard ? round.options.findIndex(option => option.card === card) : -1;
     const match = matching.indexOf(card);
     if (match !== -1) matching.splice(match, 1);
-    return tile(card, false, action === -1 ? undefined : action, match !== -1);
+    return tile(card, false, action === -1 ? undefined : action, match !== -1, canDrag ? id : undefined);
   };
-  const { stacks, loose } = arrangeHand(hand, round.rules.patterns);
-  const stackView = cards => {
-    const type = cards.length === 4 ? '提' : cards.length === 2 ? '对' : cards.every(card => card === cards[0]) ? '坎' : '吃';
-    const points = huxi({ type, cards });
+  return layout.map(column => {
+    const group = handColumnGroup(column, round.rules.patterns);
+    const points = group ? huxi(group) : 0;
     const score = points > 0 ? `<strong class="group-score"><span class="sr-only">胡息 </span>${points}</strong>` : '';
-    return `<div class="hand-stack">${cards.map(cardView).join('')}${score}</div>`;
-  };
-  return stacks.map(stackView).join('') + loose.map(cards =>
-    `<div class="hand-stack loose">${cards.map(cardView).join('')}</div>`).join('');
+    return `<div class="hand-stack${group ? '' : ' loose'}">${column.map(cardView).join('')}${score}</div>`;
+  }).join('');
 }
 
-function seatView(round, seat, event, response, openingStage, actions = '') {
+function seatView(round, seat, event, response, openingStage, actions = '', handLayout) {
   const { hand, groups, discards } = round.players[seat];
   const spread = openingStage === 'deal' || openingStage === 'reveal';
   const arranging = openingStage === 'sort';
@@ -69,7 +67,9 @@ function seatView(round, seat, event, response, openingStage, actions = '') {
     </div>
     ${actions ? `<div class="actions hand-actions">${actions}</div>` : ''}
     ${seat === 0 && spread ? openingHand(round.openingHand, openingStage === 'reveal') : ''}
-    ${seat === 0 && showHand ? `<div class="hand" aria-label="我的手牌">${playerHand(round, hand, yourDiscard, response)}</div>` : ''}
+    ${seat === 0 && showHand ? `<div class="hand" aria-label="我的手牌">${playerHand(
+      round, handLayout ?? createHandLayout(hand, round.rules.patterns), yourDiscard, response, !openingStage && round.phase !== 'finished'
+    )}</div>` : ''}
   </section>`;
 }
 
@@ -171,7 +171,7 @@ function openingPile(stage) {
     `<i class="opening-back opening-stack" style="--index:${index}"></i>`).join('')}</span>`;
 }
 
-export function renderTable(round, score, event, openingStage = '') {
+export function renderTable(round, score, event, openingStage = '', handLayout = null) {
   const { phase, seat, options, events } = round;
   const response = seat === 0 && phase === 'response' ? options[0] : null;
   const handHint = seat === 0 && phase === 'opening-ti' ? options[0] : response;
@@ -191,6 +191,7 @@ export function renderTable(round, score, event, openingStage = '') {
   return `<div class="felt${openingStage ? ' opening' : ''}"${openingStage ? ` data-stage="${openingStage}"` : ''}>
     <div class="table-hud">
       ${phase !== 'finished' ? navButton('leave', 'back', '返回首页') + navButton('pause', 'settings', '设置') : ''}
+      ${playing ? `<button data-command="auto-hand"${handLayout ? '' : ' disabled'}>自动理牌</button>` : ''}
       <span>${round.rules.name}</span><span>积分 ${score}</span>
     </div>
     ${seatView(round, 1, event, null, openingStage)}${seatView(round, 2, event, null, openingStage)}
@@ -209,7 +210,7 @@ export function renderTable(round, score, event, openingStage = '') {
         </div>
       </div>
     </div>
-    ${seatView(round, 0, event, handHint, openingStage, actions)}
+    ${seatView(round, 0, event, handHint, openingStage, actions, handLayout)}
     </div>
     ${phase === 'finished' ? resultView(round.result, score) : ''}`;
 }

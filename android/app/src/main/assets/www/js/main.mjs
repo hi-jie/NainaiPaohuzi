@@ -5,7 +5,9 @@ import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
 import { Round } from './game/state-machine.mjs?v=66';
 import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs';
-import { animateAction, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=66';
+import { bindHandDrag } from './ui/hand-drag.mjs?v=67';
+import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=67';
+import { animateAction, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=67';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
@@ -22,6 +24,7 @@ const modeTitle = document.querySelector('#mode-title');
 const data = load();
 let selectedMode = data.settings.mode;
 let round;
+let handLayout = null;
 let timer;
 let openingEnds;
 
@@ -68,9 +71,13 @@ function showHome(focus = modes.querySelector(`[data-mode="${selectedMode}"]`)) 
   showFront(home, focus);
 }
 
-function showRound(event) {
-  table.innerHTML = renderTable(round, data.score, event);
+function paintRound(event) {
+  table.innerHTML = renderTable(round, data.score, event, '', handLayout);
   if (event) animateAction(table, event);
+}
+
+function showRound(event) {
+  paintRound(event);
   scheduleTurn();
 }
 
@@ -127,6 +134,7 @@ function resumeRound() {
 function start(dealer = Math.floor(Math.random() * 3)) {
   const deck = cutDeck(shuffledDeck(Math.random), Math.random);
   round = new Round(data.settings, dealer, Math.random, deck, { deferOpening: true });
+  handLayout = null;
   setup.hidden = true;
   table.hidden = false;
   fitTable();
@@ -137,7 +145,14 @@ function start(dealer = Math.floor(Math.random() * 3)) {
 
 function step(action) {
   const before = round.events.length;
+  const usedCards = handLayout && round.seat === 0
+    ? [...table.querySelectorAll('.hand :is([aria-pressed="true"], .eat-preview, .hinted)[data-hand-card]')]
+    : [];
   round.act(action);
+  if (handLayout) {
+    handLayout = syncHandLayout(handLayout, round.players[0].hand, round.rules.patterns,
+      new Set(usedCards.map(card => Number(card.dataset.handCard))));
+  }
   const event = round.events.length > before ? round.events.at(-1) : null;
   if (event && round.rules.sound) playAction(event.type);
   if (round.phase === 'finished') {
@@ -156,6 +171,33 @@ function selectDiscard(button) {
   confirm.classList.add('guided');
 }
 
+function setHandLayout(layout, selectedId) {
+  handLayout = layout;
+  paintRound();
+  if (selectedId !== undefined) {
+    selectDiscard(table.querySelector(`[data-hand-card="${selectedId}"][data-select-card]`));
+  }
+  const choice = eatMenu.querySelector('.eat-choice[aria-pressed="true"]');
+  if (eatMenu.open && choice) {
+    previewEat(table, round.options[Number(choice.dataset.action)]);
+    const confirm = table.querySelector('[data-command="choose-eat"]');
+    confirm.textContent = '确认吃';
+    confirm.removeAttribute('aria-haspopup');
+  }
+}
+
+bindHandDrag(table, {
+  onStart: () => clearTimeout(timer),
+  onDrop(source, target) {
+    const layout = handLayout ?? createHandLayout(round.players[0].hand, round.rules.patterns);
+    const moved = moveHandCard(layout, source, target);
+    if (moved !== layout) {
+      setHandLayout(moved, table.querySelector('[data-select-card][aria-pressed="true"]')?.dataset.handCard);
+    }
+  },
+  onEnd: scheduleTurn
+});
+
 startButton.addEventListener('click', () => {
   data.settings.mode = selectedMode;
   save(data);
@@ -163,12 +205,16 @@ startButton.addEventListener('click', () => {
 });
 for (const type of ['selectstart', 'contextmenu']) {
   table.addEventListener(type, event => {
-    if (event.target.closest('[data-select-card]')) event.preventDefault();
+    if (event.target.closest('[data-hand-card]')) event.preventDefault();
   });
 }
 table.addEventListener('click', ({ target }) => {
   const button = target.closest('button');
   if (!button) return;
+  if (button.dataset.command === 'auto-hand') {
+    setHandLayout(null);
+    return;
+  }
   if (button.dataset.command === 'choose-eat') {
     if (eatMenu.open) {
       const choice = eatMenu.querySelector('.eat-choice[aria-pressed="true"]');

@@ -1,4 +1,4 @@
-import { countCard, hasCards, huxi, takeCards } from '../rules/cards.mjs';
+import { countCard, hasCards, huxi, sortCards, takeCards } from '../rules/cards.mjs';
 
 export function arrangeHand(hand, patterns) {
   let remaining = hand;
@@ -31,4 +31,63 @@ export function arrangeHand(hand, patterns) {
     loose.push(remaining.slice(index, index + 3));
   }
   return { stacks, loose };
+}
+
+export function createHandLayout(hand, patterns) {
+  const { stacks, loose } = arrangeHand(hand, patterns);
+  let id = 0;
+  return [...stacks, ...loose].map(column => column.map(card => ({ id: id++, card })));
+}
+
+export function handColumnGroup(column, patterns) {
+  const cards = sortCards(column.map(({ card }) => card));
+  if (cards.length > 1 && cards.every(card => card === cards[0])) {
+    return { type: ['对', '坎', '提'][cards.length - 2], cards };
+  }
+  if (cards.length === 3 && patterns.some(pattern => pattern.every((card, index) => card === cards[index]))) {
+    return { type: '吃', cards };
+  }
+  return null;
+}
+
+export function moveHandCard(layout, source, target) {
+  const next = layout.map(column => [...column]);
+  const [card] = next[source.column].splice(source.index, 1);
+  if (target.newColumn) next.splice(target.column, 0, [card]);
+  else {
+    const index = target.index - Number(target.column === source.column && source.index < target.index);
+    next[target.column].splice(index, 0, card);
+  }
+  const columns = next.filter(column => column.length);
+  if (columns.length === layout.length && columns.every((column, i) =>
+    column.length === layout[i].length && column.every((tile, j) => tile === layout[i][j]))) return layout;
+  return columns;
+}
+
+export function syncHandLayout(layout, hand, patterns, preferredIds) {
+  const previous = layout.flat();
+  const remaining = new Map();
+  for (const card of hand) remaining.set(card, (remaining.get(card) ?? 0) + 1);
+  const remove = new Map();
+  for (const { card } of previous) remove.set(card, (remove.get(card) ?? 0) + 1);
+  for (const [card, count] of remaining) remove.set(card, (remove.get(card) ?? 0) - count);
+
+  // When copies are interchangeable, use the previewed card or a loose card first.
+  const loose = layout.filter(column => !handColumnGroup(column, patterns)).flat();
+  const candidates = [...previous.filter(({ id }) => preferredIds.has(id)), ...loose, ...previous];
+  const removed = new Set();
+  for (const { id, card } of candidates) {
+    if (!removed.has(id) && remove.get(card) > 0) {
+      removed.add(id);
+      remove.set(card, remove.get(card) - 1);
+    }
+  }
+  const columns = layout.map(column => column.filter(({ id }) => !removed.has(id))).filter(column => column.length);
+  let id = Math.max(-1, ...previous.map(tile => tile.id)) + 1;
+  for (const [card, count] of remove) {
+    for (let added = 0; added < -count; added++) {
+      columns.push([{ id: id++, card }]);
+    }
+  }
+  return columns;
 }

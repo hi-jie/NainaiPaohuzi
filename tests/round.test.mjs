@@ -8,6 +8,7 @@ import { huxi, patterns, takeCards, types } from '../android/app/src/main/assets
 import { findHu } from '../android/app/src/main/assets/www/js/rules/hu.mjs';
 import { defaultSettings, presets } from '../android/app/src/main/assets/www/js/rules/presets.mjs';
 import { settle } from '../android/app/src/main/assets/www/js/rules/scoring.mjs';
+import { handColumnGroup, moveHandCard, syncHandLayout } from '../android/app/src/main/assets/www/js/ui/hand.mjs';
 import { renderTable } from '../android/app/src/main/assets/www/js/ui/table.mjs';
 
 const rules = { ...defaultSettings, ...presets.six, patterns: patterns(false) };
@@ -15,6 +16,21 @@ const player = (hand, groups = []) => ({
   hand, groups, discards: [], passedChi: new Set(), passedPeng: new Set(), passedHu: -1
 });
 const waitingHand = [0, 1, 2, 3, 3, 3, 5, 6, 7, 10, 11, 12, 15, 16];
+
+test('手动理牌可移动同名牌，出牌后保留其它牌的位置', () => {
+  const layout = [
+    [{ id: 0, card: 0 }, { id: 1, card: 1 }],
+    [{ id: 2, card: 1 }, { id: 3, card: 2 }]
+  ];
+  const moved = moveHandCard(layout, { column: 1, index: 1 }, { column: 0, index: 0 });
+  assert.deepEqual(moved.map(column => column.map(({ id }) => id)), [[3, 0, 1], [2]]);
+  assert.equal(huxi(handColumnGroup(moved[0], rules.patterns)), 3);
+  const synced = syncHandLayout(moved, [0, 1, 2, 9], rules.patterns, new Set([1]));
+  assert.deepEqual(synced, [[moved[0][0], moved[0][1]], [moved[1][0]], [{ id: 4, card: 9 }]]);
+  const split = moveHandCard(moved, { column: 0, index: 1 }, { column: 1, newColumn: true });
+  assert.deepEqual(split.map(column => column.map(({ id }) => id)), [[3, 1], [0], [2]]);
+  assert.equal(moveHandCard(moved, { column: 0, index: 0 }, { column: 0, index: 1 }), moved);
+});
 
 test('切牌保留整副牌，亮张前后沿用同一手牌', () => {
   const random = () => 0.375;

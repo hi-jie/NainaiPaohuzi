@@ -247,6 +247,21 @@ main:has(#table:not([hidden])) {
 .hand .card:is(.hinted, .eat-preview, [aria-pressed="true"]) { transform: translateY(-4px); }
 .hand button.card:active { filter: brightness(1.13); }
 .hand button.card:focus-visible { outline-offset: -3px; }
+.hand [data-hand-card] { touch-action: none; cursor: grab; }
+.hand .dragged-stack { z-index: 2; }
+.hand .card.dragged-card {
+  z-index: 1; transform: translate(var(--drag-x), var(--drag-y)); transition: none;
+  opacity: .85; cursor: grabbing; pointer-events: none;
+}
+.hand [data-drop]::after {
+  content: ""; position: absolute; z-index: 1; pointer-events: none;
+  background: #fff0ae; border-radius: 3px; box-shadow: 0 0 6px #ffc660;
+}
+.hand [data-drop="top"]::after { inset: -2px 0 auto; height: 4px; }
+.hand [data-drop="bottom"]::after { inset: auto 0 1px; height: 4px; }
+.hand [data-drop="left"]::after { inset: 0 auto 0 -5px; width: 4px; }
+.hand [data-drop="right"]::after { inset: 0 -5px 0 auto; width: 4px; }
+.table-hud [data-command="auto-hand"]:disabled { opacity: .5; cursor: default; }
 
 .center { position: absolute; top: 50%; left: 50%; width: 300px; transform: translateX(-50%); text-align: center; }
 .play-area { position: absolute; top: -135px; left: 0; right: 0; }
