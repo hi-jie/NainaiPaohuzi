@@ -2,12 +2,12 @@ import { chooseAction } from './ai/player.mjs';
 import { setMusicPlaying } from './audio/music.mjs?v=5-d4b6275df60f';
 import { playAction } from './audio/player.mjs';
 import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
-import { Round } from './game/state-machine.mjs?v=85';
+import { Round } from './game/state-machine.mjs?v=89';
 import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs?v=85';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=79';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=67';
-import { animateAction, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=80';
+import { animateAction, captureOfferMotion, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=89';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
@@ -80,13 +80,13 @@ function saveRound(keep = round.phase !== 'finished') {
   save(data);
 }
 
-function paintRound(event) {
+function paintRound(event, motion, action) {
   table.innerHTML = renderTable(round, data.score, event, '', handLayout);
-  if (event) animateAction(table, event);
+  if (event || motion) animateAction(table, round, event, motion, action);
 }
 
-function showRound(event) {
-  paintRound(event);
+function showRound(event, motion, action) {
+  paintRound(event, motion, action);
   scheduleTurn();
 }
 
@@ -111,9 +111,11 @@ function scheduleTurn() {
 }
 
 function beginPlay() {
+  const from = table.querySelector('.opening .landing .card')?.getBoundingClientRect();
+  const motion = from ? { offer: { source: round.dealer, card: round.opening, kind: 'opening' }, from } : null;
   round.revealOpening();
   saveRound();
-  showRound();
+  showRound(null, motion);
 }
 
 function scheduleOpening(stageIndex, delay) {
@@ -171,6 +173,7 @@ function continueSavedRound() {
 
 function step(action) {
   const before = round.events.length;
+  const motion = captureOfferMotion(table, round);
   const usedCards = handLayout && round.seat === 0
     ? [...table.querySelectorAll('.hand :is([aria-pressed="true"], .eat-preview, .hinted)[data-hand-card]')]
     : [];
@@ -186,7 +189,7 @@ function step(action) {
   }
   saveRound();
   if (event && round.rules.sound) playAction(event.type);
-  showRound(event);
+  showRound(event, motion, action);
 }
 
 function selectDiscard(button) {

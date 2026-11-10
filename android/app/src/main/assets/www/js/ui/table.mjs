@@ -42,8 +42,15 @@ function playerHand(round, layout, canDiscard, response, canDrag) {
   }).join('');
 }
 
+function tableDiscards(round, seat) {
+  const { discards } = round.players[seat];
+  return round.phase === 'response' && round.offer.kind === 'discard' && round.offer.source === seat
+    ? discards.slice(0, -1) : discards;
+}
+
 function seatView(round, seat, event, response, openingStage, actions = '', handLayout) {
-  const { hand, groups, discards } = round.players[seat];
+  const { hand, groups } = round.players[seat];
+  const discards = tableDiscards(round, seat);
   const spread = openingStage === 'deal' || openingStage === 'reveal';
   const arranging = openingStage === 'sort';
   const showHand = !openingStage || arranging;
@@ -122,11 +129,12 @@ export function previewEat(table, action) {
 
 export function renderHistory(round, seat, view) {
   const player = round.players[seat];
+  const discards = tableDiscards(round, seat);
   const content = view === 'groups'
     ? `<div class="groups">${player.groups.map(group => meld(group, seat !== 0 && ['偎', '提'].includes(group.type))).join('')}</div>`
-    : `<p class="history-count">共 ${player.discards.length} 张</p>
+    : `<p class="history-count">共 ${discards.length} 张</p>
     <div class="history-cards" role="region" aria-label="按出现顺序排列的弃牌" tabindex="0">
-      ${player.discards.map(card => tile(card)).join('')}
+      ${discards.map(card => tile(card)).join('')}
     </div>`;
   return `<h2 class="avatar-label">${avatar(seat)}${view === 'groups' ? '落地牌' : '弃牌'}</h2>${content}
     <form method="dialog"><button class="primary" autofocus>关闭</button></form>`;
@@ -171,22 +179,21 @@ function openingPile(stage) {
 }
 
 export function renderTable(round, score, event, openingStage = '', handLayout = null) {
-  const { phase, seat, options, events } = round;
-  const response = seat === 0 && phase === 'response' ? options[0] : null;
+  const { phase, seat, options } = round;
+  const offer = phase === 'response' ? round.offer : null;
+  const response = seat === 0 && offer ? options[0] : null;
   const handHint = seat === 0 && phase === 'opening-ti' ? options[0] : response;
-  const arrowSeat = phase === 'response' ? round.offer.source : seat;
-  const last = events.findLast(({ type }) => type === '出' || type === '摸');
-  const source = last?.seat ?? round.dealer;
-  const visibleCard = last?.card ?? round.opening;
+  const arrowSeat = offer?.source ?? seat;
+  const source = offer?.source ?? event?.seat ?? round.dealer;
+  const visibleCard = offer?.card ?? round.opening;
   const revealTile = ['reveal', 'sort'].includes(openingStage) && !round.hasOpeningTi;
-  const showLastPlay = !openingStage && phase !== 'opening-ti';
   const playing = !openingStage && phase !== 'finished';
   const myTurn = playing && seat === 0;
   let actions = '';
   if (openingStage) actions = '<button data-command="skip-opening">跳过动画</button>';
   else if (myTurn && phase === 'discard') actions = '<button class="primary" data-command="discard" disabled>出牌</button>';
   else if (myTurn && !options[0].forced) actions = actionButtons(options);
-  const lastLabel = last ? shortActionLabel(last.type) : '庄家亮张';
+  const lastLabel = offer?.kind === 'draw' ? '摸牌' : offer?.kind === 'discard' ? '出牌' : '庄家亮张';
   return `<div class="felt${openingStage ? ' opening' : ''}"${openingStage ? ` data-stage="${openingStage}"` : ''}>
     <div class="table-hud">
       ${phase !== 'finished' ? navButton('leave', 'back', '返回首页') + navButton('pause', 'settings', '设置') : ''}
@@ -194,7 +201,7 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
       <span>${round.rules.name}</span><span>积分 ${score}</span>
     </div>
     ${seatView(round, 1, event, null, openingStage)}${seatView(round, 2, event, null, openingStage)}
-    <div class="center${event?.type === '胡' ? ' winning' : ''}">
+    <div class="center">
       <div class="play-area">
         <div class="deck${!openingStage && round.deck.length > 1 ? ' stacked' : ''}">
           <span class="card back deck-tile" aria-hidden="true">字${openingPile(openingStage)}</span>
@@ -203,9 +210,9 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
         </div>
         <div class="last-play from-${source}">
           <div class="landing">${revealTile && openingStage === 'reveal' ? '<i class="opening-back"></i>' : ''}
-            ${showLastPlay || revealTile ? tile(visibleCard, false, undefined, response !== null) : ''}
+            ${offer || revealTile ? tile(visibleCard, false, undefined, response !== null) : ''}
           </div>
-          ${showLastPlay ? `<span>${lastLabel}</span>` : ''}
+          ${offer ? `<span>${lastLabel}</span>` : ''}
         </div>
       </div>
     </div>
@@ -272,20 +279,95 @@ export function showOpeningFrame(table, round, score, stage) {
   }
 }
 
-export function animateAction(table, event) {
+function meldCard(area, groups, index, card) {
+  return area.children[index].children[groups[index].cards.indexOf(card)];
+}
+
+export function captureOfferMotion(table, round) {
+  const { phase, offer, seat } = round;
+  const flying = table.querySelector('.flying-card');
+  if (phase === 'response') {
+    const card = flying ?? table.querySelector('.landing .card');
+    return { offer, from: card.getBoundingClientRect() };
+  }
+  if (phase === 'after-meld') {
+    const { type } = round.events.at(-1);
+    const { groups } = round.players[seat];
+    const index = groups.findIndex(group => group.type === type && group.cards[0] === offer.card);
+    const card = meldCard(table.querySelector(`.seat-${seat} .groups`), groups, index, offer.card);
+    return { offer, meld: index, from: (flying ?? card).getBoundingClientRect() };
+  }
+}
+
+function flyCard(table, card, destination, from, { via, win = false } = {}) {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const landing = table.querySelector('.landing .card');
-  const seat = table.querySelector(`.seat-${event.seat}`);
-  const origin = event.type === '摸' ? table.querySelector('.deck-tile')
-    : event.fromHand && event.seat === 0 ? seat.querySelector('.hand') : seat;
-  const destination = ['摸', '出', '胡'].includes(event.type) ? landing
-    : [...seat.querySelectorAll(`.meld[data-meld="${event.type}"][data-cards~="${event.card}"]`)].at(-1);
-  const from = (destination === landing || event.fromHand ? origin : landing).getBoundingClientRect();
-  const to = destination.getBoundingClientRect();
-  const [x, y] = tableOffset(table, from, to);
-  destination.animate([
-    { transform: `translate(${x}px, ${y}px) scale(.72)`, opacity: .3 },
-    { transform: 'translate(0, 0) scale(1.08)', opacity: 1, offset: .78 },
-    { transform: 'translate(0, 0) scale(1)', opacity: 1 }
-  ], { duration: 380, easing: 'cubic-bezier(.2,.72,.28,1)' });
+  const frame = table.getBoundingClientRect();
+  const portrait = matchMedia('(orientation: portrait)').matches;
+  const local = rect => portrait
+    ? { x: rect.top - frame.top, y: frame.right - rect.right, width: rect.height, height: rect.width }
+    : { x: rect.left - frame.left, y: rect.top - frame.top, width: rect.width, height: rect.height };
+  const deck = local(table.querySelector('.landing').getBoundingClientRect());
+  const start = local(from);
+  const end = local(destination.getBoundingClientRect());
+  const ghost = document.createElement('span');
+  ghost.className = `card flying-card${isRed(card) ? ' red' : ''}${win ? ' winning' : ''}`;
+  ghost.setAttribute('aria-hidden', 'true');
+  ghost.textContent = cardName(card);
+  Object.assign(ghost.style, {
+    left: `${start.x}px`, top: `${start.y}px`, width: `${deck.width}px`, height: `${deck.height}px`,
+    fontSize: `${28 * Number(table.style.getPropertyValue('--table-scale'))}px`
+  });
+  const transform = ({ x, y, width, height }) =>
+    `translate(${x - start.x}px, ${y - start.y}px) scale(${width / deck.width}, ${height / deck.height})`;
+  destination.style.visibility = 'hidden';
+  table.append(ghost);
+  const frames = [{ transform: transform(start) }];
+  if (via) {
+    const pause = transform(local(via));
+    frames.push({ transform: pause, offset: .32 }, { transform: pause, offset: .65 });
+  }
+  frames.push({ transform: transform(end) });
+  ghost.animate(frames, { duration: via ? 760 : win ? 600 : 380, fill: 'both', easing: 'ease-in-out' }).onfinish = () => {
+    destination.style.visibility = '';
+    ghost.remove();
+  };
+}
+
+export function animateAction(table, round, event, motion, action) {
+  const landing = table.querySelector('.landing');
+  const seatView = seat => table.querySelector(`.seat-${seat}`);
+  const discard = seat => seatView(seat).querySelector('.discarded').lastElementChild;
+  if (event?.type === '摸' || event?.type === '出') {
+    const { card, seat, type } = event;
+    const origin = type === '摸' ? table.querySelector('.deck-tile') : seatView(seat).querySelector('.avatar');
+    const center = landing.querySelector('.card');
+    flyCard(table, card, center ?? discard(seat), origin.getBoundingClientRect(),
+      { via: center ? null : landing.getBoundingClientRect() });
+  } else if (event?.type === '胡') {
+    const { card, seat } = event;
+    const { groups } = round.players[seat];
+    const winning = round.result.hu.groups;
+    const index = motion.meld ?? winning.findIndex((group, i) => i >= groups.length && group.cards.includes(card));
+    if (motion.meld !== undefined) meldCard(seatView(seat).querySelector('.groups'), groups, index, card).style.visibility = 'hidden';
+    const destination = meldCard(table.querySelector('.settlement .groups'), winning, index, card);
+    flyCard(table, card, destination, motion.from, { win: true });
+  } else if (event?.fromHand) {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const seat = seatView(event.seat);
+    const origin = event.seat === 0 ? seat.querySelector('.hand') : seat.querySelector('.avatar');
+    slideFrom(table, seat.querySelector('.groups').lastElementChild, origin.getBoundingClientRect(), 380, .72);
+  } else if (event) {
+    const { card, seat } = event;
+    const { groups } = round.players[seat];
+    const index = action.previous >= 0 ? action.previous : groups.length - (action.groups?.length ?? 1);
+    const destination = meldCard(seatView(seat).querySelector('.groups'), groups, index, card);
+    flyCard(table, card, destination, motion.from);
+  } else if (motion && motion.meld === undefined && round.phase !== 'response' && round.phase !== 'opening-ti') {
+    const { offer: { source, card, kind }, from } = motion;
+    const seat = seatView(source);
+    const destination = kind !== 'opening' ? discard(source) : source === 0
+      ? [...seat.querySelectorAll('.hand .card')].findLast(tile => tile.textContent === cardName(card))
+      : seat.querySelector('.seat-backs').lastElementChild;
+    flyCard(table, card, destination, from);
+  }
 }

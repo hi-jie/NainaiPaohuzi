@@ -9,7 +9,7 @@ import { findHu } from '../android/app/src/main/assets/www/js/rules/hu.mjs';
 import { defaultSettings, presets } from '../android/app/src/main/assets/www/js/rules/presets.mjs';
 import { settle } from '../android/app/src/main/assets/www/js/rules/scoring.mjs';
 import { handColumnGroup, moveHandCard, syncHandLayout } from '../android/app/src/main/assets/www/js/ui/hand.mjs';
-import { renderTable } from '../android/app/src/main/assets/www/js/ui/table.mjs';
+import { renderHistory, renderTable } from '../android/app/src/main/assets/www/js/ui/table.mjs';
 
 const rules = { ...defaultSettings, ...presets.six, patterns: patterns(false) };
 const player = (hand, groups = []) => ({
@@ -155,6 +155,34 @@ test('吃碰响应未确认时箭头留在出牌者，确认后才指向接牌�
     assert.equal(round.phase, accepted === '过' ? 'draw' : 'discard');
     assert.equal(arrow(), accepted === '碰' ? 0 : 1);
   }
+});
+
+test('等吃期间牌只在墩旁，吃完进入落地牌，过后进入弃牌', () => {
+  for (const kind of ['draw', 'discard']) {
+    for (const decision of ['吃', '过']) {
+      const round = new Round(defaultSettings, 0);
+      round.players = [player([0, 1, 8]), player([]), player([])];
+      if (kind === 'discard') round.players[1].discards.push(2);
+      round.reveal(1, 2, kind);
+      assert.match(renderTable(round, 0), /class="landing">\s*<span[^>]*>三</);
+      assert.match(renderHistory(round, 1, 'discards'), /共 0 张/);
+      round.act(round.options.find(action => action.type === decision));
+      assert.doesNotMatch(renderTable(round, 0), /class="landing">\s*<span/);
+      assert.match(renderHistory(round, 1, 'discards'), decision === '吃' ? /共 0 张/ : /共 1 张/);
+      if (decision === '吃') assert.deepEqual(round.players[0].groups, [{ type: '吃', cards: [0, 1, 2] }]);
+    }
+  }
+});
+
+test('放炮胡只取走本次打出的那一张，先前同名弃牌仍保留', () => {
+  const round = new Round({ ...defaultSettings, discardHu: true }, 0);
+  round.players = [player(waitingHand), { ...player([]), discards: [17, 17] }, player([])];
+  round.reveal(1, 17, 'discard');
+  assert.equal(round.options[0].type, '胡');
+  round.act(round.options[0]);
+  assert.deepEqual(round.players[1].discards, [17]);
+  assert.ok(round.result.hu.groups.some(group => group.cards.includes(17)));
+  assert.doesNotMatch(renderTable(round, 0), /class="landing">\s*<span/);
 });
 
 test('存档恢复当前响应、后续响应和过牌限制', () => {

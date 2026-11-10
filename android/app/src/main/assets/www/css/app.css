@@ -338,7 +338,8 @@ main:has(#table:not([hidden])) {
 .seat-1 .callout { left: calc(100% + 4px); }
 .seat-2 .callout { right: calc(100% + 4px); }
 .seat-0 .callout { top: -50px; left: calc(var(--side-seat-width) + 4px); }
-.winning .landing .card { box-shadow: 0 0 28px 10px #ffe28a; }
+.flying-card { position: absolute; z-index: 3; transform-origin: top left; pointer-events: none; }
+.flying-card.winning { box-shadow: 0 0 20px 6px #ffe28a; }
 
 #table.wide .felt::after { inset: 42px 32px 112px; }
 .wide .seat { top: 60px; --side-seat-width: 180px; }

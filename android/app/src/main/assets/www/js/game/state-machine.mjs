@@ -178,6 +178,7 @@ export class Round {
       return;
     }
     if (type === '胡') {
+      if (this.phase === 'response' && kind === 'discard') this.players[source].discards.pop();
       this.record(type, seat, card);
       this.finish(settle(seat, this.offer, action.hu, this.rules));
       return;
