@@ -1,7 +1,6 @@
 import { cardName, huxi, isRed } from '../rules/cards.mjs';
 import { nextSeat } from '../rules/actions.mjs?v=141';
 import { createHandLayout, handColumnGroup } from './hand.mjs?v=141';
-import { rankResultView } from './rank-result.mjs';
 
 const names = ['我', '电脑一', '电脑二', '电脑三', '电脑四'];
 
@@ -167,14 +166,15 @@ function resultView({ winner, hu, names: bonuses, tun, delta, kind }, score) {
   const details = winner === null ? '' : `
     <div class="groups">${hu.groups.map(group => meld(group)).join('')}</div>
     <p>${kind ? (kind === 'self' ? '自摸' : '接炮') : `${hu.huxi} 胡息 · ${tun} 囤 · ${bonuses.map(([name, multiple]) => `${name} ×${multiple}`).join('、')}`}</p>`;
-  return `<div class="settlement"><div class="settlement-layout"><section class="panel result" aria-live="polite">
+  return `<div class="settlement"><section class="panel result" aria-live="polite">
     <small>本局结算</small>
     <h2 class="avatar-label">${winner === null ? '黄庄' : `${avatar(winner)}胡牌`}</h2>
     ${details}
     <div class="deltas">${delta.map((value, seat) => `<div>${avatar(seat)}<strong class="${value < 0 ? 'loss' : ''}">${value > 0 ? '+' : ''}${value}</strong></div>`).join('')}</div>
+    <p>累计积分 ${score}</p>
     <div class="actions"><button class="primary" data-command="again">再来一局</button>
     ${navButton('home', 'back', '返回首页')}</div>
-  </section>${rankResultView(score, delta[0])}</div></div>`;
+  </section></div>`;
 }
 
 export const openingStages = [

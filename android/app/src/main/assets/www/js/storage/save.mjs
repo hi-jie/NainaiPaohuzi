@@ -5,10 +5,8 @@ export function load() {
   const saved = localStorage.getItem(key);
   const data = saved === null ? {} : JSON.parse(saved);
   const scores = Object.fromEntries(Object.keys(presets).map(mode => [mode, data.scores?.[mode] ?? 0]));
-  const peakScores = Object.fromEntries(Object.entries(scores).map(([mode, score]) =>
-    [mode, Math.max(score, data.peakScores?.[mode] ?? 0)]));
   return {
-    scores, peakScores,
+    scores,
     settings: { ...defaultSettings, ...data.settings }, round: data.round ?? null
   };
 }
