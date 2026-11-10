@@ -219,6 +219,31 @@ test('存档恢复当前响应、后续响应和过牌限制', () => {
   assert.equal(restored.phase, 'discard');
 });
 
+test('三种玩法的跑和碰都优先于座次靠前的吃', () => {
+  for (const mode of Object.keys(presets)) {
+    for (const [action, hand] of [['碰', [2, 2, 9]], ['跑', [2, 2, 2, 9]]]) {
+      const round = new Round({ ...defaultSettings, mode }, 0);
+      round.players = [player(hand), player([0, 1, 8]), { ...player([]), discards: [2] }];
+      round.reveal(2, 2, 'discard');
+      assert.equal(round.seat, 0);
+      assert.equal(round.options[0].type, action);
+      assert.equal(round.queue[0].choices[0].type, '吃');
+    }
+  }
+});
+
+test('三种玩法自摸不加倍，其他名堂照常计分', () => {
+  for (const [mode, preset] of Object.entries(presets)) {
+    const settings = { ...rules, ...preset, mode };
+    const hu = { huxi: 15, red: 1 };
+    const selfDraw = settle(0, { kind: 'draw', source: 0 }, hu, settings);
+    const otherDraw = settle(0, { kind: 'draw', source: 1 }, hu, settings);
+    assert.deepEqual(selfDraw.delta, otherDraw.delta);
+    assert.deepEqual(selfDraw.delta, [6 * selfDraw.tun, -3 * selfDraw.tun, -3 * selfDraw.tun]);
+    assert.deepEqual(selfDraw.names, [['点胡', 3], ['自摸', 1]]);
+  }
+});
+
 test('胡牌优先于座次靠前的跑、碰和吃', () => {
   for (const [type, hand] of [['跑', [17, 17, 17]], ['碰', [17, 17]], ['吃', [15, 16]]]) {
     const round = new Round(defaultSettings, 0);

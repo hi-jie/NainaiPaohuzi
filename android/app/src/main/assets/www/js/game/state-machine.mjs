@@ -2,7 +2,7 @@ import { countCard, patterns, sortCards, takeCards } from '../rules/cards.mjs';
 import { canHuFrom, nextSeat, responses } from '../rules/actions.mjs?v=66';
 import { findHu } from '../rules/hu.mjs?v=65';
 import { presets } from '../rules/presets.mjs';
-import { settle } from '../rules/scoring.mjs?v=65';
+import { settle } from '../rules/scoring.mjs?v=117';
 import { shuffledDeck } from './deck.mjs';
 
 function openingQuads(hand) {

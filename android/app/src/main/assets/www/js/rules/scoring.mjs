@@ -14,7 +14,7 @@ export function settle(winner, offer, hu, rules) {
   if (hu.red >= 13) names.push(['十三红', 5]);
   else if (hu.red >= 10) names.push(['十红', 2]);
   if (offer.kind === 'opening' && winner === offer.source) names.push(['天胡', 5]);
-  if (offer.kind === 'draw' && winner === offer.source) names.push(['自摸', 2]);
+  if (offer.kind === 'draw' && winner === offer.source) names.push(['自摸', 1]);
   if (offer.kind === 'discard' && offer.first) names.push(['地胡', 5]);
   if (!names.length) names.push(['平胡', 1]);
 
