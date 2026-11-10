@@ -300,19 +300,21 @@ main:has(#table:not([hidden])) {
   width: var(--strip-width); height: var(--strip-height); border-radius: 4px;
 }
 .felt.dragging-hand::before {
-  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none;
   background: #0009; backdrop-filter: blur(5px); animation: appear .15s ease-out;
 }
 .hand-drag-guides {
-  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  position: absolute; inset: 0; z-index: 5; pointer-events: none;
   display: grid; grid-template-rows: var(--cancel-height) var(--new-column-height);
   color: #ffe8ad; font-size: 22px; font-weight: 400;
 }
 .hand-drag-guides span {
   display: grid; place-items: center; border-bottom: 1px solid #ffe1a080;
 }
-.felt.dragging-hand .seat-0 { z-index: 2; }
-.felt.dragging-hand .seat-0 > :not(.hand) { filter: brightness(.45) blur(5px); }
+#table:not(.wide) .felt.dragging-hand .seat-0 {
+  inset-inline: 0; margin-inline: auto; transform: none;
+}
+.felt.dragging-hand .seat-0 > .hand { z-index: 5; }
 .felt.dragging-hand .choosing-card .hand .card:not(button) { filter: none; }
 .center { position: absolute; top: 50%; left: 50%; width: 300px; transform: translateX(-50%); text-align: center; }
 .play-area { position: absolute; top: -135px; left: 0; right: 0; }
