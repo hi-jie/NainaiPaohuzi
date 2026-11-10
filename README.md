@@ -47,7 +47,7 @@ adb install -r .\app\build\outputs\apk\debug\app-debug.apk
 
 有新角色时，在项目根目录运行 `python scripts/update-opponents.py`。首次使用需安装 Pillow（`python -m pip install Pillow`）。
 
-脚本读取[米游社角色图鉴](https://baike.mihoyo.com/ys/obc/channel/map/189/25)，排除旅行者，保留已有角色的名字，并为新增角色起名。名单和 48×48 WebP 头像图集会一起更新。脚本只更新本地文件。
+脚本读取[米游社角色图鉴](https://baike.mihoyo.com/ys/obc/channel/map/189/25)，排除旅行者。角色名开头已有《百家姓》中的姓氏时保留原名，其余角色沿用已有名字或用常见姓氏起名。名单和 48×48 WebP 头像图集会一起更新。脚本只更新本地文件。
 
 ## 首版规则取值
 

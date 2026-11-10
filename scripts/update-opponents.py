@@ -17,6 +17,30 @@ CACHE = Path(tempfile.gettempdir()) / 'paohuzi-opponent-icons'
 SOURCE = 'https://baike.mihoyo.com/ys/obc/channel/map/189/25'
 API = 'https://api-static.mihoyo.com/common/blackboard/ys_obc/v1/home/content/list?app_sn=ys_obc&channel_id=189'
 SURNAMES = '王李张刘陈杨黄赵吴周徐孙马朱胡林何郭罗高郑梁谢宋唐许邓韩曹彭曾萧田董袁潘蒋蔡'
+# Traditional surname list in simplified characters, including common variant forms.
+# https://zh.wikisource.org/zh-hans/百家姓
+HUNDRED_FAMILY_SURNAMES = set(
+    '赵钱孙李周吴郑王冯陈褚卫蒋沈韩杨朱秦尤许何吕施张孔曹严华金魏陶姜'
+    '戚谢邹喻柏水窦章云苏潘葛奚范彭郎鲁韦昌马苗凤花方俞任袁柳酆鲍史唐'
+    '费廉岑薛雷贺倪汤滕殷罗毕郝邬安常乐于时傅皮卞齐康伍余元卜顾孟平黄'
+    '和穆萧尹姚邵湛汪祁毛禹狄米贝明臧计伏成戴谈宋茅庞熊纪舒屈项祝董梁'
+    '杜阮蓝闵席季麻强贾路娄危江童颜郭梅盛林刁钟徐邱骆高夏蔡田樊胡凌霍'
+    '虞万支柯昝管卢莫经房裘缪干解应宗丁宣贲邓郁单杭洪包诸左石崔吉钮龚'
+    '程嵇邢滑裴陆荣翁荀於羊惠甄曲家封芮羿储靳汲邴糜松井段富巫乌焦巴弓'
+    '牧隗山谷车侯宓蓬全郗班仰秋仲伊宫宁仇栾暴甘针厉戎祖武符刘景詹束龙'
+    '叶幸司韶郜黎蓟薄印宿白怀蒲邰从鄂索咸籍赖卓蔺屠蒙池乔阴郁胥能苍双'
+    '闻莘党翟谭贡劳逄姬申扶堵冉宰郦雍郤璩桑桂濮牛寿通边扈燕冀郏浦尚农'
+    '温别庄晏柴瞿阎充慕连茹习宦艾鱼容向古易慎戈廖庾终暨居衡步都耿满弘'
+    '匡国文寇广禄阙东欧殳沃利蔚越夔隆师巩库聂晁勾敖融冷訾辛阚那简饶空'
+    '曾毋沙乜养鞠须丰巢关蒯相查后荆红游竺权逯盖益桓公晋楚闫法汝鄢涂钦'
+    '岳帅缑亢况后商牟佘佴墨哈谯笪年爱阳佟言福锺丘厐鉏麹鞠甯虙翼厍郈'
+)
+COMPOUND_SURNAMES = set(
+    '万俟 司马 上官 欧阳 夏侯 诸葛 闻人 东方 赫连 皇甫 尉迟 公羊 澹台 公冶 宗政 濮阳 '
+    '淳于 单于 太叔 申屠 公孙 仲孙 轩辕 令狐 钟离 宇文 长孙 慕容 鲜于 闾丘 司徒 司空 '
+    '亓官 司寇 仉督 子车 颛孙 端木 巫马 公西 漆雕 乐正 壤驷 公良 拓跋 夹谷 宰父 谷梁 '
+    '段干 百里 东郭 南门 呼延 归海 羊舌 微生 有琴 梁丘 左丘 东门 西门 伯赏 南宫 第五'.split()
+)
 TILE_SIZE = 48
 COLUMNS = 8
 BEGIN = '// BEGIN GENERATED OPPONENT DATA'
@@ -58,12 +82,20 @@ def fetch_icon(url):
 
 
 def build_roster(roles, previous):
-    used_names = {previous[role['content_id']] for role in roles if role['content_id'] in previous}
-    entries = []
-    for index, role in enumerate(roles):
-        role_id = role['content_id']
-        character = role['title'].strip()
+    characters = {role['content_id']: role['title'].strip() for role in roles}
+    assigned = {
+        role_id: character for role_id, character in characters.items()
+        if character[:1] in HUNDRED_FAMILY_SURNAMES or character[:2] in COMPOUND_SURNAMES
+    }
+    used_names = set(assigned.values())
+    for role_id in characters:
         name = previous.get(role_id)
+        if role_id not in assigned and name and name not in used_names:
+            assigned[role_id] = name
+            used_names.add(name)
+    entries = []
+    for index, (role_id, character) in enumerate(characters.items()):
+        name = assigned.get(role_id)
         if name is None:
             given = ''.join(re.findall(r'[\u3400-\u9fff]', character.split('·', 1)[0]))[-2:]
             if not given:
@@ -140,7 +172,8 @@ def main():
         index_path: versioned_entry(index_path.read_text(encoding='utf-8'), 'main.mjs', revision, '&amp;').encode(),
     })
     added = sum(role_id not in previous for role_id, _, _ in entries)
-    print(f'已更新 {len(entries)} 名对家，新增 {added} 名，头像图集 {len(atlas) / 1024:.1f} KiB。')
+    renamed = sum(role_id in previous and name != previous[role_id] for role_id, name, _ in entries)
+    print(f'已更新 {len(entries)} 名对家，新增 {added} 名，调整 {renamed} 个名字，头像图集 {len(atlas) / 1024:.1f} KiB。')
 
 
 if __name__ == '__main__':

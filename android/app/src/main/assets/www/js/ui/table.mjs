@@ -1,6 +1,6 @@
 import { cardName, huxi, isRed } from '../rules/cards.mjs';
 import { nextSeat } from '../rules/actions.mjs?v=141';
-import { getOpponent } from '../data/opponents.mjs?v=172&avatars=019446441cfe';
+import { getOpponent } from '../data/opponents.mjs?v=172&avatars=db991ec2370f';
 import { createHandLayout, handColumnGroup } from './hand.mjs?v=141';
 
 const names = ['我', '电脑一', '电脑二', '电脑三', '电脑四'];
