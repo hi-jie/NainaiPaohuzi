@@ -7,7 +7,7 @@ import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs?v=85';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=108';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=67';
-import { animateAction, captureOfferMotion, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable, showWinningResult, showWinningTable } from './ui/table.mjs?v=101';
+import { animateAction, animateHandSort, captureOfferMotion, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable, showWinningResult, showWinningTable } from './ui/table.mjs?v=109';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
@@ -268,7 +268,7 @@ table.addEventListener('click', ({ target }) => {
   const button = target.closest('button');
   if (!button) return;
   if (button.dataset.command === 'auto-hand') {
-    setHandLayout(null);
+    animateHandSort(table, () => setHandLayout(null));
     return;
   }
   if (button.dataset.command === 'choose-eat') {

@@ -282,16 +282,30 @@ export function showWinningTable(table, round, score, event, winningMeld) {
   else updateScores();
 }
 
-export function showOpeningFrame(table, round, score, stage) {
-  const previousCards = new Map();
-  if (stage === 'sort') {
-    for (const card of table.querySelectorAll('.opening-row .card')) {
-      const label = card.textContent;
-      if (!previousCards.has(label)) previousCards.set(label, []);
-      previousCards.get(label).push(card.getBoundingClientRect());
-    }
+export function animateHandSort(table, render, opening = false) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    render();
+    return;
   }
+  const previousCards = new Map();
+  for (const card of table.querySelectorAll(opening ? '.opening-row .card' : '.seat-0 .hand .card')) {
+    const label = card.textContent;
+    if (!previousCards.has(label)) previousCards.set(label, []);
+    previousCards.get(label).push(card.getBoundingClientRect());
+  }
+  render();
+  const destination = opening ? '.seat-0 .hand .card, .seat-0 .groups .card' : '.seat-0 .hand .card';
+  for (const card of table.querySelectorAll(destination)) {
+    const from = previousCards.get(card.textContent)?.shift();
+    if (from) slideFrom(table, card, from, 560, opening ? .76 : 1);
+  }
+}
 
+export function showOpeningFrame(table, round, score, stage) {
+  if (stage === 'sort') {
+    animateHandSort(table, () => { table.innerHTML = renderTable(round, score, null, stage); }, true);
+    return;
+  }
   table.innerHTML = renderTable(round, score, null, stage);
   const deck = table.querySelector('.deck-tile').getBoundingClientRect();
   if (stage === 'dealer') {
@@ -316,12 +330,6 @@ export function showOpeningFrame(table, round, score, stage) {
         { transform: 'none', opacity: 1 }
       ], { duration: 320, delay: i * 37, fill: 'both', easing: 'ease-out' });
     }
-  } else if (stage === 'sort') {
-    const arrangedCards = table.querySelectorAll('.seat-0 .hand .card, .seat-0 .groups .card');
-    arrangedCards.forEach(card => {
-      const from = previousCards.get(card.textContent)?.shift();
-      if (from) slideFrom(table, card, from, 560, .76);
-    });
   }
 }
 
