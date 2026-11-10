@@ -4,15 +4,21 @@ function bounds(element, portrait) {
 }
 
 const visibleCard = '[data-hand-card]:not([hidden])';
+const reflowItems = `${visibleCard}, .group-score`;
 
 function panAt(drag, x) {
   const { panLimits, panRate, start, anchor } = drag;
   return anchor + (start.x - Math.min(panLimits.right, Math.max(panLimits.left, x))) * panRate;
 }
 
-function cardPositions(hand, portrait) {
-  return new Map([...hand.querySelectorAll(visibleCard)].map(card => [
-    card.dataset.handCard, bounds(card, portrait)
+function reflowKey(item) {
+  return item.dataset.handCard ?? `score:${Array.from(item.parentElement.querySelectorAll('[data-hand-card]'),
+    card => card.dataset.handCard).join(',')}`;
+}
+
+function handPositions(hand, portrait) {
+  return new Map([...hand.querySelectorAll(reflowItems)].map(item => [
+    reflowKey(item), bounds(item, portrait)
   ]));
 }
 
@@ -24,14 +30,14 @@ function cancelReflow(hand) {
 
 function animateReflow(hand, previous, portrait, scale, held) {
   if (!hand || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  for (const card of hand.querySelectorAll(visibleCard)) {
-    const from = previous.get(card.dataset.handCard);
-    if (!from || card === held) continue;
-    const to = bounds(card, portrait);
+  for (const item of hand.querySelectorAll(reflowItems)) {
+    const from = previous.get(reflowKey(item));
+    if (!from || item === held) continue;
+    const to = bounds(item, portrait);
     const x = (from.left - to.left) / scale;
     const y = (from.top - to.top) / scale;
     if (Math.abs(x) < .25 && Math.abs(y) < .25) continue;
-    const animation = card.animate([
+    const animation = item.animate([
       { transform: `translate(${x}px, ${y}px)` },
       { transform: 'none' }
     ], { duration: 150, easing: 'ease-out', composite: 'add' });
@@ -99,7 +105,7 @@ function showDrop(drag, drop, previous) {
 
   const movesCards = old?.stack || drop?.stack;
   if (!previous && movesCards) {
-    previous = cardPositions(drag.hand, drag.portrait);
+    previous = handPositions(drag.hand, drag.portrait);
     cancelReflow(drag.hand);
   }
   delete old?.marker?.dataset.drop;
@@ -143,7 +149,7 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       const scale = Number(table.style.getPropertyValue('--table-scale'));
       const start = { x: portrait ? drag.startY : drag.startX, y: portrait ? -drag.startX : drag.startY };
       cancelReflow(hand);
-      previous = cardPositions(hand, portrait);
+      previous = handPositions(hand, portrait);
       const from = previous.get(drag.card.dataset.handCard);
       const stacks = [...hand.children];
       const origin = drag.card.parentElement;
@@ -236,7 +242,7 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       const center = drag.start.x + (region.x + drag.anchor - drag.start.x) / (1 + drag.panRate);
       const nextPan = panAt(drag, center);
       if (nextPan !== drag.pan) {
-        previous ??= cardPositions(hand, portrait);
+        previous ??= handPositions(hand, portrait);
         cancelReflow(hand);
         drag.pan = nextPan;
       }
@@ -257,7 +263,7 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       : null;
     drag = undefined;
     if (columns) {
-      const previous = cardPositions(hand, portrait);
+      const previous = handPositions(hand, portrait);
       cancelReflow(hand);
       slot.remove();
       held.remove();
