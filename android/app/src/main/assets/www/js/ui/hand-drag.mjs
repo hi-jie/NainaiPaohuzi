@@ -5,28 +5,9 @@ function bounds(element, portrait) {
 
 const visibleCard = '[data-hand-card]:not([hidden])';
 
-function panZones(start, limits, anchor, rate, scale) {
-  function side(end) {
-    const travel = Math.abs(end - start);
-    if (!travel || !rate) return [];
-    const steps = Math.max(1, Math.min(Math.ceil(travel * rate / (44 * scale)), Math.floor(travel / (24 * scale))));
-    return Array.from({ length: steps }, (_, i) => {
-      const x = start + (end - start) * (i + 1) / steps;
-      return { x, pan: anchor + (start - x) * rate };
-    });
-  }
-  return [...side(limits.left).reverse(), { x: start, pan: anchor }, ...side(limits.right)];
-}
-
 function panAt(drag, x) {
-  const { zones, scale } = drag;
-  let index = drag.zone;
-  const threshold = (left, right, direction) =>
-    (left.x + right.x) / 2 + direction * Math.min(6 * scale, (right.x - left.x) * .15);
-  while (index + 1 < zones.length && x > threshold(zones[index], zones[index + 1], 1)) index++;
-  while (index > 0 && x < threshold(zones[index - 1], zones[index], -1)) index--;
-  drag.zone = index;
-  return zones[index].pan;
+  const { panLimits, panRate, start, anchor } = drag;
+  return anchor + (start.x - Math.min(panLimits.right, Math.max(panLimits.left, x))) * panRate;
 }
 
 function cardPositions(hand, portrait) {
@@ -75,22 +56,28 @@ function horizontalTargets(columns, edgeCenter) {
   ];
 }
 
-function findDrop(drag, x, y) {
-  const { targets, source, area, edge, edgeReach } = drag;
-  if (y < area.top - edge || y > area.bottom + edge ||
-      x < area.left || x > area.right) return null;
-  x -= drag.zones[drag.zone].pan;
+function targetAt(drag, x) {
+  const { targets, edgeReach } = drag;
+  x -= panAt(drag, x);
 
   const first = targets[0].x;
   const last = targets.at(-1).x;
   if (x < first - edgeReach || x > last + edgeReach) return null;
 
   // Give an existing column 55% of the distance to either neighbouring gap center.
-  const target = targets.find(({ x: center, stack }, index) => {
+  return targets.find(({ x: center, stack }, index) => {
     if (index === targets.length - 1) return true;
     const share = stack ? .55 : .45;
     return x < center + (targets[index + 1].x - center) * share;
   });
+}
+
+function findDrop(drag, x, y) {
+  const { source, area, edge } = drag;
+  if (y < area.top - edge || y > area.bottom + edge ||
+      x < area.left || x > area.right) return null;
+  const target = targetAt(drag, x);
+  if (!target) return null;
   const { stack } = target;
   if (!stack) return target;
   if (stack.cards.length >= 4) return null;
@@ -231,12 +218,12 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
         left: start.x - leftDistance / (1 + panRate),
         right: start.x + rightDistance / (1 + panRate)
       };
-      const zones = panZones(start.x, panLimits, anchor, panRate, scale);
       Object.assign(drag, {
         hand, felt, held, slot, stacks, origin, columns, portrait, scale, start, originX, originY,
-        targets, edgeReach, zones, zone: zones.findIndex(zone => zone.x === start.x), source, area,
+        targets, edgeReach, anchor, panRate, panLimits, pan: anchor, source, area,
         edge: Math.min(12 * scale, (from.right - from.left) / 3)
       });
+      drag.region = targetAt(drag, start.x);
       hand.append(held);
       suppressClick = true;
     }
@@ -244,7 +231,18 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
     const { portrait, scale, held, hand, originX, originY } = drag;
     const x = portrait ? event.clientY : event.clientX;
     const y = portrait ? -event.clientX : event.clientY;
-    const pan = panAt(drag, x);
+    const region = targetAt(drag, x);
+    if (region && region !== drag.region) {
+      const center = drag.start.x + (region.x + drag.anchor - drag.start.x) / (1 + drag.panRate);
+      const nextPan = panAt(drag, center);
+      if (nextPan !== drag.pan) {
+        previous ??= cardPositions(hand, portrait);
+        cancelReflow(hand);
+        drag.pan = nextPan;
+      }
+      drag.region = region;
+    }
+    const { pan } = drag;
     hand.style.setProperty('--hand-pan', `${pan / scale}px`);
     held.style.setProperty('--drag-x', `${(x - pan - originX) / scale}px`);
     held.style.setProperty('--drag-y', `${(y - originY) / scale}px`);
