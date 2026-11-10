@@ -4,7 +4,7 @@ function bounds(element, portrait) {
 }
 
 const visibleCard = '[data-hand-card]:not([hidden])';
-const reflowItems = `${visibleCard}, .group-score`;
+const reflowItems = `${visibleCard}, .group-score, .hand-drop-slot`;
 
 function panAt(drag, x) {
   const { panLimits, panRate, start, anchor } = drag;
@@ -12,6 +12,7 @@ function panAt(drag, x) {
 }
 
 function reflowKey(item) {
+  if (item.classList.contains('hand-drop-slot')) return 'drop-slot';
   return item.dataset.handCard ?? `score:${Array.from(item.parentElement.querySelectorAll('[data-hand-card]'),
     card => card.dataset.handCard).join(',')}`;
 }
@@ -103,15 +104,19 @@ function showDrop(drag, drop, previous) {
     return;
   }
 
-  const movesCards = old?.stack || drop?.stack;
-  if (!previous && movesCards) {
+  if (!previous) {
     previous = handPositions(drag.hand, drag.portrait);
     cancelReflow(drag.hand);
   }
   delete old?.marker?.dataset.drop;
   drag.slot.remove();
   drag.drop = drop;
-  if (drop?.newColumn) drop.marker.dataset.drop = drop.side;
+  drag.slot.classList.toggle('card', !drop?.newColumn);
+  drag.slot.classList.toggle('new-column-slot', !!drop?.newColumn);
+  if (drop?.newColumn) {
+    drop.marker.dataset.drop = drop.side;
+    drop.marker.append(drag.slot);
+  }
   else if (drop) drop.stack.insertBefore(drag.slot, drop.before);
   if (previous) animateReflow(drag.hand, previous, drag.portrait, drag.scale, drag.held);
 }

@@ -283,19 +283,18 @@ main:has(#table:not([hidden])) {
   z-index: 2; transform: translate(var(--drag-x), var(--drag-y)); transition: none;
   opacity: .85; cursor: grabbing; pointer-events: none;
 }
-.hand .hand-drop-slot,
-.hand [data-drop]::after {
+.hand .hand-drop-slot {
   border: 2px solid #ffda72; background: #ffd37524;
   box-shadow: 0 0 10px #ffc247e0, inset 0 0 8px #ffd87570;
   pointer-events: none;
 }
-.hand-stack:has(> :is(.card[hidden], .hand-drop-slot)) .group-score { visibility: hidden; }
-.hand [data-drop]::after {
-  content: ""; position: absolute; bottom: 0; z-index: 1; box-sizing: border-box;
+.hand-stack:has(> :is(.card[hidden], .card.hand-drop-slot)) .group-score { visibility: hidden; }
+.hand .new-column-slot {
+  position: absolute; bottom: 0; z-index: 1;
   width: var(--edge-frame-width); height: var(--strip-height); border-radius: 4px;
 }
-.hand [data-drop="left"]::after { left: calc(-1 * (var(--edge-frame-width) + var(--edge-frame-gap))); }
-.hand [data-drop="right"]::after { right: calc(-1 * (var(--edge-frame-width) + var(--edge-frame-gap))); }
+.hand [data-drop="left"] > .new-column-slot { left: calc(-1 * (var(--edge-frame-width) + var(--edge-frame-gap))); }
+.hand [data-drop="right"] > .new-column-slot { right: calc(-1 * (var(--edge-frame-width) + var(--edge-frame-gap))); }
 .felt.dragging-hand {
   --drag-hand-gap: 48px;
   --edge-frame-width: 40px; --edge-frame-gap: 6px; --edge-frame-inset: 8px;
@@ -308,7 +307,7 @@ main:has(#table:not([hidden])) {
 .felt.dragging-hand .seat-0 > :not(.hand) { filter: brightness(.45); }
 .felt.dragging-hand .choosing-card .hand .card:not(button) { filter: none; }
 .felt.dragging-hand .hand-stack { flex: 0 0 var(--drag-column-width); width: var(--drag-column-width); }
-.felt.dragging-hand .hand-stack[data-drop="right"]:has(~ .hand-stack:not([hidden]))::after {
+.felt.dragging-hand .hand-stack[data-drop="right"]:has(~ .hand-stack:not([hidden])) > .new-column-slot {
   --gap-frame-width: min(var(--drag-column-width), 40px);
   width: var(--gap-frame-width);
   right: calc((var(--drag-hand-gap) + var(--gap-frame-width)) / -2);
