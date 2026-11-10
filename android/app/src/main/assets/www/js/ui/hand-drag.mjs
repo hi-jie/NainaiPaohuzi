@@ -78,9 +78,12 @@ function findDrop(drag, x, y) {
   if (x < first - (targets[1].x - first) / 2 ||
       x > last + (last - targets.at(-2).x) / 2) return null;
 
-  // Split the distance between each column center and the neighbouring gap center.
-  const target = targets.find(({ x: center }, index) =>
-    index === targets.length - 1 || x < (center + targets[index + 1].x) / 2);
+  // Give an existing column 55% of the distance to either neighbouring gap center.
+  const target = targets.find(({ x: center, stack }, index) => {
+    if (index === targets.length - 1) return true;
+    const share = stack ? .55 : .45;
+    return x < center + (targets[index + 1].x - center) * share;
+  });
   const { stack } = target;
   if (!stack) return target;
   if (stack.cards.length >= 4) return null;
