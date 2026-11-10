@@ -220,6 +220,10 @@ main:has(#table:not([hidden])) {
   align-items: start; column-gap: var(--discard-gap);
   padding: 0 0 calc(var(--strip-height) - var(--strip-peek)); border: 0; background: none;
 }
+.discarded .card {
+  --seat-card-edge: #927c61;
+  background: linear-gradient(#e3dac5 0 35%, #cdbda2 82%, #b9a689);
+}
 .seat-0 .discarded { align-self: start; }
 .seat-2 .groups { flex-direction: row-reverse; }
 .seat-2 .discarded {
