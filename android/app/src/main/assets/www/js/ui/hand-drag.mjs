@@ -3,12 +3,30 @@ function bounds(element, portrait) {
   return portrait ? { left: top, right: bottom, top: -right, bottom: -left } : { left, right, top, bottom };
 }
 
-const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const visibleCard = '[data-hand-card]:not([hidden])';
 
+function panZones(start, limits, anchor, rate, scale) {
+  function side(end) {
+    const travel = Math.abs(end - start);
+    if (!travel || !rate) return [];
+    const steps = Math.max(1, Math.min(Math.ceil(travel * rate / (44 * scale)), Math.floor(travel / (24 * scale))));
+    return Array.from({ length: steps }, (_, i) => {
+      const x = start + (end - start) * (i + 1) / steps;
+      return { x, pan: anchor + (start - x) * rate };
+    });
+  }
+  return [...side(limits.left).reverse(), { x: start, pan: anchor }, ...side(limits.right)];
+}
+
 function panAt(drag, x) {
-  const { panLimits, panRate, start, anchor } = drag;
-  return anchor + (start.x - clamp(x, panLimits.left, panLimits.right)) * panRate;
+  const { zones, scale } = drag;
+  let index = drag.zone;
+  const threshold = (left, right, direction) =>
+    (left.x + right.x) / 2 + direction * Math.min(6 * scale, (right.x - left.x) * .15);
+  while (index + 1 < zones.length && x > threshold(zones[index], zones[index + 1], 1)) index++;
+  while (index > 0 && x < threshold(zones[index - 1], zones[index], -1)) index--;
+  drag.zone = index;
+  return zones[index].pan;
 }
 
 function cardPositions(hand, portrait) {
@@ -61,7 +79,7 @@ function findDrop(drag, x, y) {
   const { targets, source, area, edge, edgeReach } = drag;
   if (y < area.top - edge || y > area.bottom + edge ||
       x < area.left || x > area.right) return null;
-  x -= panAt(drag, x);
+  x -= drag.zones[drag.zone].pan;
 
   const first = targets[0].x;
   const last = targets.at(-1).x;
@@ -213,9 +231,10 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
         left: start.x - leftDistance / (1 + panRate),
         right: start.x + rightDistance / (1 + panRate)
       };
+      const zones = panZones(start.x, panLimits, anchor, panRate, scale);
       Object.assign(drag, {
         hand, felt, held, slot, stacks, origin, columns, portrait, scale, start, originX, originY,
-        targets, edgeReach, anchor, panRate, panLimits, source, area,
+        targets, edgeReach, zones, zone: zones.findIndex(zone => zone.x === start.x), source, area,
         edge: Math.min(12 * scale, (from.right - from.left) / 3)
       });
       hand.append(held);
