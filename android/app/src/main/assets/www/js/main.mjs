@@ -15,9 +15,9 @@ const table = document.querySelector('#table');
 const history = document.querySelector('#discard-history');
 const pauseMenu = document.querySelector('#pause-menu');
 const leaveMenu = document.querySelector('#leave-menu');
+const resumeMenu = document.querySelector('#resume-menu');
 const eatMenu = document.querySelector('#eat-menu');
 const startButton = document.querySelector('#start');
-const continueButton = document.querySelector('#continue-round');
 const score = document.querySelector('#score');
 const settings = document.querySelector('#settings');
 const settingsButton = document.querySelector('#open-settings');
@@ -72,9 +72,7 @@ function showHome(focus = modes.querySelector(`[data-mode="${selectedMode}"]`)) 
 function showSetup(mode) {
   selectedMode = mode;
   modeTitle.textContent = presets[mode].name;
-  startButton.textContent = data.round ? '开始新局' : '开始游戏';
-  continueButton.hidden = !data.round;
-  showFront(setup, data.round ? continueButton : startButton);
+  showFront(setup, startButton);
 }
 
 function saveRound(keep = round.phase !== 'finished') {
@@ -253,7 +251,6 @@ startButton.addEventListener('click', () => {
   data.settings.mode = selectedMode;
   start();
 });
-continueButton.addEventListener('click', continueSavedRound);
 for (const type of ['selectstart', 'contextmenu']) {
   table.addEventListener(type, event => {
     if (event.target.closest('[data-hand-card]')) event.preventDefault();
@@ -338,9 +335,16 @@ pauseMenu.addEventListener('close', () => {
   resumeRound();
 });
 leaveMenu.addEventListener('close', () => {
-  const choice = leaveMenu.returnValue;
-  if (choice === 'save' || choice === 'discard') {
-    saveRound(choice === 'save');
+  if (leaveMenu.returnValue === 'discard') {
+    saveRound(false);
     showHome();
   } else resumeRound();
 });
+resumeMenu.addEventListener('close', () => {
+  if (resumeMenu.returnValue === 'resume') continueSavedRound();
+  else {
+    saveRound(false);
+    showHome();
+  }
+});
+if (data.round) resumeMenu.showModal();

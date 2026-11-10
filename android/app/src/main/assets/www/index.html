@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#113f32">
   <title>衡阳跑胡子</title>
-  <link rel="stylesheet" href="./css/app.css?v=87">
-  <script type="module" src="./js/main.mjs?v=87-d4b6275df60f"></script>
+  <link rel="stylesheet" href="./css/app.css?v=88">
+  <script type="module" src="./js/main.mjs?v=88-d4b6275df60f"></script>
 </head>
 <body>
   <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -38,10 +38,7 @@
         <label>一五十<input type="checkbox" name="oneFiveTen" role="switch"></label>
         <label>放炮胡<input type="checkbox" name="discardHu" role="switch"></label>
       </div>
-      <footer class="menu-footer">
-        <button id="continue-round" type="button" class="primary" hidden>继续对局</button>
-        <button id="start" type="button" class="primary">开始游戏</button>
-      </footer>
+      <footer class="menu-footer"><button id="start" type="button" class="primary">开始游戏</button></footer>
     </section>
     <section id="settings" class="front-screen menu-screen" hidden aria-labelledby="settings-title">
       <header class="menu-header">
@@ -70,13 +67,20 @@
   </dialog>
   <dialog id="leave-menu" class="game-dialog" aria-labelledby="leave-title" aria-describedby="leave-description">
     <h2 id="leave-title">返回首页？</h2>
-    <p id="leave-description">不保存会放弃本局。</p>
+    <p id="leave-description">放弃后，本局无法恢复。</p>
     <form method="dialog">
       <div class="actions">
-        <button value="resume" autofocus>继续打牌</button>
-        <button value="discard">不保存</button>
-        <button class="primary" value="save">保存并返回</button>
+        <button value="discard">放弃对局</button>
+        <button class="primary" value="resume" autofocus>继续打牌</button>
       </div>
+    </form>
+  </dialog>
+  <dialog id="resume-menu" class="game-dialog" aria-labelledby="resume-title" aria-describedby="resume-description">
+    <h2 id="resume-title">继续上次对局？</h2>
+    <p id="resume-description">取消会放弃上次对局。</p>
+    <form method="dialog" class="actions">
+      <button value="cancel">取消</button>
+      <button class="primary" value="resume" autofocus>继续对局</button>
     </form>
   </dialog>
   <dialog id="discard-history" aria-label="弃牌记录"></dialog>
