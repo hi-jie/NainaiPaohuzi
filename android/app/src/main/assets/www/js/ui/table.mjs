@@ -106,10 +106,7 @@ export function renderEatChoices(options, offeredCard) {
       </span>`).join('')}
     </button>`;
   }).join('');
-  return `<header class="eat-header">
-    <h2 id="eat-title">选择吃法</h2>
-    <form method="dialog"><button class="eat-close" aria-label="关闭吃法" autofocus>×</button></form>
-  </header><div class="eat-choices">${choices}</div>`;
+  return `<div class="eat-choices">${choices}</div>`;
 }
 
 export function previewEat(table, action) {

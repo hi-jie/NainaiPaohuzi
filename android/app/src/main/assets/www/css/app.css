@@ -444,16 +444,15 @@ main:has(#table:not([hidden])) {
 }
 .result h2 { color: #ffe096; font-size: 24px; margin: 2px; }
 #eat-menu {
-  position: absolute; inset: 5% auto auto calc(50% - 12px); z-index: 1; margin: 0;
-  transform: translateX(-50%);
-  width: min(29%, calc(var(--screen-height) * .52), 300px);
-  max-height: min(32%, 350px); padding: 8px; overflow: hidden;
+  position: absolute; inset: auto calc(100% - var(--eat-right)) calc(100% - var(--eat-bottom)) auto;
+  z-index: 1; margin: 0; width: min(calc(var(--eat-right) - 12px), calc(410px * var(--eat-scale)));
+  max-height: calc(var(--eat-bottom) - 16px); padding: 6px; overflow: hidden;
 }
-#eat-menu[open] { display: flex; flex-direction: column; gap: 6px; }
-.eat-header { display: flex; flex: none; justify-content: space-between; align-items: center; gap: 4px; }
-#eat-menu h2 { color: #ffe096; font-size: 20px; }
-#eat-menu .eat-close { width: 44px; min-height: 44px; padding: 0; font-size: 27px; line-height: 1; }
-.eat-choices { display: grid; gap: 6px; padding: 4px; overflow-y: auto; overscroll-behavior: contain; }
+#eat-menu[open] { display: flex; flex-direction: column; }
+.eat-choices {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px; padding: 4px; overflow-y: auto; overscroll-behavior: contain;
+}
 #eat-menu .eat-choice { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 7px; padding: 5px; }
 #eat-menu .eat-choice[aria-pressed="true"] { outline: 2px solid #ffe1a0; outline-offset: 0; }
 .eat-group { display: flex; gap: 1px; }

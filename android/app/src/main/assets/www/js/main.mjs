@@ -7,7 +7,7 @@ import { presets } from './rules/presets.mjs';
 import { load, save } from './storage/save.mjs';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=79';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=67';
-import { animateAction, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=71';
+import { animateAction, openingStages, previewEat, renderEatChoices, renderHistory, showOpeningFrame, renderTable } from './ui/table.mjs?v=80';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
@@ -88,6 +88,7 @@ function fitTable() {
   table.style.setProperty('--table-scale', scale);
   table.style.setProperty('--table-width', `${width / scale}px`);
   table.style.setProperty('--table-height', `${height / scale}px`);
+  if (eatMenu.open) placeEatMenu();
 }
 
 new ResizeObserver(fitTable).observe(table);
@@ -171,6 +172,26 @@ function selectDiscard(button) {
   confirm.classList.add('guided');
 }
 
+function placeEatMenu() {
+  const scale = Number(table.style.getPropertyValue('--table-scale'));
+  const frame = table.parentElement.getBoundingClientRect();
+  const button = table.querySelector('.hand-actions button').getBoundingClientRect();
+  const portrait = matchMedia('(orientation: portrait)').matches;
+  const left = portrait ? button.top - frame.top : button.left - frame.left;
+  const bottom = portrait ? frame.right - button.left : button.bottom - frame.top;
+  eatMenu.style.setProperty('--eat-right', `${left - 10 * scale}px`);
+  eatMenu.style.setProperty('--eat-bottom', `${bottom}px`);
+  eatMenu.style.setProperty('--eat-scale', scale);
+}
+
+function showEatPreview(choice) {
+  previewEat(table, round.options[Number(choice.dataset.action)]);
+  const confirm = table.querySelector('[data-command="choose-eat"]');
+  confirm.textContent = '确认吃';
+  confirm.removeAttribute('aria-haspopup');
+  placeEatMenu();
+}
+
 function setHandLayout(layout, selectedId) {
   handLayout = layout;
   paintRound();
@@ -178,12 +199,7 @@ function setHandLayout(layout, selectedId) {
     selectDiscard(table.querySelector(`[data-hand-card="${selectedId}"][data-select-card]`));
   }
   const choice = eatMenu.querySelector('.eat-choice[aria-pressed="true"]');
-  if (eatMenu.open && choice) {
-    previewEat(table, round.options[Number(choice.dataset.action)]);
-    const confirm = table.querySelector('[data-command="choose-eat"]');
-    confirm.textContent = '确认吃';
-    confirm.removeAttribute('aria-haspopup');
-  }
+  if (eatMenu.open && choice) showEatPreview(choice);
 }
 
 bindHandDrag(table, {
@@ -222,6 +238,7 @@ table.addEventListener('click', ({ target }) => {
       if (choice) step(round.options[Number(choice.dataset.action)]);
     } else {
       eatMenu.innerHTML = renderEatChoices(round.options, round.offer.card);
+      placeEatMenu();
       eatMenu.show();
     }
     return;
@@ -259,10 +276,16 @@ eatMenu.addEventListener('click', ({ target }) => {
   if (!choice) return;
   eatMenu.querySelector('.eat-choice[aria-pressed="true"]')?.setAttribute('aria-pressed', 'false');
   choice.setAttribute('aria-pressed', 'true');
-  previewEat(table, round.options[Number(choice.dataset.action)]);
-  const confirm = table.querySelector('[data-command="choose-eat"]');
-  confirm.textContent = '确认吃';
-  confirm.removeAttribute('aria-haspopup');
+  showEatPreview(choice);
+});
+document.addEventListener('click', ({ target }) => {
+  if (eatMenu.open && !eatMenu.contains(target) && !target.closest('[data-command="choose-eat"]')) eatMenu.close();
+});
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || !eatMenu.open) return;
+  event.preventDefault();
+  eatMenu.close();
+  table.querySelector('[data-command="choose-eat"]').focus({ preventScroll: true });
 });
 eatMenu.addEventListener('close', () => {
   if (eatMenu.open) return;
