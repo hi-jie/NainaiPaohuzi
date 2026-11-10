@@ -261,6 +261,16 @@ main:has(#table:not([hidden])) {
 .hand [data-drop="bottom"]::after { inset: auto 0 1px; height: 4px; }
 .hand [data-drop="left"]::after { inset: 0 auto 0 -5px; width: 4px; }
 .hand [data-drop="right"]::after { inset: 0 -5px 0 auto; width: 4px; }
+.felt.dragging-hand::before {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: #0009; animation: appear .15s ease-out;
+}
+.felt.dragging-hand .seat-0 { z-index: 2; }
+.felt.dragging-hand .seat-0 > :not(.hand) { filter: brightness(.45); }
+.felt.dragging-hand .choosing-card .hand .card:not(button) { filter: none; }
+.felt.dragging-hand .hand-stack { flex: 0 0 var(--drag-column-width); width: var(--drag-column-width); }
+.felt.dragging-hand .hand-stack[data-drop="left"]:not(:first-child)::after { left: -26px; }
+.felt.dragging-hand .hand-stack[data-drop="right"]:not(:last-child)::after { right: -26px; }
 .felt:has(> .auto-hand) { --auto-hand-width: 94px; --auto-hand-inset: 12px; }
 .auto-hand {
   position: absolute; right: var(--auto-hand-inset); bottom: var(--auto-hand-inset);
@@ -343,6 +353,9 @@ main:has(#table:not([hidden])) {
 .wide .felt:has(> .auto-hand) .hand {
   max-width: calc(100% - var(--hand-start) - var(--auto-hand-width) - var(--auto-hand-inset) - 8px + var(--seat-inset));
 }
+.wide .felt.dragging-hand .hand {
+  left: 0; max-width: none; gap: 48px; transform: translateX(var(--hand-pan, 0px));
+}
 .wide .hand-stack { flex: 0 1 auto; width: var(--strip-width); max-width: none; align-self: end; }
 .wide .hand-stack:has(> .card:nth-child(4)) { --strip-peek: 43.2px; }
 .card.hinted, .hand .card:is(.eat-preview, [aria-pressed="true"]) {
@@ -359,6 +372,7 @@ main:has(#table:not([hidden])) {
   from { filter: brightness(1.25); }
 }
 @media (prefers-reduced-motion: reduce) {
+  .felt.dragging-hand::before { animation: none; }
   .landing .card.hinted { animation: none; }
   .hand .card { transition: none; }
 }
