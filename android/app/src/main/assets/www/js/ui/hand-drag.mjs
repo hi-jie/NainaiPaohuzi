@@ -106,12 +106,18 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       }
       previous = cardPositions(hand, portrait);
       const from = previous.get(drag.card.dataset.handCard);
+      const right = bounds(hand.parentElement, portrait).right;
+      const width = parseFloat(getComputedStyle(hand).maxWidth) * scale;
+      const viewport = { left: right - width, right };
       for (const column of hand.children) {
         const { left, right } = bounds(column, portrait);
         column.style.setProperty('--drag-column-width', `${(right - left) / scale}px`);
       }
 
       felt.classList.add('dragging-hand');
+      const track = bounds(hand, portrait);
+      hand.style.setProperty('--hand-clip-start', `${(viewport.left - track.left) / scale}px`);
+      hand.style.setProperty('--hand-clip-end', `${(track.right - viewport.right) / scale}px`);
       const columns = [...hand.children].map(element => {
         const rect = bounds(element, portrait);
         const cards = [...element.querySelectorAll('[data-hand-card]')].map(card => ({
@@ -129,14 +135,15 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       const spread = bounds(drag.card, portrait);
       const originX = spread.left + start.x - from.left;
       const originY = spread.top + start.y - from.top;
-      const viewport = bounds(felt, portrait);
       Object.assign(drag, {
         hand, felt, columns, portrait, scale, viewport, start, originX, originY,
+        gripMin: viewport.left + start.x - from.left,
+        gripMax: viewport.right - (from.right - start.x),
         anchor: start.x - originX,
         maxPan: viewport.left + 14 * scale - columns[0].left,
         minPan: viewport.right - 14 * scale - columns.at(-1).right,
         source: { column, index },
-        area: { top: Math.min(...columns.map(stack => stack.top)), bottom: viewport.bottom },
+        area: { top: Math.min(...columns.map(stack => stack.top)), bottom: track.bottom },
         edge: Math.min(12 * scale, (columns[column].right - columns[column].left) / 3)
       });
       table.setPointerCapture(event.pointerId);
@@ -149,8 +156,9 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
     const x = portrait ? event.clientY : event.clientX;
     const y = portrait ? -event.clientX : event.clientY;
     const pan = panAt(drag, x);
+    const heldX = clamp(x, drag.gripMin, drag.gripMax);
     hand.style.setProperty('--hand-pan', `${pan / scale}px`);
-    card.style.setProperty('--drag-x', `${(x - pan - originX) / scale}px`);
+    card.style.setProperty('--drag-x', `${(heldX - pan - originX) / scale}px`);
     card.style.setProperty('--drag-y', `${(y - originY) / scale}px`);
     if (previous) animateReflow(hand, previous, portrait, scale, card);
     delete drag.drop?.marker.dataset.drop;
@@ -172,6 +180,8 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       }
       felt.classList.remove('dragging-hand');
       hand.style.removeProperty('--hand-pan');
+      hand.style.removeProperty('--hand-clip-start');
+      hand.style.removeProperty('--hand-clip-end');
       for (const column of columns) column.element.style.removeProperty('--drag-column-width');
       card.classList.remove('dragged-card');
       card.parentElement.classList.remove('dragged-stack');
