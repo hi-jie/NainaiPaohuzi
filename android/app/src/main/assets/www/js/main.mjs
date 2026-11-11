@@ -12,6 +12,7 @@ import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=
 import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=225';
 import { bindTutorial } from './ui/tutorial.mjs?v=192';
 import { bindProfile } from './ui/profile.mjs?v=202';
+import { bindAppUpdate } from './ui/update.mjs?v=226';
 
 const main = document.querySelector('main');
 const home = document.querySelector('#home');
@@ -31,6 +32,7 @@ const scoreResetTitle = scoreResetDialog.querySelector('#score-reset-title');
 const confirmScoreReset = scoreResetDialog.querySelector('#confirm-score-reset');
 const settings = document.querySelector('#settings');
 const settingsButton = document.querySelector('#open-settings');
+bindAppUpdate();
 const modeTitle = document.querySelector('#mode-title');
 const modeScore = document.querySelector('#mode-score');
 const seatPicker = document.querySelector('#mahjong-seats');

@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#113f32">
   <title>衡阳跑胡子</title>
   <link rel="icon" type="image/png" sizes="192x192" href="./favicon.png">
-  <link rel="stylesheet" href="./css/app.css?v=224">
-  <script type="module" src="./js/main.mjs?v=225-cbe0bee8a6aa"></script>
+  <link rel="stylesheet" href="./css/app.css?v=226">
+  <script type="module" src="./js/main.mjs?v=226-cbe0bee8a6aa"></script>
 </head>
 <body>
   <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -70,7 +70,21 @@
         <button class="icon-button" type="button" data-back-home aria-label="返回首页"><svg class="nav-icon" aria-hidden="true"><use href="#icon-back"/></svg></button>
         <h2 id="settings-title">设置</h2>
       </header>
-      <div class="menu-options audio-settings"></div>
+      <div class="settings-content">
+        <div class="menu-options audio-settings"></div>
+        <section id="app-update" aria-label="应用更新" hidden>
+          <p id="app-version"></p>
+          <div class="update-controls">
+            <button id="check-update" type="button">检查更新</button>
+            <button id="install-update" class="primary" type="button" hidden>安装</button>
+            <div id="update-download" hidden>
+              <progress id="update-progress" max="100" aria-label="下载进度"></progress>
+              <span id="update-percent"></span>
+            </div>
+          </div>
+          <p id="update-status" role="status"></p>
+        </section>
+      </div>
     </section>
     <section id="profile" class="front-screen" hidden aria-label="个人页面">
       <header class="menu-header">
@@ -96,6 +110,14 @@
     <section id="table" class="wide" hidden aria-label="牌桌"></section>
     <dialog id="eat-menu" aria-label="选择吃法"></dialog>
   </main>
+  <dialog id="update-dialog" class="game-dialog" aria-labelledby="update-title" aria-describedby="update-description">
+    <h2 id="update-title">发现新版本</h2>
+    <p id="update-description"></p>
+    <form method="dialog" class="actions">
+      <button value="cancel" autofocus>取消</button>
+      <button id="download-update" class="primary" value="download">下载</button>
+    </form>
+  </dialog>
   <dialog id="score-reset-dialog" class="game-dialog" aria-labelledby="score-reset-title">
     <h2 id="score-reset-title"></h2>
     <form method="dialog" class="actions">

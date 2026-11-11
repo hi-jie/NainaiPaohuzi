@@ -276,6 +276,19 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
   outline: 2px solid #fff0b0; outline-offset: 3px;
 }
 .audio-settings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.settings-content {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px;
+  width: min(100%, 680px); place-self: center;
+}
+.settings-content:has(#app-update[hidden]) { grid-template-columns: minmax(0, 320px); justify-content: center; }
+.settings-content .audio-settings { grid-template-columns: minmax(0, 1fr); }
+#app-update { display: grid; gap: 12px; align-content: center; justify-items: center; text-align: center; }
+#app-version { font-size: 22px; font-weight: 750; color: #ffe5a6; }
+.update-controls { display: flex; justify-content: center; gap: 8px; width: 100%; min-height: 46px; }
+#update-download { width: min(100%, 240px); display: grid; gap: 4px; }
+#update-progress { width: 100%; height: 12px; accent-color: var(--gold); }
+#update-status { min-height: 1.35em; color: #ffe6b9; font-size: 16px; }
+#update-description { margin: 8px 0 14px; }
 .audio-setting { padding: 8px 12px 4px; font-size: 20px; }
 .audio-setting label { white-space: nowrap; }
 .volume-control {

@@ -28,12 +28,16 @@ import android.window.OnBackInvokedDispatcher;
 
 import androidx.webkit.WebViewAssetLoader;
 
+import java.util.Collections;
+
 public class MainActivity extends Activity {
     private static final String GAME_URL = "https://appassets.androidplatform.net/assets/www/index.html";
     private static final String EXIT_URL = "paohuzi://exit";
     private static final int CHOOSE_AVATAR = 1;
     private FrameLayout root;
     private WebView game;
+    private AppUpdates updates;
+    private boolean updatePageReady;
     private ValueCallback<Uri[]> avatarSelection;
     private boolean resumed;
 
@@ -44,7 +48,7 @@ public class MainActivity extends Activity {
         WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
                 .addPathHandler("/assets/", path -> {
                     WebResourceResponse response = assets.handle(path);
-                    if (path.endsWith(".mjs")) {
+                    if (response != null && path.endsWith(".mjs")) {
                         response.setMimeType("text/javascript");
                         response.setEncoding("UTF-8");
                     }
@@ -53,6 +57,12 @@ public class MainActivity extends Activity {
                 .build();
 
         game = new WebView(this);
+        updates = new AppUpdates(this, state -> {
+            if (updatePageReady) {
+                game.evaluateJavascript("window.dispatchEvent(new CustomEvent('paohuzi-update', { detail: "
+                        + state + " }));", null);
+            }
+        });
         game.setBackgroundColor(Color.rgb(16, 58, 48));
         WebSettings settings = game.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -86,6 +96,8 @@ public class MainActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 if (GAME_URL.equals(url)) {
                     view.evaluateJavascript("document.getElementById('exit-game').hidden = false", null);
+                    updatePageReady = true;
+                    updates.sendState();
                 }
                 syncDisplayCutout(root.getRootWindowInsets());
                 syncMusicForeground();
@@ -93,14 +105,26 @@ public class MainActivity extends Activity {
 
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                return loader.shouldInterceptRequest(request.getUrl());
+                WebResourceResponse local = loader.shouldInterceptRequest(request.getUrl());
+                String scheme = request.getUrl().getScheme();
+                if (local == null && ("https".equalsIgnoreCase(scheme) || "http".equalsIgnoreCase(scheme))) {
+                    return new WebResourceResponse("text/plain", "UTF-8", 403, "Forbidden",
+                            Collections.emptyMap(), null);
+                }
+                return local;
             }
 
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String url = request.getUrl().toString();
-                if (EXIT_URL.equals(url) && request.isForMainFrame() && GAME_URL.equals(view.getUrl())) {
-                    finish();
+                if (request.isForMainFrame() && GAME_URL.equals(view.getUrl())) {
+                    switch (url) {
+                        case EXIT_URL -> finish();
+                        case "paohuzi://check-update" -> updates.check();
+                        case "paohuzi://download-update" -> updates.download();
+                        case "paohuzi://install-update" -> updates.install();
+                        default -> { }
+                    }
                 }
                 return !GAME_URL.equals(url);
             }
@@ -133,6 +157,10 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == AppUpdates.ALLOW_UPDATE_INSTALL) {
+            if (getPackageManager().canRequestPackageInstalls()) updates.install();
+            return;
+        }
         if (requestCode != CHOOSE_AVATAR) return;
         Uri selected = resultCode == RESULT_OK && data != null ? data.getData() : null;
         if (selected != null && (!ContentResolver.SCHEME_CONTENT.equals(selected.getScheme())
@@ -221,6 +249,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         resumed = false;
+        updates.pause();
         syncMusicForeground();
         game.onPause();
         game.pauseTimers();
@@ -234,11 +263,14 @@ public class MainActivity extends Activity {
         game.resumeTimers();
         resumed = true;
         syncMusicForeground();
+        updates.resume();
     }
 
     @Override
     protected void onDestroy() {
         completeAvatarSelection(null);
+        updatePageReady = false;
+        updates.close();
         root.removeView(game);
         game.destroy();
         super.onDestroy();

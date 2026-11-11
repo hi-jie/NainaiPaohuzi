@@ -2,6 +2,8 @@ plugins {
     id 'com.android.application' version '8.6.1'
 }
 
+def appVersion = new groovy.json.JsonSlurper().parse(file('src/main/assets/www/update.json'))
+
 android {
     namespace 'io.github.hijie.nainaipaohuzi'
     compileSdk 35
@@ -10,8 +12,8 @@ android {
         applicationId 'io.github.hijie.nainaipaohuzi'
         minSdk 26
         targetSdk 35
-        versionCode 3
-        versionName '1.0.1'
+        versionCode appVersion.versionCode
+        versionName appVersion.versionName
     }
 
     signingConfigs {

@@ -56,6 +56,8 @@ cd android
 
 正式包使用 `:app:assembleRelease`，签名配置通过 [Gradle 配置](android/app/build.gradle) 中的环境变量读取。
 
+发布新版时，在 [update.json](android/app/src/main/assets/www/update.json) 中递增 `versionCode` 并更新版本名和 APK 文件名。Gradle 用这份文件设置安卓版本，并将它打进 APK。发布同名 APK 到 GitHub Release 后，Pages 会发布最新正式版的 APK 和对应的更新信息。安卓玩家可在设置里手动检查、下载和安装。
+
 - [玩法规则确认稿](docs/衡阳跑胡子玩法规则确认稿.md) · [麻雀牌玩法规则](docs/麻雀牌玩法规则.md) · [当前牌局规则与代码审查](docs/当前牌局规则与代码审查.md)
 - [早期功能规格](docs/功能规格.md) · [项目结构](docs/项目结构.md)
 - [音量设计规范](docs/音量设计规范.md) · [背景音乐目录](android/app/src/main/assets/www/media/audio/music) · [衡阳方言录音目录](android/app/src/main/assets/www/media/audio/hengyang)
