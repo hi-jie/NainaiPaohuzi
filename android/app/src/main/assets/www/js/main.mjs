@@ -99,16 +99,18 @@ settingsButton.addEventListener('click', () => {
 });
 const resetScoreModes = resetScoreMenu.querySelector('.reset-score-modes');
 resetScoreModes.innerHTML = Object.entries(presets).map(([mode, { name }]) =>
-  `<button type="button" data-reset-mode="${mode}">${name}</button>`).join('');
+  `<button type="button" data-reset-mode="${mode}">${name}</button>`).join('')
+  + '<button type="button" data-reset-mode="all">全部清零</button>';
 settings.querySelector('#reset-scores').addEventListener('click', () => resetScoreMenu.showModal());
 resetScoreModes.addEventListener('click', ({ target }) => {
   const mode = target.dataset.resetMode;
   if (!mode) return;
-  const scores = { ...data.scores, [mode]: 0 };
+  const all = mode === 'all';
+  const scores = all ? Object.fromEntries(Object.keys(presets).map(key => [key, 0])) : { ...data.scores, [mode]: 0 };
   try {
     save({ ...data, scores });
     data.scores = scores;
-    resetScoreStatus.textContent = `${presets[mode].name}积分已清零`;
+    resetScoreStatus.textContent = all ? '全部积分已清零' : `${presets[mode].name}积分已清零`;
   } catch {
     resetScoreStatus.textContent = '积分清零失败';
   }
