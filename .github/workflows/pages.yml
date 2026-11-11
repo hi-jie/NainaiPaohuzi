@@ -7,25 +7,33 @@ on:
     types: [published]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: github-pages
-  cancel-in-progress: false
-
 jobs:
-  deploy:
+  dispatch-release:
+    if: github.event_name == 'release' && !github.event.release.prerelease
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Trigger Pages deployment from main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref main
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
-        with:
-          ref: ${{ github.event_name == 'release' && 'main' || github.sha }}
       - run: node scripts/update-music.mjs --playlist-only
       - name: Stage Pages with the latest released Android APK
         env:
