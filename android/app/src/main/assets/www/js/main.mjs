@@ -49,6 +49,7 @@ let handLayout = null;
 let timer;
 let openingEnds;
 let soundLoadAttempt = 0;
+let cancelSoundLoad;
 let musicWaitingForSound = data.settings.sound;
 
 const modes = home.querySelector('.modes');
@@ -283,7 +284,14 @@ function showTable() {
   syncMusic();
 }
 
-async function enterWhenSoundReady(enter) {
+soundLoading.addEventListener('close', () => {
+  if (soundLoading.open) return;
+  const cancel = cancelSoundLoad;
+  cancelSoundLoad = undefined;
+  cancel?.();
+});
+
+async function enterWhenSoundReady(enter, cancel) {
   if (!data.settings.sound) {
     enter();
     return;
@@ -301,20 +309,23 @@ async function enterWhenSoundReady(enter) {
     soundLoadingStatus.textContent = `${ready} / ${total}（${Math.floor(ready / total * 100)}%）`;
   });
   if (!pending) {
+    cancelSoundLoad = undefined;
     if (soundLoading.open) soundLoading.close();
     enter();
     return;
   }
+  cancelSoundLoad = cancel;
   if (!soundLoading.open) soundLoading.showModal();
   const ready = await pending;
   if (attempt !== soundLoadAttempt || !soundLoading.open) return;
   if (ready) {
+    cancelSoundLoad = undefined;
     soundLoading.close();
     enter();
   } else {
     soundLoadingTitle.textContent = '音效加载失败';
     retrySound.hidden = false;
-    retrySound.onclick = () => enterWhenSoundReady(enter);
+    retrySound.onclick = () => enterWhenSoundReady(enter, cancel);
     retrySound.focus();
   }
 }
@@ -535,8 +546,12 @@ leaveMenu.addEventListener('close', () => {
   } else resumeRound();
 });
 resumeMenu.addEventListener('close', () => {
-  if (resumeMenu.returnValue === 'resume') continueSavedRound();
-  else {
+  if (resumeMenu.returnValue === 'resume') {
+    enterWhenSoundReady(continueSavedRound, () => {
+      resumeMenu.returnValue = '';
+      resumeMenu.showModal();
+    });
+  } else {
     saveRound(false);
     showHome();
   }
