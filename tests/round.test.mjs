@@ -167,6 +167,10 @@ test('吃碰响应未确认时头像和箭头留在出牌者，确认后同步�
 });
 
 test('等吃期间牌只在墩旁，吃完进入落地牌，过后等下一张才进弃牌', () => {
+  const assertDiscardCount = (round, count) => {
+    const [seat] = renderTable(round, 0).match(/<section class="seat seat-1\b[^>]*>[\s\S]*?<\/section>/);
+    assert.ok(seat.includes(`aria-label="对家的弃牌，${count}张"`));
+  };
   for (const kind of ['draw', 'discard']) {
     for (const decision of ['吃', '过']) {
       const round = new Round(defaultSettings, 0);
@@ -176,9 +180,9 @@ test('等吃期间牌只在墩旁，吃完进入落地牌，过后等下一张�
       else round.waitForDiscard(1);
       round.act(round.options[0]);
       assert.match(renderTable(round, 0), /class="landing">\s*<span[^>]*>三</);
-      assert.match(renderTable(round, 0), /电脑一的弃牌，0张/);
+      assertDiscardCount(round, 0);
       round.act(round.options.find(action => action.type === decision));
-      assert.match(renderTable(round, 0), /电脑一的弃牌，0张/);
+      assertDiscardCount(round, 0);
       if (decision === '吃') {
         assert.doesNotMatch(renderTable(round, 0), /class="landing">\s*<span/);
         assert.deepEqual(round.players[0].groups, [{ type: '吃', cards: [0, 1, 2] }]);
@@ -186,10 +190,10 @@ test('等吃期间牌只在墩旁，吃完进入落地牌，过后等下一张�
         assert.match(renderTable(round, 0), /class="landing">\s*<span[^>]*>三</);
         const restored = Round.fromSave(JSON.parse(JSON.stringify(round.toSave())));
         assert.match(renderTable(restored, 0), /class="landing">\s*<span[^>]*>三</);
-        assert.match(renderTable(restored, 0), /电脑一的弃牌，0张/);
+        assertDiscardCount(restored, 0);
         round.act(round.options[0]);
         assert.match(renderTable(round, 0), /class="landing">\s*<span[^>]*>十</);
-        assert.match(renderTable(round, 0), /电脑一的弃牌，1张/);
+        assertDiscardCount(round, 1);
       }
     }
   }

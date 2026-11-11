@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#113f32">
   <title>衡阳跑胡子</title>
-  <link rel="stylesheet" href="./css/app.css?v=173">
-  <script type="module" src="./js/main.mjs?v=172-d4b6275df60f&amp;avatars=db991ec2370f"></script>
+  <link rel="stylesheet" href="./css/app.css?v=183">
+  <script type="module" src="./js/main.mjs?v=180-cbe0bee8a6aa"></script>
 </head>
 <body>
   <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -50,10 +50,7 @@
         <button class="icon-button" type="button" data-back-home aria-label="返回首页"><svg class="nav-icon" aria-hidden="true"><use href="#icon-back"/></svg></button>
         <h2 id="settings-title">设置</h2>
       </header>
-      <div class="menu-options">
-        <label>方言音效<input type="checkbox" name="sound" role="switch"></label>
-        <label>背景音乐<input type="checkbox" name="music" role="switch"></label>
-      </div>
+      <div class="menu-options audio-settings"></div>
     </section>
     <section id="records" class="front-screen menu-screen" hidden aria-labelledby="records-title">
       <header class="menu-header">
@@ -71,10 +68,7 @@
         <h2 id="pause-title">设置</h2>
         <button class="icon-button" aria-label="关闭设置" autofocus><svg class="nav-icon" aria-hidden="true"><use href="#icon-close"/></svg></button>
       </header>
-      <div class="pause-settings">
-        <label>方言音效<input type="checkbox" name="sound" role="switch"></label>
-        <label>背景音乐<input type="checkbox" name="music" role="switch"></label>
-      </div>
+      <div class="pause-settings audio-settings"></div>
     </form>
   </dialog>
   <dialog id="leave-menu" class="game-dialog" aria-labelledby="leave-title" aria-describedby="leave-description">
@@ -95,5 +89,21 @@
       <button class="primary" value="resume" autofocus>继续对局</button>
     </form>
   </dialog>
+  <template id="audio-setting-controls">
+    <div class="audio-setting">
+      <label>游戏音效<input type="checkbox" name="sound" role="switch"></label>
+      <div class="volume-control">
+        <input type="range" name="soundVolume" min="0" max="100" step="5" aria-label="游戏音效音量">
+        <output aria-hidden="true"></output>
+      </div>
+    </div>
+    <div class="audio-setting">
+      <label>背景音乐<input type="checkbox" name="music" role="switch"></label>
+      <div class="volume-control">
+        <input type="range" name="musicVolume" min="0" max="100" step="5" aria-label="音乐音量">
+        <output aria-hidden="true"></output>
+      </div>
+    </div>
+  </template>
 </body>
 </html>

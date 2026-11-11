@@ -1,15 +1,15 @@
 import { chooseAction } from './ai/player.mjs?v=141';
-import { setMusicPlaying } from './audio/music.mjs?v=100-d4b6275df60f';
-import { playAction } from './audio/player.mjs';
-import { pickOpponents } from './data/opponents.mjs?v=172&avatars=db991ec2370f';
+import { setMusicPlaying, setMusicVolume } from './audio/music.mjs?v=101-cbe0bee8a6aa';
+import { playAction, playEffect, setSoundVolume, stopEffect, stopSound, unlockSound } from './audio/player.mjs?v=177';
+import { pickTablemates } from './data/tablemates.mjs?v=179';
 import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
 import { Round } from './game/state-machine.mjs?v=141';
 import { MahjongRound } from './game/mahjong-round.mjs';
 import { presets } from './rules/presets.mjs?v=141';
-import { load, save } from './storage/save.mjs?v=171';
+import { load, save } from './storage/save.mjs?v=178';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=116';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=141';
-import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showWinningResult, showWinningTable } from './ui/table.mjs?v=172&avatars=db991ec2370f';
+import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showWinningResult, showWinningTable } from './ui/table.mjs?v=180';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
@@ -37,18 +37,44 @@ let openingEnds;
 const modes = home.querySelector('.modes');
 modes.innerHTML = Object.entries(presets).map(([key, { name }]) =>
   `<button type="button" class="primary" data-mode="${key}">${name}</button>`).join('');
+
+const audioControls = document.querySelector('#audio-setting-controls');
+for (const panel of document.querySelectorAll('.audio-settings')) {
+  panel.append(audioControls.content.cloneNode(true));
+}
+function showSettingValue(field) {
+  const value = data.settings[field.name];
+  if (field.type === 'checkbox') {
+    field.checked = value;
+  } else {
+    field.value = value;
+    field.nextElementSibling.value = `${value}%`;
+    field.setAttribute('aria-valuetext', `${value}%`);
+  }
+}
+
 const settingFields = document.querySelectorAll('.menu-options input, #pause-menu input');
 for (const field of settingFields) {
-  field.checked = data.settings[field.name];
-  field.addEventListener('change', () => {
-    data.settings[field.name] = field.checked;
+  showSettingValue(field);
+  const isVolume = field.type === 'range';
+  field.addEventListener(isVolume ? 'input' : 'change', () => {
+    const value = isVolume ? field.valueAsNumber : field.checked;
+    data.settings[field.name] = value;
     for (const input of settingFields) {
-      if (input.name === field.name) input.checked = field.checked;
+      if (input.name === field.name) showSettingValue(input);
     }
     save(data);
-    if (field.name === 'music') setMusicPlaying(field.checked);
+    if (field.name === 'musicVolume') setMusicVolume(value / 100);
+    if (field.name === 'soundVolume') setSoundVolume(value / 100);
+    if (field.name === 'music') setMusicPlaying(value);
+    if (field.name === 'sound') {
+      if (value) unlockSound();
+      else stopSound();
+    }
   });
 }
+setMusicVolume(data.settings.musicVolume / 100);
+setSoundVolume(data.settings.soundVolume / 100);
 modes.addEventListener('click', ({ target }) => {
   if (target.dataset.mode) showSetup(target.dataset.mode);
 });
@@ -74,6 +100,17 @@ function startMusic() {
 
 startMusic();
 document.addEventListener('click', startMusic, { once: true });
+document.addEventListener('click', () => {
+  if (data.settings.sound) unlockSound();
+}, { capture: true, once: true });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) stopSound();
+});
+window.addEventListener('blur', stopSound);
+window.addEventListener('pagehide', stopSound);
+window.addEventListener('paohuzi-foreground-change', () => {
+  if (!window.paohuziForeground) stopSound();
+});
 
 function showFront(screen, focus) {
   table.hidden = true;
@@ -82,6 +119,7 @@ function showFront(screen, focus) {
 }
 
 function showHome(focus = modes.querySelector(`[data-mode="${selectedMode}"]`)) {
+  stopSound();
   showFront(home, focus);
 }
 
@@ -144,6 +182,7 @@ function scheduleTurn() {
 }
 
 function beginPlay() {
+  stopEffect();
   const from = table.querySelector('.opening .landing .card')?.getBoundingClientRect();
   const motion = from ? { offer: { source: round.dealer, card: round.opening, kind: 'opening' }, from } : null;
   round.revealOpening();
@@ -161,7 +200,9 @@ function scheduleOpening(stageIndex, delay) {
 function showOpening(stageIndex) {
   const { name, duration } = openingStages[stageIndex];
   const command = document.activeElement.closest('.opening button')?.dataset.command ?? 'skip-opening';
-  showOpeningFrame(table, round, data.scores[round.rules.mode], name);
+  const dealDelays = showOpeningFrame(table, round, data.scores[round.rules.mode], name);
+  if (name === 'shuffle' && data.settings.sound) playEffect('shuffle');
+  if (name === 'deal' && data.settings.sound) playEffect('card', dealDelays);
   table.querySelector(`[data-command="${command}"]`).focus({ preventScroll: true });
   openingEnds = performance.now() + duration;
   scheduleOpening(stageIndex, duration);
@@ -185,13 +226,14 @@ function showTable() {
   startMusic();
 }
 
-function start(dealer) {
+function start(dealer, tablemates) {
+  stopSound();
   const mahjong = data.settings.mode === 'mahjong';
   const seats = mahjong ? mahjongSeats : presets[data.settings.mode].seats;
   const Game = mahjong ? MahjongRound : Round;
   const deck = cutDeck(shuffledDeck(Math.random), Math.random);
   round = new Game(data.settings, dealer ?? Math.floor(Math.random() * seats), Math.random, deck, { deferOpening: true });
-  round.opponents = pickOpponents(round.players.length - 1);
+  round.tablemates = tablemates ?? pickTablemates(seats - 1);
   handLayout = null;
   saveRound();
   showTable();
@@ -211,8 +253,8 @@ function continueSavedRound() {
   }
   round.rules.sound = data.settings.sound;
   handLayout = data.round.handLayout;
-  if (!round.opponents) {
-    round.opponents = pickOpponents(round.players.length - 1);
+  if (!round.tablemates) {
+    round.tablemates = pickTablemates(round.players.length - 1);
     saveRound();
   }
   showTable();
@@ -222,8 +264,9 @@ function continueSavedRound() {
 
 function step(action) {
   const before = round.events.length;
+  const seat = round.seat;
   const motion = captureOfferMotion(table, round);
-  const usedCards = handLayout && round.seat === 0
+  const usedCards = handLayout && seat === 0
     ? [...table.querySelectorAll('.hand :is([aria-pressed="true"], .eat-preview, .hinted)[data-hand-card]')]
     : [];
   round.act(action);
@@ -236,7 +279,8 @@ function step(action) {
     data.scores[round.rules.mode] += round.result.delta[0];
   }
   saveRound();
-  if (event && round.rules.sound) playAction(event.type);
+  const soundEvent = action.type === '过' ? { type: '过', seat } : event;
+  if (soundEvent && round.rules.sound) playAction(soundEvent, round);
   showRound(event, motion, action);
 }
 
@@ -340,7 +384,7 @@ table.addEventListener('click', ({ target }) => {
   } else if (button.dataset.command === 'pause') {
     pauseMenu.showModal();
   } else if (button.dataset.command === 'again') {
-    start(round.result.nextDealer ?? round.result.winner ?? round.dealer);
+    start(round.result.nextDealer ?? round.result.winner ?? round.dealer, round.tablemates);
   } else if (button.dataset.selectCard !== undefined) {
     selectDiscard(button);
   } else if (button.dataset.command === 'discard') {
@@ -359,6 +403,10 @@ eatMenu.addEventListener('click', ({ target }) => {
 });
 document.addEventListener('click', ({ target }) => {
   if (eatMenu.open && !eatMenu.contains(target) && !target.closest('[data-command="choose-eat"]')) eatMenu.close();
+  const button = target.closest('button:not(:disabled)');
+  if (!data.settings.sound || !button || button.matches('[data-command="discard"], [data-action], [data-select-card], .eat-choice')) return;
+  const selection = button.matches('[data-mode], [data-seats]');
+  playEffect(selection ? 'select' : 'button');
 });
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape' || !eatMenu.open) return;

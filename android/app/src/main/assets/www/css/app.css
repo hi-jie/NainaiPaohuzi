@@ -132,10 +132,13 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
 .seat-picker button { min-height: 58px; font-size: 24px; }
 :is(.menu-options, .pause-settings) label {
   display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+.menu-options > label, .audio-setting {
   min-height: 48px; padding: 8px 16px; border: 1px solid #c0935c; border-radius: 8px;
   background: linear-gradient(#513d2a, #302319); color: #fff0cc;
   box-shadow: inset 0 0 0 2px #150d0980, inset 0 0 0 3px #d8b57842;
-  font-size: clamp(20px, calc(var(--screen-height) * .059), 28px); cursor: pointer;
+  font-size: clamp(20px, calc(var(--screen-height) * .059), 28px);
 }
 :is(.menu-options, .pause-settings) input[role="switch"] {
   appearance: none; position: relative; flex: none; width: 62px; height: 28px; margin: 0;
@@ -162,7 +165,19 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
 }
 .menu-footer { display: flex; justify-content: flex-end; }
 #start { min-width: 155px; }
-.pause-settings label { flex: 1 1 146px; min-height: 44px; padding: 5px 8px; font-size: 18px; white-space: nowrap; }
+.audio-settings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.audio-setting { padding: 8px 12px 4px; font-size: 20px; }
+.audio-setting label { white-space: nowrap; }
+.volume-control {
+  display: grid; grid-template-columns: minmax(0, 1fr) 4.5ch; align-items: center; gap: 8px;
+  font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.volume-control input {
+  width: 100%; min-height: 44px; margin: 0; accent-color: var(--gold);
+  cursor: pointer; touch-action: none;
+}
+.volume-control input:focus-visible { outline: 2px solid #fff0b0; outline-offset: 2px; border-radius: 5px; }
+.volume-control output { text-align: right; color: #ffe6b9; }
 
 main:has(#table:not([hidden])) {
   background: repeating-linear-gradient(120deg, #ffffff05 0 1px, transparent 1px 4px),
@@ -219,11 +234,6 @@ main:has(#table:not([hidden])) {
 }
 .avatar-2 { background: radial-gradient(circle at 40% 25%, #578b89, #244e54); }
 .avatar-0 { background: radial-gradient(circle at 40% 25%, #ad8550, #64472b); }
-.avatar.has-portrait { position: relative; }
-.avatar.has-portrait::before {
-  content: ""; position: absolute; inset: 0;
-  background: var(--avatar-image) var(--avatar-position) / var(--avatar-sheet-size) no-repeat;
-}
 .avatar-label { display: flex; align-items: center; justify-content: center; gap: 6px; }
 .seat.active .avatar {
   border-color: #fff6c7;
@@ -522,6 +532,13 @@ main:has(#table:not([hidden])) {
 .six-hu.many-seats .seat.seat-2 { --seat-cards-width: var(--right-seat-cards-width); }
 .wide .six-hu.many-seats .seat.seat-2 { top: 182px; }
 .six-hu.many-seats .seat-3 { right: 46px; }
+.many-seats :is(.seat-3, .seat-4) .dealer,
+.six-hu.many-seats .seat-1 .dealer {
+  top: calc(var(--avatar-size) / 2); bottom: auto;
+  inset-inline: calc(100% + 8px) auto; margin: 0; transform: translateY(-50%);
+}
+.many-seats .seat-4 .dealer,
+.six-hu.many-seats .seat-1 .dealer { inset-inline: auto calc(100% + 8px); }
 .mahjong .seat { --mahjong-back-row: var(--seat-backs-height); }
 .mahjong.many-seats .seat { --seat-heading-top: 26px; }
 .mahjong.many-seats .seat-3 { top: 26px; }
@@ -726,7 +743,8 @@ main:has(#table:not([hidden])) {
 .game-dialog .actions { flex-wrap: wrap; }
 .dialog-header { display: flex; align-items: center; justify-content: space-between; }
 #leave-description, #resume-description { margin: 6px 0 14px; }
-.pause-settings { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; }
+#pause-menu { width: min(calc(var(--screen-width) - 24px), 460px); }
+.pause-settings { display: grid; gap: 8px; margin: 8px 0 4px; }
 .game-dialog {
   max-width: calc(var(--screen-width) - 24px); max-height: calc(var(--screen-height) - 24px);
 }

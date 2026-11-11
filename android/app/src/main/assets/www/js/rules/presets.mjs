@@ -5,4 +5,7 @@ export const presets = {
   mahjong: { name: '麻雀牌', seats: 3, dealt: 10 }
 };
 
-export const defaultSettings = { mode: 'six', oneFiveTen: false, discardHu: false, sound: true, music: true };
+export const defaultSettings = {
+  mode: 'six', oneFiveTen: false, discardHu: false, sound: true, music: true,
+  soundVolume: 100, musicVolume: 20
+};

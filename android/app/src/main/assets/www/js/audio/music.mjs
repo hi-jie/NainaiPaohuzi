@@ -1,8 +1,7 @@
-import tracks from '../../media/audio/music/playlist.mjs?v=5-d4b6275df60f';
+import tracks from '../../media/audio/music/playlist.mjs?v=5-cbe0bee8a6aa';
 
 const folder = new URL('../../media/audio/music/', import.meta.url);
 const audio = new Audio();
-audio.volume = 0.45;
 let current;
 let enabled = false;
 
@@ -41,4 +40,8 @@ window.addEventListener('pagehide', () => audio.pause());
 export function setMusicPlaying(playing) {
   enabled = playing;
   syncPlayback();
+}
+
+export function setMusicVolume(volume) {
+  audio.volume = volume;
 }

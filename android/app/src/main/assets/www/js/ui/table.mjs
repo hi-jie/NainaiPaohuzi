@@ -1,22 +1,23 @@
 import { cardName, huxi, isRed } from '../rules/cards.mjs';
 import { nextSeat } from '../rules/actions.mjs?v=141';
-import { getOpponent } from '../data/opponents.mjs?v=172&avatars=db991ec2370f';
 import { createHandLayout, handColumnGroup } from './hand.mjs?v=141';
+import { tablemates } from '../data/tablemates.mjs?v=179';
 
-const names = ['我', '电脑一', '电脑二', '电脑三', '电脑四'];
+const seatName = (round, seat) => seat === 0 ? '我' : tablemates[round.tablemates?.[seat - 1]] ?? '对家';
 
 function navButton(command, icon, label) {
   return `<button class="icon-button" data-command="${command}" aria-label="${label}"${command === 'home' ? '' : ' aria-haspopup="dialog"'}>
     <svg class="nav-icon" aria-hidden="true"><use href="#icon-${icon}"/></svg></button>`;
 }
 
-function opponentAt(round, seat) {
-  return getOpponent(round.opponents?.[seat - 1]);
-}
-
-function avatar(seat, opponent) {
-  const style = opponent ? ` style="${opponent.sprite}"` : '';
-  return `<span class="avatar avatar-${seat}${opponent ? ' has-portrait' : ''}"${style} role="img" aria-label="${opponent?.name ?? names[seat]}"></span>`;
+function avatar(round, seat) {
+  const name = seatName(round, seat);
+  const id = round.tablemates?.[seat - 1];
+  if (id !== undefined) {
+    const filename = String(id + 1).padStart(2, '0');
+    return `<img class="avatar avatar-${seat}" src="./media/avatars/tablemates/${filename}.webp" alt="${name}" draggable="false">`;
+  }
+  return `<span class="avatar avatar-${seat}" role="img" aria-label="${name}"></span>`;
 }
 
 function tile(card, hidden = false, selection, hinted = false, handId) {
@@ -79,8 +80,7 @@ function totalHuxi(groups) {
 
 function seatView(round, seat, activeSeat, event, response, openingStage, actions = '', handLayout) {
   const { hand, groups } = round.players[seat];
-  const opponent = opponentAt(round, seat);
-  const name = opponent?.name ?? names[seat];
+  const name = seatName(round, seat);
   const mahjong = round.rules.mode === 'mahjong';
   const discards = tableDiscards(round, seat);
   const showdown = event?.type === '胡';
@@ -103,8 +103,8 @@ function seatView(round, seat, activeSeat, event, response, openingStage, action
   </div>`;
   return `<section class="seat seat-${seat}${active ? ' active' : ''}${yourDiscard ? ' choosing-card' : ''}"${active ? ' aria-current="true"' : ''}>
     <div class="seat-heading">
-      ${avatar(seat, opponent)}
-      <span class="seat-name">${opponent?.name ?? (seat === 0 ? '我' : '对家')}</span>
+      ${avatar(round, seat)}
+      <span class="seat-name">${name}</span>
       <span class="dealer" ${round.dealer === seat ? '' : 'inert aria-hidden="true"'}>庄</span>
       ${showHand && !mahjong ? `<strong class="seat-score">${totalHuxi(groups)}胡息</strong>` : ''}
     </div>
@@ -177,13 +177,10 @@ function resultView(round, score) {
     <p>${kind ? (kind === 'self' ? '自摸' : '接炮') : `${hu.huxi} 胡息 · ${tun} 囤 · ${bonuses.map(([name, multiple]) => `${name} ×${multiple}`).join('、')}`}</p>`;
   return `<div class="settlement"><section class="panel result" aria-live="polite">
     <small>本局结算</small>
-    <h2 class="avatar-label">${winner === null ? '黄庄' : `${avatar(winner, opponentAt(round, winner))}胡牌`}</h2>
+    <h2 class="avatar-label">${winner === null ? '黄庄' : `${avatar(round, winner)}${seatName(round, winner)}胡牌`}</h2>
     ${details}
-    <div class="deltas">${delta.map((value, seat) => {
-      const opponent = opponentAt(round, seat);
-      return `<div>${avatar(seat, opponent)}<span class="result-player-name">${opponent?.name ?? names[seat]}</span>
-        <strong class="${value < 0 ? 'loss' : ''}">${value > 0 ? '+' : ''}${value}</strong></div>`;
-    }).join('')}</div>
+    <div class="deltas">${delta.map((value, seat) => `<div>${avatar(round, seat)}<span class="result-player-name">${seatName(round, seat)}</span>
+      <strong class="${value < 0 ? 'loss' : ''}">${value > 0 ? '+' : ''}${value}</strong></div>`).join('')}</div>
     <p>累计积分 ${score}</p>
     <div class="actions"><button class="primary" data-command="again">再来一局</button>
     ${navButton('home', 'back', '返回首页')}</div>
@@ -353,7 +350,10 @@ export function showOpeningFrame(table, round, score, stage) {
     const portrait = matchMedia('(orientation: portrait)').matches;
     let seat = round.dealer;
     const total = positions.reduce((sum, cards) => sum + cards.length, 0);
+    const dealDelays = [];
     for (let i = 0; i < total; i++, seat = nextSeat(seat, seats)) {
+      const delay = i * 37;
+      dealDelays.push(delay);
       const index = Math.floor(i / seats);
       const card = destinations[seat][index];
       const position = positions[seat][index];
@@ -366,8 +366,9 @@ export function showOpeningFrame(table, round, score, stage) {
         { transform: origin, opacity: 0 },
         { transform: origin, opacity: 1, offset: .05 },
         { transform: 'none', opacity: 1 }
-      ], { duration: 320, delay: i * 37, fill: 'both', easing: 'ease-out' });
+      ], { duration: 320, delay, fill: 'both', easing: 'ease-out' });
     }
+    return dealDelays;
   }
 }
 
