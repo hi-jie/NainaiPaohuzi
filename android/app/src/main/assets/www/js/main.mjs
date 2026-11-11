@@ -11,7 +11,7 @@ import { bindHandDrag } from './ui/hand-drag.mjs?v=116';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=141';
 import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=195';
 import { bindTutorial } from './ui/tutorial.mjs?v=192';
-import { bindProfile } from './ui/profile.mjs?v=198';
+import { bindProfile } from './ui/profile.mjs?v=199';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
@@ -31,7 +31,7 @@ const seatPicker = document.querySelector('#mahjong-seats');
 const paohuziOptions = document.querySelector('#paohuzi-options');
 const openTutorial = bindTutorial(document.querySelector('#tutorial'));
 const data = load();
-const refreshProfile = bindProfile(profilePage, profileButton, data.profile, profile => {
+const refreshProfile = bindProfile(profilePage, profileButton, document.querySelector('#nickname-dialog'), data.profile, profile => {
   save({ ...data, profile });
   data.profile = profile;
 });

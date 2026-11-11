@@ -19,17 +19,20 @@ async function makeAvatar(file) {
   }
 }
 
-export function bindProfile(page, entry, profile, saveProfile) {
+export function bindProfile(page, entry, nicknameDialog, profile, saveProfile) {
   const editor = page.querySelector('#profile-editor');
-  const nickname = editor.querySelector('#profile-nickname');
+  const nickname = nicknameDialog.querySelector('#profile-nickname');
+  const nicknameStatus = nicknameDialog.querySelector('#nickname-status');
   const fileInput = editor.querySelector('#avatar-file');
   const status = editor.querySelector('#profile-status');
   const homeName = entry.querySelector('#home-nickname');
+  const profileName = editor.querySelector('#profile-display-name');
   const avatars = [entry.querySelector('.profile-avatar'), editor.querySelector('.profile-avatar')];
   let avatarRequest = 0;
 
   function renderIdentity() {
     homeName.textContent = profile.nickname;
+    profileName.textContent = profile.nickname;
     entry.setAttribute('aria-label', `${profile.nickname}的个人页面`);
     for (const avatar of avatars) {
       const image = avatar.querySelector('img');
@@ -47,15 +50,22 @@ export function bindProfile(page, entry, profile, saveProfile) {
     renderIdentity();
   }
 
-  editor.addEventListener('submit', event => {
+  editor.querySelector('#edit-nickname').addEventListener('click', () => {
+    nickname.value = profile.nickname;
+    nicknameStatus.textContent = '';
+    nicknameDialog.showModal();
+    nickname.select();
+  });
+  nicknameDialog.querySelector('#cancel-nickname').addEventListener('click', () => nicknameDialog.close());
+  nicknameDialog.querySelector('form').addEventListener('submit', event => {
     event.preventDefault();
     const name = nickname.value.trim() || defaultNickname;
     try {
       update({ nickname: name });
-      nickname.value = name;
+      nicknameDialog.close();
       status.textContent = '昵称已保存';
     } catch {
-      status.textContent = '昵称保存失败';
+      nicknameStatus.textContent = '昵称保存失败';
     }
   });
 
@@ -77,7 +87,6 @@ export function bindProfile(page, entry, profile, saveProfile) {
 
   renderIdentity();
   return () => {
-    nickname.value = profile.nickname;
     status.textContent = '';
   };
 }
