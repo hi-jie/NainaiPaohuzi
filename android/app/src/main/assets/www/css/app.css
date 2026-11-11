@@ -75,7 +75,7 @@ button.icon-button {
 .nav-icon { width: 25px; height: 25px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter: brightness(1.12); }
 .front-screen {
-  width: min(100%, 980px); height: min(100%, 550px); display: grid;
+  width: 100%; height: 100%; display: grid;
   padding: clamp(12px, calc(var(--screen-height) * .05), 30px) clamp(16px, calc(var(--screen-width) * .042), 42px);
 }
 #home { grid-template-columns: 1.1fr 1fr; grid-template-rows: auto 1fr; column-gap: 18px; }
