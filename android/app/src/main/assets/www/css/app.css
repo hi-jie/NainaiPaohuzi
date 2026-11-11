@@ -135,12 +135,17 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
 #nickname-status:empty { display: none; }
 .score-records {
   grid-area: 1 / 2; width: 100%; display: grid;
-  grid-template-columns: minmax(0, 1fr) max-content; gap: clamp(6px, calc(var(--screen-height) * .018), 12px) 12px;
-  margin: 0; place-self: center;
+  grid-template-columns: minmax(0, 1fr) repeat(2, max-content); gap: clamp(6px, calc(var(--screen-height) * .018), 12px) 10px;
+  margin: 0; padding: 0; list-style: none; place-self: center;
+}
+.record-entry {
+  grid-column: span 3; display: grid; grid-template-columns: minmax(0, 1fr) 60px max-content;
+  grid-template-columns: subgrid; align-items: center; column-gap: 10px;
 }
 .record-card {
-  grid-column: span 2; display: grid; grid-template-columns: minmax(0, 1fr) 112px;
+  grid-column: span 2; display: grid; grid-template-columns: minmax(0, 1fr) 60px;
   grid-template-columns: subgrid; align-items: center; column-gap: 12px;
+  margin: 0;
   min-height: clamp(42px, calc(var(--screen-height) * .12), 66px);
   padding: 6px clamp(12px, calc(var(--screen-width) * .032), 28px);
   border: 1px solid #b49461; border-radius: 12px;
@@ -153,22 +158,28 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
   font-size: clamp(17px, calc(var(--screen-height) * .052), 27px);
 }
 .record-score {
-  display: flex; justify-content: flex-end; align-items: center; gap: 8px;
   margin: 0; padding-left: 12px; border-left: 1px solid #b4946180;
   color: #fff0c8; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; text-align: end;
 }
 .record-score strong { font-size: clamp(18px, calc(var(--screen-height) * .062), 32px); line-height: 1; }
-.front-screen .record-reset { min-height: 34px; padding: 3px 8px; border-radius: 6px; font-size: 15px; }
+#profile .record-reset {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  min-height: 36px; padding: 2px 3px; border: 0; border-radius: 4px;
+  background: none; box-shadow: none; color: #ffe5a6; font: 650 15px/1.2 system-ui, sans-serif; white-space: nowrap;
+}
+#profile .record-reset:active { translate: none; }
+.record-reset .nav-icon { width: 17px; height: 17px; }
 @container profile (max-height: 218px) {
   .score-records { grid-template-columns: repeat(2, minmax(0, 1fr) max-content); gap: 6px; }
+  .record-entry { grid-column: span 2; grid-template-columns: minmax(0, 1fr) 36px; grid-template-columns: subgrid; row-gap: 2px; }
   .record-card {
     grid-template-columns: minmax(0, 1fr) 44px; grid-template-columns: subgrid;
     column-gap: 4px; padding-inline: 7px;
   }
   .record-card dt { font-size: clamp(12px, calc(var(--screen-width) * .024), 17px); }
-  .record-score { flex-direction: column; align-items: flex-end; gap: 3px; padding-left: 4px; font-size: 11px; }
+  .record-score { padding-left: 4px; font-size: 11px; }
   .record-score strong { font-size: clamp(13px, calc(var(--screen-width) * .025), 18px); }
-  .front-screen .record-reset { min-height: 30px; padding-inline: 5px; font-size: 13px; }
+  #profile .record-reset { grid-column: 1 / -1; justify-self: center; min-height: 30px; font-size: 13px; }
 }
 .home-brand { grid-column: 1; grid-row: 1 / -1; display: grid; place-content: center; justify-items: center; gap: 18px; }
 .home-brand h1 {

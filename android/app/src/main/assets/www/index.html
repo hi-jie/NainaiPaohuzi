@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#113f32">
   <title>衡阳跑胡子</title>
-  <link rel="stylesheet" href="./css/app.css?v=211">
-  <script type="module" src="./js/main.mjs?v=211-cbe0bee8a6aa"></script>
+  <link rel="stylesheet" href="./css/app.css?v=212">
+  <script type="module" src="./js/main.mjs?v=212-cbe0bee8a6aa"></script>
 </head>
 <body>
   <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -16,6 +16,7 @@
       <circle cx="12" cy="12" r="3"/>
     </symbol>
     <symbol id="icon-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2 6M20 5v6h-6"/></symbol>
     <symbol id="icon-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></symbol>
   </svg>
   <main>
@@ -87,7 +88,7 @@
         <input id="avatar-file" type="file" accept="image/*" hidden>
         <p id="profile-status" role="status"></p>
       </div>
-      <dl class="score-records" aria-label="各玩法积分"></dl>
+      <ul class="score-records" aria-label="各玩法积分"></ul>
     </section>
     <section id="table" class="wide" hidden aria-label="牌桌"></section>
     <dialog id="eat-menu" aria-label="选择吃法"></dialog>

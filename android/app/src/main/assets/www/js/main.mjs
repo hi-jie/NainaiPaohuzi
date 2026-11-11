@@ -101,10 +101,12 @@ document.querySelector('#setup-tutorial').addEventListener('click', () => openTu
 document.querySelector('#pause-tutorial').addEventListener('click', () => openTutorial(round.rules.mode));
 profileButton.addEventListener('click', () => {
   scoreRecords.innerHTML = Object.entries(presets).map(([mode, { name }]) =>
-    `<div class="record-card"><dt>${name}</dt><dd class="record-score">
-      <span><strong>${data.scores[mode]}</strong> 分</span>
-      <button class="record-reset" type="button" data-reset-mode="${mode}" aria-label="${name}积分清零">清零</button>
-    </dd></div>`).join('');
+    `<li class="record-entry">
+      <dl class="record-card"><dt>${name}</dt><dd class="record-score"><strong>${data.scores[mode]}</strong> 分</dd></dl>
+      <button class="record-reset" type="button" data-reset-mode="${mode}" aria-label="${name}积分清零">
+        <svg class="nav-icon" aria-hidden="true"><use href="#icon-refresh"/></svg>清零
+      </button>
+    </li>`).join('');
   refreshProfile();
   showFront(profilePage, profilePage.querySelector('[data-back-home]'));
 });
@@ -116,7 +118,7 @@ scoreRecords.addEventListener('click', ({ target }) => {
   try {
     save({ ...data, scores });
     data.scores = scores;
-    button.closest('.record-score').querySelector('strong').textContent = '0';
+    button.closest('.record-entry').querySelector('.record-score strong').textContent = '0';
     profileStatus.textContent = `${presets[mode].name}积分已清零`;
   } catch {
     profileStatus.textContent = '积分清零失败';
