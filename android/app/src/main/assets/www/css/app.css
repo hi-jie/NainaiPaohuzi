@@ -326,9 +326,10 @@ main:has(#table:not([hidden])) {
 }
 .revealed-hand {
   --strip-height: 28px; --strip-font: 17px;
-  display: grid; min-width: 0; grid-template-columns: repeat(auto-fill, var(--strip-width));
-  grid-auto-rows: var(--strip-height); gap: 1px;
+  display: flex; min-width: 0; gap: 1px;
 }
+.revealed-hand .reveal-slot { flex: 0 1 var(--strip-width); min-width: 0; container-type: inline-size; }
+.revealed-hand .card { width: 100%; font-size: min(var(--strip-font), calc(100cqw - 1px)); }
 .seat-2 .revealed-hand { direction: rtl; }
 :is(.reveal-slot .card, .reveal-meld .card + .card) {
   position: relative; animation: showdown-flip .42s ease-in-out both;

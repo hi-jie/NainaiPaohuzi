@@ -382,6 +382,7 @@ function meldCard(area, groups, index, card) {
 }
 
 export function showRoundResult(table, round, score, event, winningMeld) {
+  table.querySelector('.winner .callout')?.remove();
   table.querySelector('.table-score span:last-child').textContent = `积分 ${score}`;
   table.querySelector('.felt').inert = true;
   table.insertAdjacentHTML('beforeend', resultView(round, score));
