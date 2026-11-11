@@ -23,10 +23,10 @@ const eatMenu = document.querySelector('#eat-menu');
 const startButton = document.querySelector('#start');
 const profilePage = document.querySelector('#profile');
 const profileButton = document.querySelector('#open-profile');
+const scoreRecords = profilePage.querySelector('.score-records');
+const profileStatus = profilePage.querySelector('#profile-status');
 const settings = document.querySelector('#settings');
 const settingsButton = document.querySelector('#open-settings');
-const resetScoreStatus = document.querySelector('#reset-score-status');
-const resetScoreMenu = document.querySelector('#reset-score-menu');
 const modeTitle = document.querySelector('#mode-title');
 const modeScore = document.querySelector('#mode-score');
 const seatPicker = document.querySelector('#mahjong-seats');
@@ -94,39 +94,33 @@ seatPicker.addEventListener('click', ({ target }) => {
   mahjongSeats = Number(target.dataset.seats);
   updateSeatPicker();
 });
-settingsButton.addEventListener('click', () => {
-  resetScoreStatus.textContent = '';
-  showFront(settings, settings.querySelector('[data-back-home]'));
-});
-const resetScoreModes = resetScoreMenu.querySelector('.reset-score-modes');
-resetScoreModes.innerHTML = Object.entries(presets).map(([mode, { name }]) =>
-  `<button type="button" data-reset-mode="${mode}">${name}</button>`).join('')
-  + '<button type="button" data-reset-mode="all">全部清零</button>';
-settings.querySelector('#reset-scores').addEventListener('click', () => resetScoreMenu.showModal());
-resetScoreModes.addEventListener('click', ({ target }) => {
-  const mode = target.dataset.resetMode;
-  if (!mode) return;
-  const all = mode === 'all';
-  const scores = all ? Object.fromEntries(Object.keys(presets).map(key => [key, 0])) : { ...data.scores, [mode]: 0 };
-  try {
-    save({ ...data, scores });
-    data.scores = scores;
-    resetScoreStatus.textContent = all ? '全部积分已清零' : `${presets[mode].name}积分已清零`;
-  } catch {
-    resetScoreStatus.textContent = '积分清零失败';
-  }
-  resetScoreMenu.close();
-});
+settingsButton.addEventListener('click', () => showFront(settings, settings.querySelector('[data-back-home]')));
 settings.querySelector('[data-back-home]').addEventListener('click', () => showHome(settingsButton));
 setup.querySelector('[data-back-home]').addEventListener('click', () => showHome());
 document.querySelector('#setup-tutorial').addEventListener('click', () => openTutorial(selectedMode));
 document.querySelector('#pause-tutorial').addEventListener('click', () => openTutorial(round.rules.mode));
 profileButton.addEventListener('click', () => {
-  const scores = Object.entries(presets).map(([mode, { name }]) => [name, data.scores[mode]]);
-  profilePage.querySelector('.score-records').innerHTML = scores.map(([name, value]) =>
-    `<div class="record-card"><dt>${name}</dt><dd class="record-score"><strong>${value}</strong> 分</dd></div>`).join('');
+  scoreRecords.innerHTML = Object.entries(presets).map(([mode, { name }]) =>
+    `<div class="record-card"><dt>${name}</dt><dd class="record-score">
+      <span><strong>${data.scores[mode]}</strong> 分</span>
+      <button class="record-reset" type="button" data-reset-mode="${mode}" aria-label="${name}积分清零">清零</button>
+    </dd></div>`).join('');
   refreshProfile();
   showFront(profilePage, profilePage.querySelector('[data-back-home]'));
+});
+scoreRecords.addEventListener('click', ({ target }) => {
+  const button = target.closest('[data-reset-mode]');
+  if (!button) return;
+  const mode = button.dataset.resetMode;
+  const scores = { ...data.scores, [mode]: 0 };
+  try {
+    save({ ...data, scores });
+    data.scores = scores;
+    button.closest('.record-score').querySelector('strong').textContent = '0';
+    profileStatus.textContent = `${presets[mode].name}积分已清零`;
+  } catch {
+    profileStatus.textContent = '积分清零失败';
+  }
 });
 profilePage.querySelector('[data-back-home]').addEventListener('click', () => showHome(profileButton));
 
