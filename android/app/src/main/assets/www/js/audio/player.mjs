@@ -37,6 +37,10 @@ export function unlockSound() {
     effectGain = context.createGain();
     effectGain.connect(gain);
     for (const { file } of Object.values(effects)) loadClip(file);
+    for (const number of numbers) {
+      loadClip(`hengyang/x${number}.wav`);
+      loadClip(`hengyang/d${number}.wav`);
+    }
   }
   if (context.state !== 'running') context.resume().catch(error => console.warn('音效启动失败', error));
 }
@@ -98,14 +102,17 @@ function queueSound({ file, level = 1, duration }) {
 
 export function playAction(event, round) {
   if (!canPlaySound()) return;
-  if (event.type === '摸' || event.type === '出') queueSound(effects.card);
   const name = voiceClip(event, round);
+  if (event.type === '摸' || event.type === '出') {
+    if (name) stopVoice();
+    playEffect('card', [0], { replace: false });
+  }
   if (name) queueSound({ file: `hengyang/${name}.wav` });
 }
 
-export async function playEffect(name, delays = [0]) {
+export async function playEffect(name, delays = [0], { replace = true } = {}) {
   if (!canPlaySound()) return;
-  stopEffect();
+  if (replace) stopEffect();
   const request = effectRequest;
   const { file, level, duration, duck = true } = effects[name];
   const buffer = await loadClip(file);
@@ -130,10 +137,14 @@ export function stopEffect() {
   activeEffects.clear();
 }
 
-export function stopSound() {
-  stopEffect();
+function stopVoice() {
   queue = [];
   active?.stop();
   active = undefined;
   if (effectGain) effectGain.gain.value = 1;
+}
+
+export function stopSound() {
+  stopEffect();
+  stopVoice();
 }
