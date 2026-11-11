@@ -9,7 +9,7 @@ import { presets } from './rules/presets.mjs?v=141';
 import { load, save } from './storage/save.mjs?v=202';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=116';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=141';
-import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=195';
+import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=214';
 import { bindTutorial } from './ui/tutorial.mjs?v=192';
 import { bindProfile } from './ui/profile.mjs?v=202';
 
@@ -195,7 +195,7 @@ function saveRound(keep = round.phase !== 'finished') {
 
 function paintRound(event, motion, action) {
   const previousSeat = table.querySelector('.turn-arrow')?.dataset.seat;
-  table.innerHTML = renderTable(round, data.scores[round.rules.mode], event, '', handLayout);
+  table.innerHTML = renderTable(round, data.scores[round.rules.mode], event, '', handLayout, data.profile);
   animateTurnArrow(table.querySelector('.turn-arrow'), previousSeat);
   if (event || motion) animateAction(table, round, event, motion, action);
 }
@@ -203,8 +203,8 @@ function paintRound(event, motion, action) {
 function showRound(event, motion, action) {
   const score = data.scores[round.rules.mode];
   if (round.phase === 'finished') {
-    showFinishedTable(table, round, score, event);
-    timer = setTimeout(() => showRoundResult(table, round, score), 2200);
+    showFinishedTable(table, round, score, event, data.profile);
+    timer = setTimeout(() => showRoundResult(table, round, score, data.profile), 2200);
   } else {
     paintRound(event, motion, action);
     scheduleTurn();
@@ -259,7 +259,7 @@ function scheduleOpening(stageIndex, delay) {
 function showOpening(stageIndex) {
   const { name, duration } = openingStages[stageIndex];
   const command = document.activeElement.closest('.opening button')?.dataset.command ?? 'skip-opening';
-  const dealDelays = showOpeningFrame(table, round, data.scores[round.rules.mode], name);
+  const dealDelays = showOpeningFrame(table, round, data.scores[round.rules.mode], name, data.profile);
   if (name === 'shuffle' && data.settings.sound) playEffect('shuffle');
   if (name === 'deal' && data.settings.sound) playEffect('card', dealDelays);
   table.querySelector(`[data-command="${command}"]`).focus({ preventScroll: true });

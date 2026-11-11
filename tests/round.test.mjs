@@ -18,6 +18,16 @@ const player = (hand, groups = []) => ({
 });
 const waitingHand = [0, 1, 2, 3, 3, 3, 5, 6, 7, 10, 11, 12, 15, 16];
 
+test('牌桌将自定义昵称作为文字和头像标签显示', () => {
+  const round = new Round(defaultSettings, 0, Math.random, undefined, { deferOpening: true });
+  const profile = { nickname: '小雨 <家> & "我"', avatar: 'data:image/webp;base64,AAAA' };
+  const html = renderTable(round, 0, null, 'dealer', null, profile);
+  const name = '小雨 &lt;家&gt; &amp; &quot;我&quot;';
+  assert.ok(html.includes(`<span class="seat-name" title="${name}">${name}</span>`));
+  assert.ok(html.includes(`src="${profile.avatar}" alt="${name}"`));
+  assert.doesNotMatch(html, /<家>/);
+});
+
 test('手动理牌可移动同名牌，出牌后保留其它牌的位置', () => {
   const layout = [
     [{ id: 0, card: 0 }, { id: 1, card: 1 }],

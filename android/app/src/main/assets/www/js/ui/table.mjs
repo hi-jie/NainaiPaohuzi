@@ -3,19 +3,29 @@ import { nextSeat } from '../rules/actions.mjs?v=141';
 import { createHandLayout, handColumnGroup } from './hand.mjs?v=141';
 import { tablemates } from '../data/tablemates.mjs?v=179';
 
-const seatName = (round, seat) => seat === 0 ? '我' : tablemates[round.tablemates?.[seat - 1]] ?? '对家';
+const htmlEntities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const escapeHtml = value => String(value).replace(/[&<>"']/g, character => htmlEntities[character]);
+
+function seatIdentity(round, seat, profile) {
+  if (seat === 0) {
+    const name = escapeHtml(profile?.nickname || '我');
+    const image = /^data:image\/(webp|png|jpeg);base64,/i.test(profile?.avatar) ? escapeHtml(profile.avatar) : null;
+    return { name, image };
+  }
+  const id = round.tablemates?.[seat - 1];
+  const name = escapeHtml(tablemates[id] ?? '对家');
+  const image = Number.isInteger(id) ? `./media/avatars/tablemates/${String(id + 1).padStart(2, '0')}.webp` : null;
+  return { name, image };
+}
 
 function navButton(command, icon, label) {
   return `<button class="icon-button" data-command="${command}" aria-label="${label}"${command === 'home' ? '' : ' aria-haspopup="dialog"'}>
     <svg class="nav-icon" aria-hidden="true"><use href="#icon-${icon}"/></svg></button>`;
 }
 
-function avatar(round, seat) {
-  const name = seatName(round, seat);
-  const id = round.tablemates?.[seat - 1];
-  if (id !== undefined) {
-    const filename = String(id + 1).padStart(2, '0');
-    return `<img class="avatar avatar-${seat}" src="./media/avatars/tablemates/${filename}.webp" alt="${name}" draggable="false">`;
+function avatar(seat, { name, image }) {
+  if (image) {
+    return `<img class="avatar avatar-${seat}" src="${image}" alt="${name}" draggable="false">`;
   }
   return `<span class="avatar avatar-${seat}" role="img" aria-label="${name}"></span>`;
 }
@@ -77,9 +87,9 @@ function totalHuxi(groups) {
   return groups.reduce((sum, group) => sum + huxi(group), 0);
 }
 
-function seatView(round, seat, activeSeat, event, response, openingStage, actions = '', handLayout) {
+function seatView(round, seat, identity, activeSeat, event, response, openingStage, actions = '', handLayout) {
   const { hand, groups: playedGroups } = round.players[seat];
-  const name = seatName(round, seat);
+  const { name } = identity;
   const mahjong = round.rules.mode === 'mahjong';
   const discards = tableDiscards(round, seat);
   const showdown = round.phase === 'finished';
@@ -102,8 +112,8 @@ function seatView(round, seat, activeSeat, event, response, openingStage, action
   </div>`;
   return `<section class="seat seat-${seat}${active ? ' active' : ''}${yourDiscard ? ' choosing-card' : ''}${winner ? ' winner' : ''}"${active ? ' aria-current="true"' : ''}>
     <div class="seat-heading">
-      ${avatar(round, seat)}
-      <span class="seat-name">${name}</span>
+      ${avatar(seat, identity)}
+      <span class="seat-name" title="${name}">${name}</span>
       <span class="dealer" ${round.dealer === seat ? '' : 'inert aria-hidden="true"'}>庄</span>
       ${showHand && !mahjong ? `<strong class="seat-score">${totalHuxi(playedGroups)}胡息</strong>` : ''}
     </div>
@@ -174,16 +184,17 @@ export function previewEat(table, action) {
   }
 }
 
-function resultView(round, score) {
+function resultView(round, score, profile) {
   const { winner, hu, names: bonuses, tun, delta, kind } = round.result;
+  const identities = delta.map((_, seat) => seatIdentity(round, seat, profile));
   const details = winner === null ? '' : `
     <div class="groups">${hu.groups.map(group => meld(group)).join('')}</div>
     <p>${kind ? (kind === 'self' ? '自摸' : '接炮') : `${hu.huxi} 胡息 · ${tun} 囤 · ${bonuses.map(([name, multiple]) => `${name} ×${multiple}`).join('、')}`}</p>`;
   return `<div class="settlement"><section class="panel result" aria-live="polite">
     <small>本局结算</small>
-    <h2 class="avatar-label">${winner === null ? '黄庄' : `${avatar(round, winner)}${seatName(round, winner)}胡牌`}</h2>
+    <h2 class="avatar-label">${winner === null ? '黄庄' : `${avatar(winner, identities[winner])}${identities[winner].name}胡牌`}</h2>
     ${details}
-    <div class="deltas">${delta.map((value, seat) => `<div>${avatar(round, seat)}<span class="result-player-name">${seatName(round, seat)}</span>
+    <div class="deltas">${delta.map((value, seat) => `<div>${avatar(seat, identities[seat])}<span class="result-player-name" title="${identities[seat].name}">${identities[seat].name}</span>
       <strong class="${value < 0 ? 'loss' : ''}">${value > 0 ? '+' : ''}${value}</strong></div>`).join('')}</div>
     <p>累计积分 ${score}</p>
     <div class="actions"><button class="primary" data-command="again">再来一局</button>
@@ -215,7 +226,7 @@ function openingPile(stage) {
     `<i class="opening-back opening-stack" style="--index:${index}"></i>`).join('')}</span>`;
 }
 
-export function renderTable(round, score, event, openingStage = '', handLayout = null) {
+export function renderTable(round, score, event, openingStage = '', handLayout = null, profile) {
   const { phase, seat, options } = round;
   const mahjong = round.rules.mode === 'mahjong';
   const showdown = phase === 'finished';
@@ -244,7 +255,10 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
       ${playing && handLayout ? '<button data-command="auto-hand">自动理牌</button>' : ''}
       <div class="table-score"><span>${round.rules.name}</span><span>积分 ${score}</span></div>
     </div>
-    ${round.players.slice(1).map((_, index) => seatView(round, index + 1, activeSeat, event, null, openingStage)).join('')}
+    ${round.players.slice(1).map((_, index) => {
+      const other = index + 1;
+      return seatView(round, other, seatIdentity(round, other), activeSeat, event, null, openingStage);
+    }).join('')}
     <div class="center">
       ${showdown && round.deck.length
         ? `<div class="revealed-deck" role="group" aria-label="牌墩">${revealSlots([...round.deck].reverse())}</div>` : ''}
@@ -262,7 +276,7 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
         </div>
       </div>
     </div>
-    ${seatView(round, 0, activeSeat, event, handHint, openingStage, actions, handLayout)}
+    ${seatView(round, 0, seatIdentity(round, 0, profile), activeSeat, event, handHint, openingStage, actions, handLayout)}
     </div>`;
 }
 
@@ -293,10 +307,10 @@ function slideFrom(table, element, from, duration, scale) {
   ], { duration, fill: 'backwards', easing: 'cubic-bezier(.22,.6,.28,1)' });
 }
 
-export function showFinishedTable(table, round, score, event) {
+export function showFinishedTable(table, round, score, event, profile) {
   const backs = round.players.map((_, seat) => Array.from(table.querySelectorAll(`.seat-${seat} .seat-backs span`),
     card => card.getBoundingClientRect()));
-  table.innerHTML = renderTable(round, score - round.result.delta[0], event);
+  table.innerHTML = renderTable(round, score - round.result.delta[0], event, '', null, profile);
   if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
     backs.forEach((positions, seat) => {
       table.querySelectorAll(`.seat-${seat} .reveal-slot`).forEach((slot, index) => {
@@ -338,12 +352,12 @@ export function animateHandSort(table, render, opening = false) {
   }
 }
 
-export function showOpeningFrame(table, round, score, stage) {
+export function showOpeningFrame(table, round, score, stage, profile) {
   if (stage === 'sort') {
-    animateHandSort(table, () => { table.innerHTML = renderTable(round, score, null, stage); }, true);
+    animateHandSort(table, () => { table.innerHTML = renderTable(round, score, null, stage, null, profile); }, true);
     return;
   }
-  table.innerHTML = renderTable(round, score, null, stage);
+  table.innerHTML = renderTable(round, score, null, stage, null, profile);
   const deck = table.querySelector('.deck-tile').getBoundingClientRect();
   if (stage === 'dealer') {
     const badge = table.querySelector(`.seat-${round.dealer} .dealer`);
@@ -384,11 +398,11 @@ function meldCard(area, groups, index, card) {
   return area.children[index].children[groups[index].cards.indexOf(card)];
 }
 
-export function showRoundResult(table, round, score) {
+export function showRoundResult(table, round, score, profile) {
   table.querySelector('.winner .callout')?.remove();
   table.querySelector('.table-score span:last-child').textContent = `积分 ${score}`;
   table.querySelector('.felt').inert = true;
-  table.insertAdjacentHTML('beforeend', resultView(round, score));
+  table.insertAdjacentHTML('beforeend', resultView(round, score, profile));
   table.querySelector('[data-command="review-round"]').focus({ preventScroll: true });
 }
 
