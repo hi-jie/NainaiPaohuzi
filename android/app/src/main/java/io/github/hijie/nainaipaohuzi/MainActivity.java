@@ -1,27 +1,38 @@
 package io.github.hijie.nainaipaohuzi;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
+import android.content.ContentResolver;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Insets;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Process;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
+import android.widget.Toast;
 import android.window.OnBackInvokedDispatcher;
 
 import androidx.webkit.WebViewAssetLoader;
 
 public class MainActivity extends Activity {
     private static final String GAME_URL = "https://appassets.androidplatform.net/assets/www/index.html";
+    private static final int CHOOSE_AVATAR = 1;
     private FrameLayout root;
     private WebView game;
+    private ValueCallback<Uri[]> avatarSelection;
     private boolean resumed;
 
     @Override
@@ -47,6 +58,27 @@ public class MainActivity extends Activity {
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
+        game.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback,
+                                             FileChooserParams params) {
+                if (!GAME_URL.equals(view.getUrl()) || params.getMode() != FileChooserParams.MODE_OPEN) {
+                    return false;
+                }
+                completeAvatarSelection(null);
+                avatarSelection = callback;
+                Intent picker = new Intent(Intent.ACTION_OPEN_DOCUMENT)
+                        .addCategory(Intent.CATEGORY_OPENABLE)
+                        .setType("image/*");
+                try {
+                    startActivityForResult(picker, CHOOSE_AVATAR);
+                } catch (ActivityNotFoundException error) {
+                    completeAvatarSelection(null);
+                    Toast.makeText(MainActivity.this, "无法打开图片选择器", Toast.LENGTH_SHORT).show();
+                }
+                return true;
+            }
+        });
         game.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
@@ -81,6 +113,25 @@ public class MainActivity extends Activity {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
                     OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::navigateBack);
         }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != CHOOSE_AVATAR) return;
+        Uri selected = resultCode == RESULT_OK && data != null ? data.getData() : null;
+        if (selected != null && (!ContentResolver.SCHEME_CONTENT.equals(selected.getScheme())
+                || checkUriPermission(selected, Process.myPid(), Process.myUid(),
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION) != PackageManager.PERMISSION_GRANTED)) {
+            selected = null;
+        }
+        completeAvatarSelection(selected);
+    }
+
+    private void completeAvatarSelection(Uri selected) {
+        ValueCallback<Uri[]> callback = avatarSelection;
+        avatarSelection = null;
+        if (callback != null) callback.onReceiveValue(selected == null ? null : new Uri[]{selected});
     }
 
     @Override
@@ -152,6 +203,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        completeAvatarSelection(null);
         root.removeView(game);
         game.destroy();
         super.onDestroy();

@@ -6,11 +6,12 @@ import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
 import { Round } from './game/state-machine.mjs?v=141';
 import { MahjongRound } from './game/mahjong-round.mjs';
 import { presets } from './rules/presets.mjs?v=141';
-import { load, save } from './storage/save.mjs?v=178';
+import { load, save } from './storage/save.mjs?v=198';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=116';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=141';
 import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=195';
 import { bindTutorial } from './ui/tutorial.mjs?v=192';
+import { bindProfile } from './ui/profile.mjs?v=198';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
@@ -20,8 +21,8 @@ const leaveMenu = document.querySelector('#leave-menu');
 const resumeMenu = document.querySelector('#resume-menu');
 const eatMenu = document.querySelector('#eat-menu');
 const startButton = document.querySelector('#start');
-const records = document.querySelector('#records');
-const recordsButton = document.querySelector('#open-records');
+const profilePage = document.querySelector('#profile');
+const profileButton = document.querySelector('#open-profile');
 const settings = document.querySelector('#settings');
 const settingsButton = document.querySelector('#open-settings');
 const modeTitle = document.querySelector('#mode-title');
@@ -30,6 +31,10 @@ const seatPicker = document.querySelector('#mahjong-seats');
 const paohuziOptions = document.querySelector('#paohuzi-options');
 const openTutorial = bindTutorial(document.querySelector('#tutorial'));
 const data = load();
+const refreshProfile = bindProfile(profilePage, profileButton, data.profile, profile => {
+  save({ ...data, profile });
+  data.profile = profile;
+});
 let mahjongSeats = data.settings.mahjongSeats ?? presets.mahjong.seats;
 let selectedMode = data.settings.mode;
 let round;
@@ -91,13 +96,14 @@ settings.querySelector('[data-back-home]').addEventListener('click', () => showH
 setup.querySelector('[data-back-home]').addEventListener('click', () => showHome());
 document.querySelector('#setup-tutorial').addEventListener('click', () => openTutorial(selectedMode));
 document.querySelector('#pause-tutorial').addEventListener('click', () => openTutorial(round.rules.mode));
-recordsButton.addEventListener('click', () => {
+profileButton.addEventListener('click', () => {
   const scores = Object.entries(presets).map(([mode, { name }]) => [name, data.scores[mode]]);
-  records.querySelector('.score-records').innerHTML = scores.map(([name, value]) =>
+  profilePage.querySelector('.score-records').innerHTML = scores.map(([name, value]) =>
     `<div class="record-card"><dt>${name}</dt><dd class="record-score"><strong>${value}</strong> 分</dd></div>`).join('');
-  showFront(records, records.querySelector('[data-back-home]'));
+  refreshProfile();
+  showFront(profilePage, profilePage.querySelector('[data-back-home]'));
 });
-records.querySelector('[data-back-home]').addEventListener('click', () => showHome(recordsButton));
+profilePage.querySelector('[data-back-home]').addEventListener('click', () => showHome(profileButton));
 
 function startMusic() {
   setMusicPlaying(data.settings.music);
@@ -119,7 +125,7 @@ window.addEventListener('paohuzi-foreground-change', () => {
 
 function showFront(screen, focus) {
   table.hidden = true;
-  for (const page of [home, setup, settings, records]) page.hidden = page !== screen;
+  for (const page of [home, setup, settings, profilePage]) page.hidden = page !== screen;
   focus.focus({ preventScroll: true });
 }
 

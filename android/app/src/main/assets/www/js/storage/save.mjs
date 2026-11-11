@@ -1,6 +1,8 @@
 import { defaultSettings, presets } from '../rules/presets.mjs?v=175';
 
 const key = 'hengyang-paohuzi-v1';
+export const defaultNickname = '我';
+
 export function load() {
   const saved = localStorage.getItem(key);
   const data = saved === null ? {} : JSON.parse(saved);
@@ -12,7 +14,9 @@ export function load() {
   const scores = Object.fromEntries(Object.keys(presets).map(mode => [mode, data.scores?.[mode] ?? 0]));
   return {
     scores,
-    settings: { ...defaultSettings, ...data.settings }, round
+    settings: { ...defaultSettings, ...data.settings },
+    profile: { nickname: defaultNickname, avatar: null, ...data.profile },
+    round
   };
 }
 export function save(data) {

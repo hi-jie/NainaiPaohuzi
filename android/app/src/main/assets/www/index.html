@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#113f32">
   <title>衡阳跑胡子</title>
-  <link rel="stylesheet" href="./css/app.css?v=197">
-  <script type="module" src="./js/main.mjs?v=196-cbe0bee8a6aa"></script>
+  <link rel="stylesheet" href="./css/app.css?v=198">
+  <script type="module" src="./js/main.mjs?v=198-cbe0bee8a6aa"></script>
 </head>
 <body>
   <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -16,11 +16,18 @@
       <circle cx="12" cy="12" r="3"/>
     </symbol>
     <symbol id="icon-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="icon-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></symbol>
   </svg>
   <main>
     <section id="home" class="front-screen" aria-labelledby="home-title">
       <header class="home-top">
-        <button id="open-records" type="button">积分记录</button>
+        <button id="open-profile" type="button">
+          <span class="profile-avatar" aria-hidden="true">
+            <img alt="" hidden>
+            <svg class="nav-icon"><use href="#icon-person"/></svg>
+          </span>
+          <span id="home-nickname"></span>
+        </button>
         <button id="open-settings" class="icon-button" type="button" aria-label="设置"><svg class="nav-icon" aria-hidden="true"><use href="#icon-settings"/></svg></button>
       </header>
       <div class="home-brand">
@@ -61,12 +68,27 @@
       </header>
       <div class="menu-options audio-settings"></div>
     </section>
-    <section id="records" class="front-screen menu-screen" hidden aria-labelledby="records-title">
+    <section id="profile" class="front-screen" hidden aria-label="个人页面">
       <header class="menu-header">
         <button class="icon-button" type="button" data-back-home aria-label="返回首页"><svg class="nav-icon" aria-hidden="true"><use href="#icon-back"/></svg></button>
-        <h2 id="records-title">积分记录</h2>
       </header>
-      <dl class="score-records"></dl>
+      <form id="profile-editor">
+        <div class="profile-photo">
+          <span class="profile-avatar" aria-hidden="true">
+            <img alt="" hidden>
+            <svg class="nav-icon"><use href="#icon-person"/></svg>
+          </span>
+          <button id="choose-avatar" type="button">上传头像</button>
+          <input id="avatar-file" type="file" accept="image/*" hidden>
+        </div>
+        <label class="sr-only" for="profile-nickname">昵称</label>
+        <div class="profile-name-edit">
+          <input id="profile-nickname" name="nickname" type="text" maxlength="16" autocomplete="nickname" placeholder="昵称">
+          <button type="submit">保存</button>
+        </div>
+        <p id="profile-status" role="status"></p>
+      </form>
+      <dl class="score-records" aria-label="各玩法积分"></dl>
     </section>
     <section id="table" class="wide" hidden aria-label="牌桌"></section>
     <dialog id="eat-menu" aria-label="选择吃法"></dialog>
