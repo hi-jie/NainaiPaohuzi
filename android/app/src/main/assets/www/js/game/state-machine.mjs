@@ -192,7 +192,8 @@ export class Round {
     if (type === '吃') {
       const [group, ...companions] = action.groups;
       player.hand = takeCards(player.hand, companions.flat());
-      for (const cards of [group, ...companions]) player.groups.push({ type, cards });
+      player.groups.push({ type, cards: group, offeredCard: card });
+      for (const cards of companions) player.groups.push({ type, cards });
     } else {
       const size = type === '偎' || type === '碰' ? 3 : 4;
       const group = { type, cards: Array(size).fill(card) };

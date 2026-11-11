@@ -207,7 +207,7 @@ test('等吃期间牌只在墩旁，吃完进入落地牌，过后等下一张�
       assertDiscardCount(round, 0);
       if (decision === '吃') {
         assert.doesNotMatch(renderTable(round, 0), /class="landing">\s*<span/);
-        assert.deepEqual(round.players[0].groups, [{ type: '吃', cards: [0, 1, 2] }]);
+        assert.deepEqual(round.players[0].groups, [{ type: '吃', cards: [0, 1, 2], offeredCard: 2 }]);
       } else {
         assert.match(renderTable(round, 0), /class="landing">\s*<span[^>]*>三</);
         const restored = Round.fromSave(JSON.parse(JSON.stringify(round.toSave())));
@@ -219,6 +219,23 @@ test('等吃期间牌只在墩旁，吃完进入落地牌，过后等下一张�
       }
     }
   }
+});
+
+test('吃进的牌落在主组最下方，比牌仍按顺序，续局保留牌面排列', () => {
+  const round = new Round(defaultSettings, 0);
+  round.players = [player([0, 1, 2, 6, 8, 9]), { ...player([]), discards: [1] }, player([]), player([])];
+  round.reveal(1, 1, 'discard');
+  round.act(round.options.find(action => action.type === '吃' && action.groups[0][0] === 0));
+  const restored = Round.fromSave(JSON.parse(JSON.stringify(round.toSave())));
+  const groups = restored.players[0].groups;
+  assert.deepEqual(groups.map(huxi), [3, 3]);
+
+  const displayOrder = current => [...renderTable(current, 0).matchAll(/data-meld="吃"[^>]*>((?:<span class="card[^>]*>[^<]+<\/span>)+)/g)]
+    .map(([, group]) => [...group.matchAll(/>([^<>]+)<\/span>/g)].map(([, card]) => card));
+  assert.deepEqual(displayOrder(round), [['一', '三', '二'], ['二', '七', '十']]);
+  assert.deepEqual(displayOrder(restored), displayOrder(round));
+  delete groups[0].offeredCard;
+  assert.deepEqual(displayOrder(restored), [['一', '二', '三'], ['二', '七', '十']]);
 });
 
 test('放炮胡只取走本次打出的那一张，先前同名弃牌仍保留', () => {
@@ -271,7 +288,7 @@ test('存档恢复当前响应、后续响应和过牌限制', () => {
   assert.deepEqual([...restored.players[0].passedPeng], [3, 2]);
   assert.equal(restored.seat, 1);
   restored.act(restored.options.find(action => action.type === '吃'));
-  assert.deepEqual(restored.players[1].groups, [{ type: '吃', cards: [0, 1, 2] }]);
+  assert.deepEqual(restored.players[1].groups, [{ type: '吃', cards: [0, 1, 2], offeredCard: 2 }]);
   assert.equal(restored.phase, 'discard');
 });
 

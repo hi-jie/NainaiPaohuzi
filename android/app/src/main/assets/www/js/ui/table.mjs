@@ -1,4 +1,4 @@
-import { cardName, huxi, isRed } from '../rules/cards.mjs';
+import { cardName, huxi, isRed, takeCards } from '../rules/cards.mjs';
 import { nextSeat } from '../rules/actions.mjs?v=141';
 import { createHandLayout, handColumnGroup } from './hand.mjs?v=141';
 import { tablemates } from '../data/tablemates.mjs?v=179';
@@ -39,8 +39,9 @@ function tile(card, hidden = false, selection, hinted = false, handId) {
   return `<span class="${classes}"${handAttribute}>${hidden ? '◆' : cardName(card)}</span>`;
 }
 
-function meld(group, concealed = false, reveal = false) {
-  return `<span class="meld${concealed && reveal ? ' reveal-meld' : ''}" data-meld="${group.type}" data-cards="${group.cards.join(' ')}">${group.cards.map((card, index) => tile(card, concealed && !reveal && index > 0)).join('')}</span>`;
+function meld({ type, cards, offeredCard }, concealed = false, reveal = false) {
+  const displayCards = offeredCard === undefined ? cards : [...takeCards(cards, [offeredCard]), offeredCard];
+  return `<span class="meld${concealed && reveal ? ' reveal-meld' : ''}" data-meld="${type}" data-cards="${cards.join(' ')}">${displayCards.map((card, index) => tile(card, concealed && !reveal && index > 0)).join('')}</span>`;
 }
 
 function revealSlots(cards) {
@@ -396,10 +397,6 @@ export function showOpeningFrame(table, round, score, stage, profile) {
   }
 }
 
-function meldCard(area, groups, index, card) {
-  return area.children[index].children[groups[index].cards.indexOf(card)];
-}
-
 export function showRoundResult(table, round, score, profile) {
   table.querySelector('.winner .callout')?.remove();
   table.querySelector('.table-score span:last-child').textContent = `积分 ${score}`;
@@ -418,7 +415,7 @@ export function captureOfferMotion(table, round) {
     const { type } = round.events.at(-1);
     const { groups } = round.players[seat];
     const index = groups.findIndex(group => group.type === type && group.cards[0] === offer.card);
-    const card = meldCard(table.querySelector(`.seat-${seat} .groups`), groups, index, offer.card);
+    const card = table.querySelector(`.seat-${seat} .groups`).children[index].lastElementChild;
     return { offer, meld: index, from: (flying ?? card).getBoundingClientRect() };
   }
 }
@@ -499,7 +496,7 @@ export function animateAction(table, round, event, motion, action) {
     const { card, seat } = event;
     const { groups } = round.players[seat];
     const index = action.previous >= 0 ? action.previous : groups.length - (action.groups?.length ?? 1);
-    const destination = meldCard(seatView(seat).querySelector('.groups'), groups, index, card);
+    const destination = seatView(seat).querySelector('.groups').children[index].lastElementChild;
     animateTransfer(table, card, destination, motion.from);
   } else if (motion?.offer.kind === 'opening' && motion.meld === undefined && round.phase !== 'response' && round.phase !== 'opening-ti') {
     const { offer: { source, card }, from } = motion;
