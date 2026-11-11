@@ -2,10 +2,10 @@ const numbers = ['yi', 'er', 'san', 'si', 'wu', 'liu', 'qi', 'ba', 'jiu', 'shi']
 const actions = { 吃: 'chi', 碰: 'peng', 偎: 'wei', 提: 'ti', 跑: 'pao', 胡: 'hu', 过: 'guo' };
 const effects = {
   button: { file: 'sfx/button.mp3', level: 0.48 },
-  select: { file: 'sfx/select-button.mp3', level: 0.38 },
-  shuffle: { file: 'sfx/shuffling-deck-of-cards.mp3', level: 0.51 },
-  card: { file: 'sfx/taking-playing-card.mp3', level: 0.48, duration: 0.23 },
-  impact: { file: 'sfx/knockout-body-fall-in-the-boxing-ring-first.mp3', level: 0.38, duck: false }
+  select: { file: 'sfx/select.mp3', level: 0.38 },
+  shuffle: { file: 'sfx/shuffle.mp3', level: 0.51 },
+  card: { file: 'sfx/card.mp3', level: 0.48, duration: 0.23 },
+  impact: { file: 'sfx/impact.mp3', level: 0.38, duck: false }
 };
 const folder = new URL('../../media/audio/', import.meta.url);
 const version = new URL(import.meta.url).search;

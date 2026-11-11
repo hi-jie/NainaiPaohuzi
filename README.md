@@ -47,7 +47,7 @@ adb install -r .\app\build\outputs\apk\debug\app-debug.apk
 
 [方言录音目录](android/app/src/main/assets/www/media/audio/hengyang)中的 WAV 随网页和 APK 提供。摸牌和出牌时读牌面，小字用 `x` 开头（如 `xyi.wav` 是「一」），大字用 `d` 开头（如 `dyi.wav` 是「壹」）。吃、碰、偎、提、跑、胡、过有各自的录音，同一玩家在本局第二次起跑牌时播放 `cpao.wav`。麻雀牌只报自己摸的牌和所有玩家打出的牌。
 
-[通用音效目录](android/app/src/main/assets/www/media/audio/sfx)的 `button.mp3` 用于普通按钮，`select-button.mp3` 用于选择玩法和人数，`shuffling-deck-of-cards.mp3` 用于开局洗牌，`taking-playing-card.mp3` 用于发牌、摸牌和出牌。通用音效与方言共用「游戏音效」开关和音量，默认 100%。
+[通用音效目录](android/app/src/main/assets/www/media/audio/sfx)的 `button.mp3` 用于普通按钮，`select.mp3` 用于选择玩法和人数，`shuffle.mp3` 用于开局洗牌，`card.mp3` 用于发牌、摸牌和出牌，`impact.mp3` 用于动作大字落地。通用音效与方言共用「游戏音效」开关和音量，默认 100%。
 
 原始录音放在该目录的 `original/` 下，在项目根目录运行 `node scripts/process-voices.mjs`。需要 FFmpeg 在 `PATH` 中。脚本从原始文件生成同名 WAV，裁掉首尾空白和开口前较轻的吸气声，给字头和字尾保留少量余量。轻度降噪、增强人声清晰度、压缩过大音量差，再通过两遍测量统一到 −14 LUFS，真峰值上限 −3.5 dBTP。输出为 24 kHz、16 位单声道，直接供游戏播放。重复运行会从 `original/` 重新生成。参见[音量设计规范](docs/音量设计规范.md)。
 
