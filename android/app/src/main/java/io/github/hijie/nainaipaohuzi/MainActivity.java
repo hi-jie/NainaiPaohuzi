@@ -6,14 +6,15 @@ import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.graphics.Insets;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
+import android.view.DisplayCutout;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
+import android.view.WindowManager;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -82,6 +83,7 @@ public class MainActivity extends Activity {
         game.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
+                syncDisplayCutout(root.getRootWindowInsets());
                 syncMusicForeground();
             }
 
@@ -100,13 +102,18 @@ public class MainActivity extends Activity {
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             getWindow().setDecorFitsSystemWindows(false);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            WindowManager.LayoutParams layout = getWindow().getAttributes();
+            layout.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            getWindow().setAttributes(layout);
             root.setOnApplyWindowInsetsListener((view, insets) -> {
-                Insets cutout = insets.getInsets(WindowInsets.Type.displayCutout());
-                view.setPadding(cutout.left, cutout.top, cutout.right, cutout.bottom);
+                syncDisplayCutout(insets);
                 return insets;
             });
         }
         setContentView(root);
+        enterImmersiveMode();
         game.loadUrl(GAME_URL);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -138,9 +145,13 @@ public class MainActivity extends Activity {
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (resumed) syncMusicForeground();
-        if (!hasFocus) return;
+        if (hasFocus) enterImmersiveMode();
+    }
+
+    private void enterImmersiveMode() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             WindowInsetsController bars = getWindow().getInsetsController();
+            if (bars == null) return;
             bars.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
             bars.hide(WindowInsets.Type.systemBars());
         } else {
@@ -148,6 +159,22 @@ public class MainActivity extends Activity {
                     View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                             | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         }
+    }
+
+    private void syncDisplayCutout(WindowInsets insets) {
+        if (insets == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return;
+        DisplayCutout cutout = insets.getDisplayCutout();
+        float density = getResources().getDisplayMetrics().density;
+        float top = cutout == null ? 0 : cutout.getSafeInsetTop() / density;
+        float right = cutout == null ? 0 : cutout.getSafeInsetRight() / density;
+        float bottom = cutout == null ? 0 : cutout.getSafeInsetBottom() / density;
+        float left = cutout == null ? 0 : cutout.getSafeInsetLeft() / density;
+        // The page can avoid the cutout without resizing the WebView when transient bars appear.
+        game.evaluateJavascript("(() => { const style = document.documentElement.style;"
+                + " style.setProperty('--safe-top', '" + top + "px');"
+                + " style.setProperty('--safe-right', '" + right + "px');"
+                + " style.setProperty('--safe-bottom', '" + bottom + "px');"
+                + " style.setProperty('--safe-left', '" + left + "px'); })()", null);
     }
 
     private void syncMusicForeground() {

@@ -37,6 +37,8 @@ main {
   padding: max(4px, var(--safe-top)) max(4px, var(--safe-right))
     max(4px, var(--safe-bottom)) max(4px, var(--safe-left));
   position: relative;
+  background: repeating-linear-gradient(120deg, #ffffff05 0 1px, transparent 1px 4px),
+    radial-gradient(ellipse at 24% 42%, #327057, #103a30 75%);
 }
 h1, h2, h3, p { margin: 0; }
 button { font: inherit; font-family: var(--display-font); color: #fff1cf; cursor: pointer; touch-action: manipulation; }
@@ -75,10 +77,6 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
 .front-screen {
   width: min(100%, 980px); height: min(100%, 550px); display: grid;
   padding: clamp(12px, calc(var(--screen-height) * .05), 30px) clamp(16px, calc(var(--screen-width) * .042), 42px);
-  border: 5px solid #513225; outline: 1px solid #b98a58; outline-offset: -7px; border-radius: 25px;
-  background: repeating-linear-gradient(120deg, #ffffff05 0 1px, transparent 1px 4px),
-    radial-gradient(ellipse at 24% 42%, #327057, #103a30 75%);
-  box-shadow: 0 18px 45px #0007;
 }
 #home { grid-template-columns: 1.1fr 1fr; grid-template-rows: auto 1fr; column-gap: 18px; }
 .home-top {
@@ -803,10 +801,14 @@ main:has(#table:not([hidden])) {
   100% { transform: scaleX(1); }
 }
 
-.settlement { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; background: #080e0ad1; animation: appear .16s .14s both; }
+.settlement { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; animation: appear .16s .14s both; }
+#table:has(.settlement:not([hidden])) > .felt { visibility: hidden; }
 .result, .game-dialog, #eat-menu {
   width: min(calc(100% - 18px), 530px); text-align: center; padding: 10px;
-  border: 3px solid #ad7947; border-radius: 17px; color: #fff0c8;
+  color: #fff0c8;
+}
+.game-dialog, #eat-menu {
+  border: 3px solid #ad7947; border-radius: 17px;
   background: radial-gradient(ellipse at top, #65412c, #30241a); box-shadow: 0 12px 35px #0009;
 }
 .result h2 { color: #ffe096; font-size: 24px; margin: 2px; }
@@ -907,6 +909,13 @@ main:has(#table:not([hidden])) {
 .tutorial-panel thead { background: #251a13; }
 .tutorial-panel tbody th { width: 1%; white-space: nowrap; color: #ffe5ac; }
 .tutorial-panel tbody tr:nth-child(even) { background: #21170e4d; }
+@media (orientation: landscape) {
+  .game-dialog {
+    inset: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+    max-width: calc(var(--screen-width) - var(--safe-left) - var(--safe-right) - 24px);
+    max-height: calc(var(--screen-height) - var(--safe-top) - var(--safe-bottom) - 24px);
+  }
+}
 @media (orientation: portrait) {
   :root {
     --screen-width: 100dvh;
