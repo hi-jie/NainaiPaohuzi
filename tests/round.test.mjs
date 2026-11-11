@@ -9,7 +9,7 @@ import { findHu } from '../android/app/src/main/assets/www/js/rules/hu.mjs';
 import { defaultSettings, presets } from '../android/app/src/main/assets/www/js/rules/presets.mjs';
 import { settle } from '../android/app/src/main/assets/www/js/rules/scoring.mjs';
 import { handColumnGroup, moveHandCard, syncHandLayout } from '../android/app/src/main/assets/www/js/ui/hand.mjs';
-import { renderEatChoices, renderTable } from '../android/app/src/main/assets/www/js/ui/table.mjs';
+import { previewEat, renderEatChoices, renderTable } from '../android/app/src/main/assets/www/js/ui/table.mjs';
 
 const paohuziModes = ['six', 'ten', 'fifteen'];
 const rules = { ...defaultSettings, ...presets.six, patterns: patterns(false) };
@@ -160,6 +160,38 @@ test('吃法预览将九张排一行，十二张分成两行', () => {
     assert.deepEqual(rows.map(row => [...row.matchAll(/class="card\b/g)].length), expected);
     assert.equal(preview.includes('eat-choice-compact'), count === 4);
     assert.equal([...preview.matchAll(/class="eat-source"/g)].length, 1);
+  }
+});
+
+test('吃牌高亮优先散牌，再少拆组，最后少损失胡息', () => {
+  const cases = [
+    { columns: [[0, 1, 2], [1], [2, 12, 12]], offer: 3, groups: [[1, 2, 3]], ids: [3, 4] },
+    { columns: [[1, 11, 11], [2, 12, 12], [0, 1, 2]], offer: 3, groups: [[1, 2, 3]], ids: [7, 8] },
+    { columns: [[0, 1, 2], [1, 11, 11], [6]], offer: 9, groups: [[1, 6, 9]], ids: [3, 6] },
+    { columns: [[0, 1, 2], [1, 3, 9], [8]], offer: 2, groups: [[0, 1, 2], [1, 2, 3]], ids: [0, 1, 2, 3, 4] }
+  ];
+  for (const { columns, offer, groups, ids } of cases) {
+    let nextId = 0;
+    const layout = columns.map(column => column.map(card => ({ id: nextId++, card })));
+    const hand = columns.flat();
+    const action = responses(player(hand), 0, { card: offer, source: 1, kind: 'discard' }, rules)
+      .find(option => option.type === '吃' && JSON.stringify(option.groups) === JSON.stringify(groups));
+    assert.ok(action);
+    const highlighted = new Set();
+    const table = {
+      querySelectorAll: () => layout.flat().map(({ id }) => ({
+        dataset: { handCard: String(id) },
+        classList: { toggle: (_, active) => active ? highlighted.add(id) : highlighted.delete(id) }
+      }))
+    };
+    previewEat(table, action, layout, rules.patterns);
+    assert.deepEqual([...highlighted], ids);
+
+    const remaining = takeCards(hand, [...action.cards, ...groups.slice(1).flat()]);
+    const synced = syncHandLayout(layout, remaining, rules.patterns, highlighted);
+    assert.deepEqual(synced.flat(), layout.flat().filter(({ id }) => !highlighted.has(id)));
+    previewEat(table);
+    assert.equal(highlighted.size, 0);
   }
 });
 

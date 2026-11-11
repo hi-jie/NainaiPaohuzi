@@ -8,8 +8,8 @@ import { MahjongRound } from './game/mahjong-round.mjs';
 import { presets } from './rules/presets.mjs?v=141';
 import { load, save } from './storage/save.mjs?v=202';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=116';
-import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=141';
-import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=225';
+import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=229';
+import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=229';
 import { bindTutorial } from './ui/tutorial.mjs?v=192';
 import { bindProfile } from './ui/profile.mjs?v=202';
 import { bindAppUpdate } from './ui/update.mjs?v=226';
@@ -389,7 +389,13 @@ function placeEatMenu() {
 }
 
 function updateEatSelection(choice) {
-  previewEat(table, choice ? round.options[Number(choice.dataset.action)] : undefined);
+  if (choice) {
+    const { patterns } = round.rules;
+    const layout = handLayout ?? createHandLayout(round.players[0].hand, patterns);
+    previewEat(table, round.options[Number(choice.dataset.action)], layout, patterns);
+  } else {
+    previewEat(table);
+  }
   const button = table.querySelector('[data-command="choose-eat"]');
   button.textContent = choice ? '确认吃' : '选择吃法';
   if (choice) button.removeAttribute('aria-haspopup');

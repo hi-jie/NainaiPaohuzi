@@ -1,6 +1,6 @@
 import { cardName, huxi, isRed, takeCards } from '../rules/cards.mjs';
 import { nextSeat } from '../rules/actions.mjs?v=141';
-import { createHandLayout, handColumnGroup } from './hand.mjs?v=141';
+import { createHandLayout, eatPreviewIds, handColumnGroup } from './hand.mjs?v=229';
 import { tablemates } from '../data/tablemates.mjs?v=179';
 
 const htmlEntities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
@@ -176,14 +176,10 @@ export function renderEatChoices(options, offeredCard) {
   return `<div class="eat-choices">${choices}</div>`;
 }
 
-export function previewEat(table, action) {
-  const needed = action ? [...action.cards, ...action.groups.slice(1).flat()].map(cardName) : [];
-  const loose = table.querySelectorAll('.hand-stack.loose .card');
-  const grouped = table.querySelectorAll('.hand-stack:not(.loose) .card');
-  for (const card of [...loose, ...grouped]) {
-    const index = needed.indexOf(card.textContent);
-    card.classList.toggle('eat-preview', index !== -1);
-    if (index !== -1) needed.splice(index, 1);
+export function previewEat(table, action, layout, patterns) {
+  const ids = action ? eatPreviewIds(layout, patterns, [...action.cards, ...action.groups.slice(1).flat()]) : new Set();
+  for (const card of table.querySelectorAll('.hand [data-hand-card]')) {
+    card.classList.toggle('eat-preview', ids.has(Number(card.dataset.handCard)));
   }
 }
 

@@ -53,6 +53,49 @@ export function handColumnGroup(column, patterns, mahjong = false) {
   return null;
 }
 
+export function eatPreviewIds(layout, patterns, cards) {
+  function takeMatching(column, needed) {
+    return column.filter(({ card }) => {
+      const index = needed.indexOf(card);
+      if (index === -1) return false;
+      needed.splice(index, 1);
+      return true;
+    });
+  }
+
+  const needed = [...cards];
+  const loose = [];
+  const groups = [];
+  for (const column of layout) {
+    const group = handColumnGroup(column, patterns);
+    if (group) groups.push({ column, points: huxi(group) });
+    else loose.push(...takeMatching(column, needed));
+  }
+
+  let best;
+  // Compare whole sets of columns so one group can supply several needed cards.
+  function chooseGroups(start, remaining, tiles, count, points) {
+    if (remaining.length === 0) {
+      if (!best || count < best.count || (count === best.count && points < best.points)) {
+        best = { tiles, count, points };
+      }
+      return;
+    }
+    if (best && count >= best.count) return;
+
+    for (let index = start; index < groups.length; index++) {
+      const group = groups[index];
+      const rest = [...remaining];
+      const matching = takeMatching(group.column, rest);
+      if (matching.length) {
+        chooseGroups(index + 1, rest, [...tiles, ...matching], count + 1, points + group.points);
+      }
+    }
+  }
+  chooseGroups(0, needed, [], 0, 0);
+  return new Set([...loose, ...(best?.tiles ?? [])].map(({ id }) => id));
+}
+
 export function moveHandCard(layout, source, target) {
   const next = layout.map(column => [...column]);
   const [card] = next[source.column].splice(source.index, 1);
