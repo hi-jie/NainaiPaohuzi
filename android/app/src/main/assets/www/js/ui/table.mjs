@@ -41,7 +41,7 @@ function tile(card, hidden = false, selection, hinted = false, handId) {
 
 function meld({ type, cards, offeredCard }, concealed = false, reveal = false, eatCardOnTop = true) {
   const displayCards = offeredCard !== undefined && eatCardOnTop
-    ? [offeredCard, ...takeCards(cards, [offeredCard])] : cards;
+    ? [...takeCards(cards, [offeredCard]), offeredCard] : cards;
   return `<span class="meld${concealed && reveal ? ' reveal-meld' : ''}" data-meld="${type}" data-cards="${cards.join(' ')}">${displayCards.map((card, index) => tile(card, concealed && !reveal && index > 0)).join('')}</span>`;
 }
 
@@ -494,8 +494,8 @@ export function animateAction(table, round, event, motion, action) {
     const { groups } = round.players[seat];
     const index = action.previous >= 0 ? action.previous : groups.length - (action.groups?.length ?? 1);
     const stack = seatView(seat).querySelector('.groups').children[index];
-    const destination = event.type === '吃'
-      ? stack.children[round.rules.eatCardOnTop === false ? groups[index].cards.indexOf(card) : 0]
+    const destination = event.type === '吃' && round.rules.eatCardOnTop === false
+      ? stack.children[groups[index].cards.indexOf(card)]
       : stack.lastElementChild;
     animateTransfer(table, card, destination, motion.from);
   } else if (motion?.offer.kind === 'opening' && motion.meld === undefined && round.phase !== 'response' && round.phase !== 'opening-ti') {

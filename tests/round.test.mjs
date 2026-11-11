@@ -253,7 +253,7 @@ test('等吃期间牌只在墩旁，吃完进入落地牌，过后等下一张�
   }
 });
 
-test('吃进的牌默认放主组顶部，关闭后与比牌一样按顺序排', () => {
+test('吃进的牌默认放主组末尾，关闭后与比牌一样按顺序排', () => {
   const round = new Round(defaultSettings, 0);
   round.players = [player([0, 1, 2, 6, 8, 9]), { ...player([]), discards: [1] }, player([]), player([])];
   round.reveal(1, 1, 'discard');
@@ -264,7 +264,7 @@ test('吃进的牌默认放主组顶部，关闭后与比牌一样按顺序排',
 
   const displayOrder = current => [...renderTable(current, 0).matchAll(/data-meld="吃"[^>]*>((?:<span class="card[^>]*>[^<]+<\/span>)+)/g)]
     .map(([, group]) => [...group.matchAll(/>([^<>]+)<\/span>/g)].map(([, card]) => card));
-  assert.deepEqual(displayOrder(round), [['二', '一', '三'], ['二', '七', '十']]);
+  assert.deepEqual(displayOrder(round), [['一', '三', '二'], ['二', '七', '十']]);
   assert.deepEqual(displayOrder(restored), displayOrder(round));
   delete restored.rules.eatCardOnTop;
   assert.deepEqual(displayOrder(restored), displayOrder(round));
