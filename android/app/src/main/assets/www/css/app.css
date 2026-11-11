@@ -741,6 +741,14 @@ main:has(#table:not([hidden])) {
   --eat-card-width: calc((100cqw - 2px) / 3);
   width: 100%; height: calc(var(--eat-card-width) * 39 / 22); font-size: calc(var(--eat-card-width) * 17 / 22);
 }
+#eat-menu .eat-choice-compact { --eat-row-gap: 2px; row-gap: var(--eat-row-gap); }
+.eat-choice-compact .eat-group {
+  grid-template-columns: repeat(3, calc((100% - 2px) / 6)); justify-content: center;
+}
+.eat-choice-compact .card {
+  --eat-card-width: calc((100cqw - 2px) / 6);
+  height: calc(var(--eat-card-width) * 39 / 22 - var(--eat-row-gap) / 2); padding-top: 0;
+}
 .eat-source { display: flex; }
 .eat-source .card {
   background: linear-gradient(#fff2b5, #e3ad4f);

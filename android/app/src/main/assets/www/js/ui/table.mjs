@@ -154,8 +154,9 @@ export function renderEatChoices(options, offeredCard) {
       ${cards.map((card, cardIndex) => groupIndex === 0 && cardIndex === offeredIndex
         ? `<span class="eat-source">${tile(card)}</span>` : tile(card)).join('')}
     </span>`);
-    const rows = groups.length > 3 ? [groups.slice(0, 2), groups.slice(2)] : [groups];
-    return `<button class="eat-choice" data-action="${index}" aria-pressed="false" aria-label="${label}">
+    const compact = groups.length > 3;
+    const rows = compact ? [groups.slice(0, 2), groups.slice(2)] : [groups];
+    return `<button class="eat-choice${compact ? ' eat-choice-compact' : ''}" data-action="${index}" aria-pressed="false" aria-label="${label}">
       ${rows.map(row => `<span class="eat-row" aria-hidden="true">${row.join('')}</span>`).join('')}
     </button>`;
   }).join('');

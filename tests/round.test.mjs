@@ -147,6 +147,7 @@ test('吃法预览将九张排一行，十二张分成两行', () => {
     const preview = renderEatChoices([{ type: '吃', groups: groups.slice(0, count) }], 2);
     const rows = preview.split('class="eat-row"').slice(1);
     assert.deepEqual(rows.map(row => [...row.matchAll(/class="card\b/g)].length), expected);
+    assert.equal(preview.includes('eat-choice-compact'), count === 4);
     assert.equal([...preview.matchAll(/class="eat-source"/g)].length, 1);
   }
 });
