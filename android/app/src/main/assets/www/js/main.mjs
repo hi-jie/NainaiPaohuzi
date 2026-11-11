@@ -10,6 +10,7 @@ import { load, save } from './storage/save.mjs?v=178';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=116';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=141';
 import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=187';
+import { bindTutorial } from './ui/tutorial.mjs?v=191';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
@@ -26,6 +27,7 @@ const settingsButton = document.querySelector('#open-settings');
 const modeTitle = document.querySelector('#mode-title');
 const seatPicker = document.querySelector('#mahjong-seats');
 const paohuziOptions = document.querySelector('#paohuzi-options');
+const openTutorial = bindTutorial(document.querySelector('#tutorial'));
 const data = load();
 let mahjongSeats = data.settings.mahjongSeats ?? presets.mahjong.seats;
 let selectedMode = data.settings.mode;
@@ -86,6 +88,8 @@ seatPicker.addEventListener('click', ({ target }) => {
 settingsButton.addEventListener('click', () => showFront(settings, settings.querySelector('[data-back-home]')));
 settings.querySelector('[data-back-home]').addEventListener('click', () => showHome(settingsButton));
 setup.querySelector('[data-back-home]').addEventListener('click', () => showHome());
+document.querySelector('#setup-tutorial').addEventListener('click', () => openTutorial(selectedMode));
+document.querySelector('#pause-tutorial').addEventListener('click', () => openTutorial(round.rules.mode));
 recordsButton.addEventListener('click', () => {
   const scores = Object.entries(presets).map(([mode, { name }]) => [name, data.scores[mode]]);
   records.querySelector('.score-records').innerHTML = scores.map(([name, value]) =>

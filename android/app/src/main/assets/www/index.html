@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#113f32">
   <title>衡阳跑胡子</title>
-  <link rel="stylesheet" href="./css/app.css?v=188">
-  <script type="module" src="./js/main.mjs?v=190-cbe0bee8a6aa"></script>
+  <link rel="stylesheet" href="./css/app.css?v=191">
+  <script type="module" src="./js/main.mjs?v=191-cbe0bee8a6aa"></script>
 </head>
 <body>
   <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -33,6 +33,7 @@
       <header class="menu-header">
         <button class="icon-button" type="button" data-back-home aria-label="返回首页"><svg class="nav-icon" aria-hidden="true"><use href="#icon-back"/></svg></button>
         <h2 id="mode-title"></h2>
+        <button id="setup-tutorial" type="button" aria-haspopup="dialog">教程</button>
       </header>
       <div id="paohuzi-options" class="menu-options" role="group" aria-label="本局规则">
         <label>一五十<input type="checkbox" name="oneFiveTen" role="switch"></label>
@@ -69,7 +70,22 @@
         <button class="icon-button" aria-label="关闭设置" autofocus><svg class="nav-icon" aria-hidden="true"><use href="#icon-close"/></svg></button>
       </header>
       <div class="pause-settings audio-settings"></div>
+      <div class="actions"><button id="pause-tutorial" type="button" aria-haspopup="dialog">教程</button></div>
     </form>
+  </dialog>
+  <dialog id="tutorial" class="game-dialog" aria-labelledby="tutorial-title">
+    <form method="dialog" class="dialog-header">
+      <h2 id="tutorial-title"></h2>
+      <button class="icon-button" aria-label="关闭教程"><svg class="nav-icon" aria-hidden="true"><use href="#icon-close"/></svg></button>
+    </form>
+    <div class="tutorial-tabs" role="tablist" aria-label="教程章节">
+      <button id="tutorial-start-tab" type="button" role="tab" aria-controls="tutorial-start" aria-selected="true" autofocus>快速上手</button>
+      <button id="tutorial-hu-tab" type="button" role="tab" aria-controls="tutorial-hu" aria-selected="false" tabindex="-1">胡牌</button>
+      <button id="tutorial-score-tab" type="button" role="tab" aria-controls="tutorial-score" aria-selected="false" tabindex="-1">计分</button>
+    </div>
+    <div id="tutorial-start" class="tutorial-panel" role="tabpanel" aria-labelledby="tutorial-start-tab" tabindex="0"></div>
+    <div id="tutorial-hu" class="tutorial-panel" role="tabpanel" aria-labelledby="tutorial-hu-tab" tabindex="0" hidden></div>
+    <div id="tutorial-score" class="tutorial-panel" role="tabpanel" aria-labelledby="tutorial-score-tab" tabindex="0" hidden></div>
   </dialog>
   <dialog id="leave-menu" class="game-dialog" aria-labelledby="leave-title" aria-describedby="leave-description">
     <h2 id="leave-title">返回首页？</h2>

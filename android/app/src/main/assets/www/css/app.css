@@ -127,6 +127,7 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
 .menu-screen { grid-template-rows: auto 1fr auto; gap: 8px; }
 .menu-header { display: flex; align-items: center; gap: 16px; }
 .menu-header h2 { color: #ffe5a6; font-size: clamp(24px, calc(var(--screen-height) * .072), 38px); }
+#setup-tutorial { margin-inline-start: auto; }
 .menu-options { width: min(100%, 480px); display: grid; gap: 8px; place-self: center; }
 .seat-picker { grid-template-columns: repeat(3, 1fr); }
 .seat-picker button { min-height: 58px; font-size: 24px; }
@@ -763,6 +764,29 @@ main:has(#table:not([hidden])) {
 .game-dialog {
   max-width: calc(var(--screen-width) - 24px); max-height: calc(var(--screen-height) - 24px);
 }
+#tutorial {
+  width: min(calc(var(--screen-width) - 24px), 720px);
+  height: min(calc(var(--screen-height) - 24px), 580px);
+  padding: clamp(10px, calc(var(--screen-height) * .035), 18px);
+  overflow: hidden; text-align: start;
+}
+#tutorial[open] { display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 10px; }
+.tutorial-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.tutorial-tabs button { min-height: 44px; padding-inline: 6px; }
+.tutorial-panel {
+  min-width: 0; overflow: auto; overscroll-behavior: contain;
+  padding: 2px 6px 4px 2px; font-size: clamp(16px, calc(var(--screen-height) * .044), 19px);
+}
+.tutorial-panel:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; border-radius: 4px; }
+.tutorial-panel table { width: 100%; border-collapse: collapse; }
+.tutorial-panel :is(table, p) + :is(table, p) { margin-top: 12px; }
+.tutorial-panel caption { margin-bottom: 4px; color: #ffe096; font-weight: 800; text-align: start; }
+.tutorial-panel :is(th, td) {
+  padding: 5px 8px; border: 1px solid #b4804e80; text-align: start; vertical-align: top;
+}
+.tutorial-panel thead { background: #251a13; }
+.tutorial-panel tbody th { width: 1%; white-space: nowrap; color: #ffe5ac; }
+.tutorial-panel tbody tr:nth-child(even) { background: #21170e4d; }
 @media (orientation: portrait) {
   :root {
     --screen-width: 100dvh;
