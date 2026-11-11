@@ -33,9 +33,12 @@
 [hidden] { display: none !important; }
 body { margin: 0; overflow: hidden; background: radial-gradient(ellipse at 50% 25%, #314c3b, #101e1a 78%); }
 main {
+  --layout-top: max(4px, var(--safe-top));
+  --layout-right: max(4px, var(--safe-right));
+  --layout-bottom: max(4px, var(--safe-bottom));
+  --layout-left: max(4px, var(--safe-left));
   height: var(--screen-height); display: grid; place-items: center;
-  padding: max(4px, var(--safe-top)) max(4px, var(--safe-right))
-    max(4px, var(--safe-bottom)) max(4px, var(--safe-left));
+  padding: var(--layout-top) var(--layout-right) var(--layout-bottom) var(--layout-left);
   position: relative;
   background: repeating-linear-gradient(120deg, #ffffff05 0 1px, transparent 1px 4px),
     radial-gradient(ellipse at 24% 42%, #327057, #103a30 75%);
@@ -75,7 +78,13 @@ button.icon-button {
 .nav-icon { width: 25px; height: 25px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter: brightness(1.12); }
 .front-screen {
-  width: 100%; height: 100%; display: grid;
+  --screen-width: var(--front-width, 864px);
+  --screen-height: var(--front-height, 480px);
+  position: absolute;
+  left: calc((100% + var(--layout-left) - var(--layout-right)) / 2);
+  top: calc((100% + var(--layout-top) - var(--layout-bottom)) / 2);
+  width: var(--screen-width); height: var(--screen-height); display: grid;
+  transform: translate(-50%, -50%) scale(var(--front-scale, 1));
   padding: clamp(12px, calc(var(--screen-height) * .05), 30px) clamp(16px, calc(var(--screen-width) * .042), 42px);
 }
 #home { grid-template-columns: 1.1fr 1fr; grid-template-rows: auto 1fr; column-gap: 18px; }
@@ -98,7 +107,7 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
 #profile {
   --profile-gutter: clamp(52px, calc(var(--screen-width) * .075), 76px);
   container: profile / size;
-  position: relative; padding-inline: var(--profile-gutter);
+  padding-inline: var(--profile-gutter);
   grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr);
   column-gap: var(--profile-gutter);
 }
@@ -201,7 +210,6 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
 .menu-screen { grid-template-rows: auto 1fr auto; gap: 8px; }
 .menu-header { display: flex; align-items: center; gap: 16px; }
 .menu-header h2 { color: #ffe5a6; font-size: clamp(24px, calc(var(--screen-height) * .072), 38px); }
-main:has(:is(#round-setup, #profile):not([hidden])) { grid-template-rows: minmax(0, 1fr); }
 #round-setup {
   grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto minmax(0, 1fr);
   column-gap: clamp(16px, calc(var(--screen-width) * .045), 44px); row-gap: 8px;

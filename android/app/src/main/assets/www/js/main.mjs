@@ -13,6 +13,7 @@ import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, o
 import { bindTutorial } from './ui/tutorial.mjs?v=192';
 import { bindProfile } from './ui/profile.mjs?v=202';
 
+const main = document.querySelector('main');
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
 const table = document.querySelector('#table');
@@ -220,10 +221,22 @@ function showRound(event, motion, action) {
   }
 }
 
+function layoutScale(width, height) {
+  return Math.min(width / 864, height / 480);
+}
+
+new ResizeObserver(([{ contentRect: { width, height } }]) => {
+  if (!width || !height) return;
+  const scale = layoutScale(width, height);
+  main.style.setProperty('--front-scale', scale);
+  main.style.setProperty('--front-width', `${width / scale}px`);
+  main.style.setProperty('--front-height', `${height / scale}px`);
+}).observe(main);
+
 function fitTable() {
   if (table.hidden) return;
   const { clientWidth: width, clientHeight: height } = table;
-  const scale = Math.min(width / 864, height / 480);
+  const scale = layoutScale(width, height);
   table.style.setProperty('--table-scale', scale);
   table.style.setProperty('--table-width', `${width / scale}px`);
   table.style.setProperty('--table-height', `${height / scale}px`);
