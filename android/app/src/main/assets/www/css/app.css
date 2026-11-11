@@ -107,7 +107,7 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
 #profile .menu-header {
   position: absolute; z-index: 1;
   inset-block-start: clamp(12px, calc(var(--screen-height) * .05), 30px);
-  inset-inline-start: calc((var(--profile-gutter) - 44px) / 2);
+  inset-inline-start: clamp(16px, calc(var(--screen-width) * .042), 42px);
 }
 #profile-editor {
   grid-area: 1 / 1;
