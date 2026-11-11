@@ -127,14 +127,16 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
 .menu-screen { grid-template-rows: auto 1fr auto; gap: 8px; }
 .menu-header { display: flex; align-items: center; gap: 16px; }
 .menu-header h2 { color: #ffe5a6; font-size: clamp(24px, calc(var(--screen-height) * .072), 38px); }
+main:has(#round-setup:not([hidden])) { grid-template-rows: minmax(0, 1fr); }
 #round-setup {
   grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto minmax(0, 1fr);
   column-gap: clamp(16px, calc(var(--screen-width) * .045), 44px); row-gap: 8px;
 }
-#round-setup .menu-header { grid-column: 1 / -1; }
+#round-setup .menu-header { grid-area: 1 / 1 / 2 / -1; }
 #setup-tutorial { margin-inline-start: auto; }
 .setup-summary {
-  display: grid; place-content: center; justify-items: center; gap: 12px; text-align: center;
+  grid-area: 1 / 1 / -1 / 2; place-self: center;
+  display: grid; justify-items: center; gap: 12px; text-align: center;
 }
 .setup-summary h2 {
   color: #ffe5a6; font: 800 clamp(32px, calc(var(--screen-height) * .12), 66px)/1.12 var(--display-font);
@@ -147,11 +149,11 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
 .setup-score dd { margin: 0; font-variant-numeric: tabular-nums; }
 .setup-score strong { font-size: clamp(24px, calc(var(--screen-height) * .084), 44px); line-height: 1.12; }
 .setup-controls {
-  width: min(100%, 380px); place-self: center; display: grid;
-  gap: clamp(8px, calc(var(--screen-height) * .035), 18px);
+  grid-area: 2 / 2; width: min(100%, 380px); place-self: center; display: grid;
+  gap: clamp(16px, calc(var(--screen-height) * .065), 36px);
 }
 .menu-options { width: min(100%, 480px); display: grid; gap: 8px; place-self: center; }
-.setup-controls .menu-options { width: 100%; }
+.setup-controls .menu-options { width: min(100%, clamp(168px, 90%, 240px)); }
 .seat-picker { grid-template-columns: repeat(3, 1fr); }
 .seat-picker button {
   min-height: clamp(44px, calc(var(--screen-height) * .14), 58px);
