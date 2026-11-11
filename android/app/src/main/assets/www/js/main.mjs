@@ -99,6 +99,7 @@ seatPicker.addEventListener('click', ({ target }) => {
   updateSeatPicker();
 });
 settingsButton.addEventListener('click', () => showFront(settings, settings.querySelector('[data-back-home]')));
+document.querySelector('#exit-game').addEventListener('click', () => { location.href = 'paohuzi://exit'; });
 settings.querySelector('[data-back-home]').addEventListener('click', () => showHome(settingsButton));
 setup.querySelector('[data-back-home]').addEventListener('click', () => showHome());
 document.querySelector('#setup-tutorial').addEventListener('click', () => openTutorial(selectedMode));

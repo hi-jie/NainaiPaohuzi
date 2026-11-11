@@ -30,6 +30,7 @@ import androidx.webkit.WebViewAssetLoader;
 
 public class MainActivity extends Activity {
     private static final String GAME_URL = "https://appassets.androidplatform.net/assets/www/index.html";
+    private static final String EXIT_URL = "paohuzi://exit";
     private static final int CHOOSE_AVATAR = 1;
     private FrameLayout root;
     private WebView game;
@@ -83,6 +84,9 @@ public class MainActivity extends Activity {
         game.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
+                if (GAME_URL.equals(url)) {
+                    view.evaluateJavascript("document.getElementById('exit-game').hidden = false", null);
+                }
                 syncDisplayCutout(root.getRootWindowInsets());
                 syncMusicForeground();
             }
@@ -94,7 +98,11 @@ public class MainActivity extends Activity {
 
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return !GAME_URL.equals(request.getUrl().toString());
+                String url = request.getUrl().toString();
+                if (EXIT_URL.equals(url) && request.isForMainFrame() && GAME_URL.equals(view.getUrl())) {
+                    finish();
+                }
+                return !GAME_URL.equals(url);
             }
         });
         root = new FrameLayout(this);

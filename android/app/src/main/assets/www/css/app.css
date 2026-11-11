@@ -88,6 +88,7 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
   padding: clamp(12px, calc(var(--screen-height) * .05), 30px) clamp(16px, calc(var(--screen-width) * .042), 42px);
 }
 #home { grid-template-columns: 1.1fr 1fr; grid-template-rows: auto 1fr; column-gap: 18px; }
+#exit-game { grid-area: 1 / 1; place-self: start; z-index: 1; }
 .home-top {
   grid-column: 2; display: flex; align-items: center; justify-content: flex-end;
   gap: clamp(18px, calc(var(--screen-width) * .028), 30px); min-width: 0;
