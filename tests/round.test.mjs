@@ -208,10 +208,31 @@ test('放炮胡只取走本次打出的那一张，先前同名弃牌仍保留',
   assert.deepEqual(round.players[1].discards, [17]);
   assert.ok(round.result.hu.groups.some(group => group.cards.includes(17)));
   assert.doesNotMatch(renderTable(round, 0), /class="landing">\s*<span/);
+  round.deck = [0, 1];
   const reveal = renderTable(round, 0, round.events.at(-1));
   assert.match(reveal, /class="callout"[^>]*>胡</);
-  assert.equal([...reveal.matchAll(/class="revealed-hand"/g)].length, 4);
+  assert.equal([...reveal.matchAll(/class="revealed-hand"/g)].length, 3);
+  const [winner] = reveal.match(/<section class="seat seat-0 winner">[\s\S]*?<\/section>/);
+  assert.deepEqual([...winner.matchAll(/data-cards="([^"]+)"/g)].map(([, cards]) => cards),
+    round.result.hu.groups.map(({ cards }) => cards.join(' ')));
+  const [, deck] = reveal.match(/class="revealed-deck"[^>]*>(.*?)<\/div>/);
+  assert.deepEqual([...deck.matchAll(/class="card[^"]*">([^<]+)</g)].map(([, card]) => card), ['二', '一']);
   assert.doesNotMatch(reveal, /class="(?:hand|settlement)"/);
+});
+
+test('跑胡子黄庄后亮出每家的手牌和暗偎', () => {
+  const round = new Round(defaultSettings, 0);
+  round.players = [player([0]), player([1], [{ type: '偎', cards: [4, 4, 4] }]), player([2]), player([3])];
+  round.deck = [];
+  round.waitForDraw(0);
+  round.act(round.options[0]);
+
+  assert.equal(round.result.winner, null);
+  const table = renderTable(round, 0);
+  assert.equal([...table.matchAll(/class="reveal-slot"/g)].length, 4);
+  assert.doesNotMatch(table, /class="revealed-deck"/);
+  assert.match(table, /class="meld reveal-meld" data-meld="偎"/);
+  assert.doesNotMatch(table, /class="seat-backs"|data-select-card/);
 });
 
 test('存档恢复当前响应、后续响应和过牌限制', () => {

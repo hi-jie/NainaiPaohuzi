@@ -293,10 +293,10 @@ main:has(#table:not([hidden])) {
   color: #efcb8e; background: repeating-linear-gradient(45deg, #75382e 0 3px, #8c4437 3px 6px);
   border: 1px solid #d9aa71; border-radius: 4px;
 }
-.seat-cards :is(.card, .seat-backs span) {
+.seat-cards :is(.card, .seat-backs span), .revealed-deck .card {
   border: 0; border-radius: 2px; box-shadow: inset 0 0 0 .75px var(--seat-card-edge);
 }
-.seat-cards .card { padding-top: 2.4px; }
+:is(.seat-cards, .revealed-deck) .card { padding-top: 2.4px; }
 .seat-cards :is(.card.back, .seat-backs span) { --seat-card-edge: #d9aa71; }
 .meld > .card + .card,
 .hand-stack > .card:not([hidden]) ~ .card:not([hidden]) { margin-top: calc(var(--strip-peek) - var(--strip-height)); }
@@ -314,15 +314,20 @@ main:has(#table:not([hidden])) {
 }
 .seat-2 .seat-backs { justify-content: flex-end; }
 .showdown .seat-cards {
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: var(--meld-row-height) minmax(var(--seat-backs-height), auto) auto;
 }
+.showdown .seat:not(.seat-0) .discarded { grid-row: -2; }
 .showdown .seat-0 .seat-cards {
   grid-template-rows: var(--meld-row-height) minmax(var(--seat-backs-height), auto);
 }
+.showdown .seat-0:not(.winner) .seat-cards:not(.own-discards) {
+  width: min(var(--seat-cards-width), calc(100% - var(--seat-card-offset) - var(--own-discard-width) - var(--seat-row-gap)));
+}
 .revealed-hand {
   --strip-height: 28px; --strip-font: 17px;
-  display: grid; min-width: 0; grid-template-rows: var(--strip-height);
-  grid-auto-flow: column; grid-auto-columns: var(--strip-width); gap: 1px;
+  display: grid; min-width: 0; grid-template-columns: repeat(auto-fill, var(--strip-width));
+  grid-auto-rows: var(--strip-height); gap: 1px;
 }
 .seat-2 .revealed-hand { direction: rtl; }
 :is(.reveal-slot .card, .reveal-meld .card + .card) {
@@ -422,6 +427,15 @@ main:has(#table:not([hidden])) {
 }
 .deck.stacked::before { bottom: 0; }
 .deck.stacked::after { bottom: 2px; }
+.revealed-deck {
+  --strip-width: 21.6px; --strip-height: 38.4px; --strip-font: 19.2px; --strip-peek: 24px;
+  --seat-card-edge: #bd955d;
+  position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%);
+  width: calc(10 * var(--strip-width) + 9px);
+  display: flex; flex-wrap: wrap; justify-content: center; column-gap: 1px;
+  padding-bottom: calc(var(--strip-height) - var(--strip-peek));
+}
+.revealed-deck .reveal-slot { height: var(--strip-peek); }
 .turn-arrow {
   --orbit-radius: 49px; --arrow-angle: 0deg;
   position: absolute; top: 50%; left: 50%; width: 12px; height: 22px;
@@ -545,7 +559,9 @@ main:has(#table:not([hidden])) {
 .mahjong.many-seats .seat-4 { top: 62px; }
 .mahjong.five-seats .seat.seat-1 { top: calc(50% - 17px); }
 .mahjong.showdown .seat { --mahjong-back-row: 28px; }
+.mahjong.showdown .seat.winner { --mahjong-back-row: 76px; }
 .mahjong .seat-cards > .groups { display: none; }
+.mahjong.showdown .winner .seat-cards > .groups { display: flex; }
 .mahjong .seat-cards { grid-template-rows: var(--mahjong-back-row) auto; }
 .mahjong .seat:not(.seat-0) .seat-cards { top: var(--seat-heading-top); }
 .mahjong .seat-0 .seat-cards { grid-template-rows: var(--mahjong-back-row); }

@@ -9,7 +9,7 @@ import { presets } from './rules/presets.mjs?v=141';
 import { load, save } from './storage/save.mjs?v=178';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=116';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=141';
-import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showWinningResult, showWinningTable } from './ui/table.mjs?v=180';
+import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=184';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
@@ -152,9 +152,9 @@ function paintRound(event, motion, action) {
 
 function showRound(event, motion, action) {
   const score = data.scores[round.rules.mode];
-  if (event?.type === '胡') {
-    showWinningTable(table, round, score, event, motion?.meld);
-    timer = setTimeout(() => showWinningResult(table, round, score, event, motion?.meld), 2200);
+  if (round.phase === 'finished') {
+    showFinishedTable(table, round, score, event);
+    timer = setTimeout(() => showRoundResult(table, round, score, event, motion?.meld), 2200);
     return;
   }
   paintRound(event, motion, action);
@@ -385,6 +385,13 @@ table.addEventListener('click', ({ target }) => {
     pauseMenu.showModal();
   } else if (button.dataset.command === 'again') {
     start(round.result.nextDealer ?? round.result.winner ?? round.dealer, round.tablemates);
+  } else if (button.dataset.command === 'review-round' || button.dataset.command === 'return-to-result') {
+    const review = button.dataset.command === 'review-round';
+    const back = table.querySelector('[data-command="return-to-result"]');
+    table.querySelector('.settlement').hidden = review;
+    table.querySelector('.felt').inert = !review;
+    back.hidden = !review;
+    (review ? back : table.querySelector('[data-command="review-round"]')).focus({ preventScroll: true });
   } else if (button.dataset.selectCard !== undefined) {
     selectDiscard(button);
   } else if (button.dataset.command === 'discard') {

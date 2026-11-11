@@ -44,6 +44,9 @@ test('多人接炮逆时针顺延，只由放炮人付一分', () => {
   assert.deepEqual(round.result.delta, [-1, 0, 0, 1, 0]);
   assert.equal(round.result.nextDealer, 3);
   assert.equal(round.players[3].hand.length, 11);
+  const [winner] = renderTable(round, 0).match(/<section class="seat seat-3 winner">[\s\S]*?<\/section>/);
+  assert.deepEqual([...winner.matchAll(/data-cards="([^"]+)"/g)].map(([, cards]) => cards),
+    round.result.hu.groups.map(({ cards }) => cards.join(' ')));
 });
 
 test('过胡限制所有接炮，摸牌可立即自摸', () => {
@@ -127,6 +130,9 @@ test('空墩可继续吃打，需要摸牌时才黄庄，下家接庄', () => {
   assert.equal(round.phase, 'claim');
   choose(round, '摸');
   assert.deepEqual(round.result, { winner: null, delta: [0, 0, 0], nextDealer: 2 });
+  const table = renderTable(round, 0);
+  assert.equal([...table.matchAll(/class="revealed-hand"/g)].length, 3);
+  assert.doesNotMatch(table, /class="seat-backs"|data-select-card/);
 });
 
 test('对家的私摸不出现在桌面，暗吃直接提供吃和摸按钮', () => {
