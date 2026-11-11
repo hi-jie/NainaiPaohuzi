@@ -1,6 +1,6 @@
 import { chooseAction } from './ai/player.mjs?v=141';
-import { setMusicPlaying, setMusicVolume } from './audio/music.mjs?v=101-cbe0bee8a6aa';
-import { playAction, playEffect, preloadSound, prepareSound, setSoundVolume, stopEffect, stopSound, unlockSound } from './audio/player.mjs?v=207';
+import { setMusicPlaying, setMusicVolume } from './audio/music.mjs?v=208-cbe0bee8a6aa';
+import { playAction, playEffect, preloadSound, prepareSound, setSoundVolume, stopEffect, stopSound, unlockSound } from './audio/player.mjs?v=208';
 import { pickTablemates } from './data/tablemates.mjs?v=179';
 import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
 import { Round } from './game/state-machine.mjs?v=141';
@@ -49,6 +49,7 @@ let handLayout = null;
 let timer;
 let openingEnds;
 let soundLoadAttempt = 0;
+let musicWaitingForSound = data.settings.sound;
 
 const modes = home.querySelector('.modes');
 modes.innerHTML = Object.entries(presets).map(([key, { name }]) =>
@@ -82,7 +83,7 @@ for (const field of settingFields) {
     save(data);
     if (field.name === 'musicVolume') setMusicVolume(value / 100);
     if (field.name === 'soundVolume') setSoundVolume(value / 100);
-    if (field.name === 'music') setMusicPlaying(value);
+    if (field.name === 'music' || field.name === 'sound') syncMusic();
     if (field.name === 'sound') {
       if (value) unlockSound();
       else stopSound();
@@ -135,13 +136,17 @@ profileButton.addEventListener('click', () => {
 });
 profilePage.querySelector('[data-back-home]').addEventListener('click', () => showHome(profileButton));
 
-function startMusic() {
-  setMusicPlaying(data.settings.music);
+function syncMusic() {
+  setMusicPlaying(data.settings.music && (!data.settings.sound || !musicWaitingForSound));
 }
 
-startMusic();
-if (data.settings.sound) preloadSound();
-document.addEventListener('click', startMusic, { once: true });
+if (musicWaitingForSound) {
+  preloadSound().then(() => {
+    musicWaitingForSound = false;
+    syncMusic();
+  });
+}
+syncMusic();
 document.addEventListener('click', () => {
   if (data.settings.sound) unlockSound();
 }, { capture: true, once: true });
@@ -275,7 +280,7 @@ function showTable() {
   setup.hidden = true;
   table.hidden = false;
   fitTable();
-  startMusic();
+  syncMusic();
 }
 
 async function enterWhenSoundReady(enter) {
@@ -497,6 +502,7 @@ eatMenu.addEventListener('click', ({ target }) => {
   updateEatSelection(choice);
 });
 document.addEventListener('click', ({ target }) => {
+  syncMusic();
   if (eatMenu.open && !eatMenu.contains(target) && !target.closest('[data-command="choose-eat"]')) eatMenu.close();
   const button = target.closest('button:not(:disabled)');
   if (!data.settings.sound || !button || button.matches('[data-command="discard"], [data-action], [data-select-card], .eat-choice')) return;

@@ -2,6 +2,7 @@ import tracks from '../../media/audio/music/playlist.mjs?v=5-cbe0bee8a6aa';
 
 const folder = new URL('../../media/audio/music/', import.meta.url);
 const audio = new Audio();
+audio.preload = 'none';
 let current;
 let enabled = false;
 

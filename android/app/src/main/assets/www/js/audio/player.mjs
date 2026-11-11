@@ -53,10 +53,13 @@ export function setSoundVolume(value) {
   if (gain) gain.gain.setTargetAtTime(volume, context.currentTime, 0.015);
 }
 
-export function preloadSound() {
-  for (const file of soundFiles) {
-    if (context) loadClip(file);
-    else downloadClip(file);
+export async function preloadSound() {
+  if (context) {
+    await Promise.all(soundFiles.map(loadClip));
+  } else {
+    await Promise.all(soundFiles.map(downloadClip));
+    // The first interaction may have started decoding while the downloads were in flight.
+    await Promise.all(clips.values());
   }
 }
 
