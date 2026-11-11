@@ -54,46 +54,59 @@ export function handColumnGroup(column, patterns, mahjong = false) {
 }
 
 export function eatPreviewIds(layout, patterns, cards) {
-  function takeMatching(column, needed) {
-    return column.filter(({ card }) => {
-      const index = needed.indexOf(card);
-      if (index === -1) return false;
-      needed.splice(index, 1);
-      return true;
-    });
-  }
-
-  const needed = [...cards];
-  const loose = [];
+  const copies = new Map();
   const groups = [];
   for (const column of layout) {
     const group = handColumnGroup(column, patterns);
     if (group) groups.push({ column, points: huxi(group) });
-    else loose.push(...takeMatching(column, needed));
+    for (const { card, id } of column) {
+      if (!copies.has(card)) copies.set(card, []);
+      copies.get(card).push(id);
+    }
   }
 
-  let best;
-  // Compare whole sets of columns so one group can supply several needed cards.
-  function chooseGroups(start, remaining, tiles, count, points) {
-    if (remaining.length === 0) {
-      if (!best || count < best.count || (count === best.count && points < best.points)) {
-        best = { tiles, count, points };
+  const needed = sortCards([...cards]);
+  const selected = new Set();
+  let best = new Set();
+  let bestScore;
+  function scoreSelection() {
+    let wholeGroups = 0;
+    let looseCards = selected.size;
+    let splitGroups = 0;
+    let lostPoints = 0;
+    for (const { column, points } of groups) {
+      const taken = column.filter(({ id }) => selected.has(id)).length;
+      looseCards -= taken;
+      if (taken === column.length) wholeGroups++;
+      else if (taken > 0) {
+        splitGroups++;
+        lostPoints += points;
+      }
+    }
+    return [wholeGroups, looseCards, -splitGroups, -lostPoints];
+  }
+
+  // A legal eat can use at most two copies of each hand card.
+  function chooseCopies(index, start) {
+    if (index === needed.length) {
+      const score = scoreSelection();
+      const difference = bestScore ? score.findIndex((value, i) => value !== bestScore[i]) : -1;
+      if (!bestScore || (difference >= 0 && score[difference] > bestScore[difference])) {
+        best = new Set(selected);
+        bestScore = score;
       }
       return;
     }
-    if (best && count >= best.count) return;
-
-    for (let index = start; index < groups.length; index++) {
-      const group = groups[index];
-      const rest = [...remaining];
-      const matching = takeMatching(group.column, rest);
-      if (matching.length) {
-        chooseGroups(index + 1, rest, [...tiles, ...matching], count + 1, points + group.points);
-      }
+    const card = needed[index];
+    const ids = copies.get(card) ?? [];
+    for (let i = start; i < ids.length; i++) {
+      selected.add(ids[i]);
+      chooseCopies(index + 1, needed[index + 1] === card ? i + 1 : 0);
+      selected.delete(ids[i]);
     }
   }
-  chooseGroups(0, needed, [], 0, 0);
-  return new Set([...loose, ...(best?.tiles ?? [])].map(({ id }) => id));
+  chooseCopies(0, 0);
+  return best;
 }
 
 export function moveHandCard(layout, source, target) {

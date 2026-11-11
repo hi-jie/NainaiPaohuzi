@@ -1,6 +1,6 @@
 import { cardName, huxi, isRed, takeCards } from '../rules/cards.mjs';
 import { nextSeat } from '../rules/actions.mjs?v=141';
-import { createHandLayout, eatPreviewIds, handColumnGroup } from './hand.mjs?v=229';
+import { createHandLayout, eatPreviewIds, handColumnGroup } from './hand.mjs?v=235';
 import { tablemates } from '../data/tablemates.mjs?v=179';
 
 const htmlEntities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
