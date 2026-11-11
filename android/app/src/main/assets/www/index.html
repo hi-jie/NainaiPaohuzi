@@ -7,7 +7,7 @@
   <title>衡阳跑胡子</title>
   <link rel="icon" type="image/png" sizes="192x192" href="./favicon.png">
   <link rel="stylesheet" href="./css/app.css?v=234">
-  <script type="module" src="./js/main.mjs?v=236"></script>
+  <script type="module" src="./js/main.mjs?v=237"></script>
 </head>
 <body>
   <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -72,9 +72,9 @@
       </header>
       <div class="settings-content">
         <div class="menu-options shared-settings"></div>
-        <section id="app-update" aria-label="应用更新" hidden>
+        <section id="app-update" aria-label="版本信息" hidden>
           <p id="app-version"></p>
-          <div class="update-controls">
+          <div class="update-controls" hidden>
             <button id="check-update" type="button">检查更新</button>
             <button id="install-update" class="primary" type="button" hidden>安装</button>
             <div id="update-download" hidden>
@@ -82,7 +82,7 @@
               <span id="update-percent"></span>
             </div>
           </div>
-          <p id="update-status" role="status"></p>
+          <p id="update-status" role="status" hidden></p>
         </section>
       </div>
     </section>

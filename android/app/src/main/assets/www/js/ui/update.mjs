@@ -1,6 +1,7 @@
 export function bindAppUpdate() {
   const section = document.querySelector('#app-update');
   const version = document.querySelector('#app-version');
+  const controls = section.querySelector('.update-controls');
   const check = document.querySelector('#check-update');
   const install = document.querySelector('#install-update');
   const download = document.querySelector('#update-download');
@@ -19,9 +20,15 @@ export function bindAppUpdate() {
   });
   install.addEventListener('click', () => { location.href = 'paohuzi://install-update'; });
 
-  window.addEventListener('paohuzi-update', ({ detail }) => {
+  function showVersion(name) {
+    version.textContent = `版本 ${name}`;
     section.hidden = false;
-    version.textContent = `版本 ${detail.version}`;
+  }
+
+  window.addEventListener('paohuzi-update', ({ detail }) => {
+    showVersion(detail.version);
+    controls.hidden = false;
+    status.hidden = false;
     check.hidden = detail.downloading;
     check.disabled = detail.checking;
     check.textContent = detail.checking ? '检查中…' : '检查更新';
@@ -36,4 +43,11 @@ export function bindAppUpdate() {
       dialog.showModal();
     }
   });
+
+  fetch('./update.json', { cache: 'no-cache' })
+    .then(response => response.ok ? response.json() : null)
+    .then(info => {
+      if (controls.hidden && typeof info?.versionName === 'string') showVersion(info.versionName);
+    })
+    .catch(() => {});
 }

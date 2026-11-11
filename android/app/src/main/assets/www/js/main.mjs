@@ -12,7 +12,7 @@ import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=
 import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=235';
 import { bindTutorial } from './ui/tutorial.mjs?v=192';
 import { bindProfile } from './ui/profile.mjs?v=202';
-import { bindAppUpdate } from './ui/update.mjs?v=226';
+import { bindAppUpdate } from './ui/update.mjs?v=237';
 
 const main = document.querySelector('main');
 const home = document.querySelector('#home');
