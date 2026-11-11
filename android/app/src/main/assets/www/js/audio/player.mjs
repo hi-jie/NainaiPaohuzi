@@ -16,7 +16,11 @@ const soundFiles = [
 ];
 const downloads = new Map();
 const clips = new Map();
-const readyFiles = new Set();
+const buffers = new Map();
+const failedFiles = new Set();
+let soundEnabled = false;
+let retryTimer;
+let retryDelay = 1000;
 let context;
 let gain;
 let effectGain;
@@ -24,7 +28,6 @@ let volume = 1;
 let queue = [];
 let active;
 const activeEffects = new Set();
-let effectRequest = 0;
 
 export function voiceClip({ type, seat, card }, { rules, players }) {
   if (type === '摸' || type === '出') {
@@ -53,7 +56,16 @@ export function setSoundVolume(value) {
   if (gain) gain.gain.setTargetAtTime(volume, context.currentTime, 0.015);
 }
 
-export async function preloadSound() {
+export function setSoundEnabled(enabled) {
+  soundEnabled = enabled;
+  if (enabled) return preloadSound();
+  clearTimeout(retryTimer);
+  retryTimer = undefined;
+  retryDelay = 1000;
+  stopSound();
+}
+
+async function preloadSound() {
   if (context) {
     await Promise.all(soundFiles.map(loadClip));
   } else {
@@ -63,18 +75,14 @@ export async function preloadSound() {
   }
 }
 
-export function prepareSound(report) {
-  unlockSound();
-  const total = soundFiles.length;
-  let ready = readyFiles.size;
-  if (ready === total) return null;
-  report(ready, total);
-  const pending = soundFiles.filter(file => !readyFiles.has(file));
-  return Promise.all(pending.map(async file => {
-    const buffer = await loadClip(file);
-    if (buffer) report(++ready, total);
-    return Boolean(buffer);
-  })).then(results => results.every(Boolean));
+function retrySound(file) {
+  failedFiles.add(file);
+  if (!soundEnabled || retryTimer !== undefined) return;
+  retryTimer = setTimeout(() => {
+    retryTimer = undefined;
+    retryDelay = Math.min(retryDelay * 2, 15000);
+    preloadSound();
+  }, retryDelay);
 }
 
 function downloadClip(file) {
@@ -83,12 +91,15 @@ function downloadClip(file) {
     url.search = version;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
-    downloads.set(file, fetch(url, { signal: controller.signal }).then(response => {
+    downloads.set(file, fetch(url, {
+      signal: controller.signal, cache: failedFiles.has(file) ? 'reload' : 'default'
+    }).then(response => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.arrayBuffer();
     }).catch(error => {
       downloads.delete(file);
       console.warn(`音效下载失败：${file}`, error);
+      if (!clips.has(file)) retrySound(file);
     }).finally(() => clearTimeout(timeout)));
   }
   return downloads.get(file);
@@ -101,22 +112,17 @@ function loadClip(file) {
       .catch(error => console.warn(`音效解码失败：${file}`, error))
       .then(buffer => {
         downloads.delete(file);
-        if (buffer) readyFiles.add(file);
-        else clips.delete(file);
+        if (buffer) {
+          buffers.set(file, buffer);
+          failedFiles.delete(file);
+        } else {
+          clips.delete(file);
+          retrySound(file);
+        }
         return buffer;
       }));
   }
   return clips.get(file);
-}
-
-function waitForClip(clip) {
-  return new Promise(resolve => {
-    const timeout = setTimeout(resolve, 300);
-    clip.then(buffer => {
-      clearTimeout(timeout);
-      resolve(buffer);
-    });
-  });
 }
 
 function createSource(buffer, level, output) {
@@ -130,19 +136,17 @@ function createSource(buffer, level, output) {
 }
 
 function canPlaySound() {
-  return context && !document.hidden && (window.paohuziForeground ?? document.hasFocus());
+  return soundEnabled && context && !document.hidden && (window.paohuziForeground ?? document.hasFocus());
 }
 
 async function playNext(pending) {
-  const { clip, level, duration } = pending[0];
-  const buffer = await waitForClip(clip);
-  if (pending !== queue) return;
-  if (buffer && canPlaySound()) {
+  const buffer = pending[0];
+  if (canPlaySound()) {
     await new Promise(resolve => {
-      active = createSource(buffer, level, gain);
+      active = createSource(buffer, 1, gain);
       effectGain.gain.value = 0.16;
       active.onended = resolve;
-      active.start(0, 0, duration);
+      active.start();
     });
     if (pending !== queue) return;
     active = undefined;
@@ -152,28 +156,26 @@ async function playNext(pending) {
   else effectGain.gain.value = 1;
 }
 
-function queueSound({ file, level = 1, duration }) {
-  queue.push({ clip: loadClip(file), level, duration });
-  if (queue.length === 1) playNext(queue);
-}
-
 export function playAction(event, round) {
   if (!canPlaySound()) return;
   const name = voiceClip(event, round);
+  const buffer = name && buffers.get(`hengyang/${name}.wav`);
   if (event.type === '摸' || event.type === '出') {
-    if (name) stopVoice();
+    if (buffer) stopVoice();
     playEffect('card', [0], { replace: false });
   }
-  if (name) queueSound({ file: `hengyang/${name}.wav` });
+  if (buffer) {
+    queue.push(buffer);
+    if (queue.length === 1) playNext(queue);
+  }
 }
 
-export async function playEffect(name, delays = [0], { replace = true } = {}) {
+export function playEffect(name, delays = [0], { replace = true } = {}) {
   if (!canPlaySound()) return;
-  if (replace) stopEffect();
-  const request = effectRequest;
   const { file, level, duration, duck = true } = effects[name];
-  const buffer = await waitForClip(loadClip(file));
-  if (request !== effectRequest || !buffer || !canPlaySound()) return;
+  const buffer = buffers.get(file);
+  if (!buffer) return;
+  if (replace) stopEffect();
 
   const start = context.currentTime;
   let next = start;
@@ -189,7 +191,6 @@ export async function playEffect(name, delays = [0], { replace = true } = {}) {
 }
 
 export function stopEffect() {
-  effectRequest++;
   for (const source of activeEffects) source.stop();
   activeEffects.clear();
 }

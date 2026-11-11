@@ -1,6 +1,6 @@
 import { chooseAction } from './ai/player.mjs?v=141';
 import { setMusicPlaying, setMusicVolume } from './audio/music.mjs?v=208-cbe0bee8a6aa';
-import { playAction, playEffect, preloadSound, prepareSound, setSoundVolume, stopEffect, stopSound, unlockSound } from './audio/player.mjs?v=208';
+import { playAction, playEffect, setSoundEnabled, setSoundVolume, stopEffect, stopSound, unlockSound } from './audio/player.mjs?v=210';
 import { pickTablemates } from './data/tablemates.mjs?v=179';
 import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
 import { Round } from './game/state-machine.mjs?v=141';
@@ -21,11 +21,6 @@ const leaveMenu = document.querySelector('#leave-menu');
 const resumeMenu = document.querySelector('#resume-menu');
 const eatMenu = document.querySelector('#eat-menu');
 const startButton = document.querySelector('#start');
-const soundLoading = document.querySelector('#sound-loading');
-const soundLoadingTitle = soundLoading.querySelector('#sound-loading-title');
-const soundProgress = soundLoading.querySelector('#sound-progress');
-const soundLoadingStatus = soundLoading.querySelector('#sound-loading-status');
-const retrySound = soundLoading.querySelector('#retry-sound');
 const profilePage = document.querySelector('#profile');
 const profileButton = document.querySelector('#open-profile');
 const settings = document.querySelector('#settings');
@@ -48,8 +43,6 @@ let round;
 let handLayout = null;
 let timer;
 let openingEnds;
-let soundLoadAttempt = 0;
-let cancelSoundLoad;
 let musicWaitingForSound = data.settings.sound;
 
 const modes = home.querySelector('.modes');
@@ -86,8 +79,8 @@ for (const field of settingFields) {
     if (field.name === 'soundVolume') setSoundVolume(value / 100);
     if (field.name === 'music' || field.name === 'sound') syncMusic();
     if (field.name === 'sound') {
+      setSoundEnabled(value);
       if (value) unlockSound();
-      else stopSound();
     }
   });
 }
@@ -142,7 +135,7 @@ function syncMusic() {
 }
 
 if (musicWaitingForSound) {
-  preloadSound().then(() => {
+  setSoundEnabled(true).then(() => {
     musicWaitingForSound = false;
     syncMusic();
   });
@@ -284,52 +277,6 @@ function showTable() {
   syncMusic();
 }
 
-soundLoading.addEventListener('close', () => {
-  if (soundLoading.open) return;
-  const cancel = cancelSoundLoad;
-  cancelSoundLoad = undefined;
-  cancel?.();
-});
-
-async function enterWhenSoundReady(enter, cancel) {
-  if (!data.settings.sound) {
-    enter();
-    return;
-  }
-  const attempt = ++soundLoadAttempt;
-  retrySound.hidden = true;
-  retrySound.onclick = null;
-  soundLoadingTitle.textContent = '正在加载音效';
-  soundProgress.value = 0;
-  soundLoadingStatus.textContent = '';
-  const pending = prepareSound((ready, total) => {
-    if (attempt !== soundLoadAttempt) return;
-    soundProgress.max = total;
-    soundProgress.value = ready;
-    soundLoadingStatus.textContent = `${ready} / ${total}（${Math.floor(ready / total * 100)}%）`;
-  });
-  if (!pending) {
-    cancelSoundLoad = undefined;
-    if (soundLoading.open) soundLoading.close();
-    enter();
-    return;
-  }
-  cancelSoundLoad = cancel;
-  if (!soundLoading.open) soundLoading.showModal();
-  const ready = await pending;
-  if (attempt !== soundLoadAttempt || !soundLoading.open) return;
-  if (ready) {
-    cancelSoundLoad = undefined;
-    soundLoading.close();
-    enter();
-  } else {
-    soundLoadingTitle.textContent = '音效加载失败';
-    retrySound.hidden = false;
-    retrySound.onclick = () => enterWhenSoundReady(enter, cancel);
-    retrySound.focus();
-  }
-}
-
 function start(dealer, tablemates) {
   stopSound();
   const mahjong = data.settings.mode === 'mahjong';
@@ -449,7 +396,7 @@ bindHandDrag(table, {
 startButton.addEventListener('click', () => {
   data.settings.mode = selectedMode;
   if (selectedMode === 'mahjong') data.settings.mahjongSeats = mahjongSeats;
-  enterWhenSoundReady(() => start());
+  start();
 });
 for (const type of ['selectstart', 'contextmenu']) {
   table.addEventListener(type, event => {
@@ -488,7 +435,7 @@ table.addEventListener('click', ({ target }) => {
   } else if (button.dataset.command === 'pause') {
     pauseMenu.showModal();
   } else if (button.dataset.command === 'again') {
-    enterWhenSoundReady(() => start(round.result.nextDealer ?? round.result.winner ?? round.dealer, round.tablemates));
+    start(round.result.nextDealer ?? round.result.winner ?? round.dealer, round.tablemates);
   } else if (button.dataset.command === 'review-round' || button.dataset.command === 'return-to-result') {
     const review = button.dataset.command === 'review-round';
     const back = table.querySelector('[data-command="return-to-result"]');
@@ -546,12 +493,8 @@ leaveMenu.addEventListener('close', () => {
   } else resumeRound();
 });
 resumeMenu.addEventListener('close', () => {
-  if (resumeMenu.returnValue === 'resume') {
-    enterWhenSoundReady(continueSavedRound, () => {
-      resumeMenu.returnValue = '';
-      resumeMenu.showModal();
-    });
-  } else {
+  if (resumeMenu.returnValue === 'resume') continueSavedRound();
+  else {
     saveRound(false);
     showHome();
   }
