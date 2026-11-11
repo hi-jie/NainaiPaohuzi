@@ -9,6 +9,12 @@ const effects = {
 };
 const folder = new URL('../../media/audio/', import.meta.url);
 const version = new URL(import.meta.url).search;
+const soundFiles = [
+  ...[...Object.values(actions), 'cpao'].map(name => `hengyang/${name}.wav`),
+  ...Object.values(effects).map(({ file }) => file),
+  ...numbers.flatMap(number => [`hengyang/x${number}.wav`, `hengyang/d${number}.wav`])
+];
+const downloads = new Map();
 const clips = new Map();
 let context;
 let gain;
@@ -36,11 +42,7 @@ export function unlockSound() {
     gain.connect(context.destination);
     effectGain = context.createGain();
     effectGain.connect(gain);
-    for (const { file } of Object.values(effects)) loadClip(file);
-    for (const number of numbers) {
-      loadClip(`hengyang/x${number}.wav`);
-      loadClip(`hengyang/d${number}.wav`);
-    }
+    preloadSound();
   }
   if (context.state !== 'running') context.resume().catch(error => console.warn('音效启动失败', error));
 }
@@ -50,16 +52,50 @@ export function setSoundVolume(value) {
   if (gain) gain.gain.setTargetAtTime(volume, context.currentTime, 0.015);
 }
 
-function loadClip(file) {
-  if (!clips.has(file)) {
+export function preloadSound() {
+  for (const file of soundFiles) {
+    if (context) loadClip(file);
+    else downloadClip(file);
+  }
+}
+
+function downloadClip(file) {
+  if (!downloads.has(file)) {
     const url = new URL(file, folder);
     url.search = version;
-    clips.set(file, fetch(url)
-      .then(response => response.arrayBuffer())
-      .then(bytes => context.decodeAudioData(bytes))
-      .catch(error => console.warn(`音效加载失败：${file}`, error)));
+    downloads.set(file, fetch(url).then(response => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.arrayBuffer();
+    }).catch(error => {
+      downloads.delete(file);
+      console.warn(`音效下载失败：${file}`, error);
+    }));
+  }
+  return downloads.get(file);
+}
+
+function loadClip(file) {
+  if (!clips.has(file)) {
+    clips.set(file, downloadClip(file)
+      .then(bytes => bytes && context.decodeAudioData(bytes))
+      .catch(error => console.warn(`音效解码失败：${file}`, error))
+      .then(buffer => {
+        downloads.delete(file);
+        if (!buffer) clips.delete(file);
+        return buffer;
+      }));
   }
   return clips.get(file);
+}
+
+function waitForClip(clip) {
+  return new Promise(resolve => {
+    const timeout = setTimeout(resolve, 300);
+    clip.then(buffer => {
+      clearTimeout(timeout);
+      resolve(buffer);
+    });
+  });
 }
 
 function createSource(buffer, level, output) {
@@ -78,9 +114,9 @@ function canPlaySound() {
 
 async function playNext(pending) {
   const { clip, level, duration } = pending[0];
-  const buffer = await clip;
+  const buffer = await waitForClip(clip);
   if (pending !== queue) return;
-  if (buffer) {
+  if (buffer && canPlaySound()) {
     await new Promise(resolve => {
       active = createSource(buffer, level, gain);
       effectGain.gain.value = 0.16;
@@ -115,7 +151,7 @@ export async function playEffect(name, delays = [0], { replace = true } = {}) {
   if (replace) stopEffect();
   const request = effectRequest;
   const { file, level, duration, duck = true } = effects[name];
-  const buffer = await loadClip(file);
+  const buffer = await waitForClip(loadClip(file));
   if (request !== effectRequest || !buffer || !canPlaySound()) return;
 
   const start = context.currentTime;
