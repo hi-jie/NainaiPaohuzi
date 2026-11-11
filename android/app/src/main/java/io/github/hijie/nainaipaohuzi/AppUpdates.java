@@ -111,7 +111,7 @@ public final class AppUpdates {
                 if (closed) return;
                 checking = false;
                 if (result == null) publish("检查更新失败，请稍后重试。", null);
-                else if (result.code() <= versionCode(installed)) publish("已是最新版本。", null);
+                else if (result.code() <= versionCode(installed)) publish("已是最新版本", null);
                 else if (ready && downloadVersion >= result.code()) publish("更新已下载，可以安装。", null);
                 else {
                     offered = result;

@@ -59,8 +59,8 @@ function playerHand(round, layout, canDiscard, response, canDrag) {
   };
   return layout.map(column => {
     const group = handColumnGroup(column, round.rules.patterns, mahjong);
-    const points = group && !mahjong ? huxi(group) : 0;
-    const score = points > 0 ? `<strong class="group-score"><span class="sr-only">胡息 </span>${points}</strong>` : '';
+    const score = group && !mahjong
+      ? `<strong class="group-score"><span class="sr-only">胡息 </span>${huxi(group)}</strong>` : '';
     return `<div class="hand-stack${group ? '' : ' loose'}">${column.map(cardView).join('')}${score}</div>`;
   }).join('');
 }
