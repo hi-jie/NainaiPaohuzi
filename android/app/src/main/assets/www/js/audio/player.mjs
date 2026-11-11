@@ -16,6 +16,7 @@ const soundFiles = [
 ];
 const downloads = new Map();
 const clips = new Map();
+const readyFiles = new Set();
 let context;
 let gain;
 let effectGain;
@@ -59,17 +60,33 @@ export function preloadSound() {
   }
 }
 
+export function prepareSound(report) {
+  unlockSound();
+  const total = soundFiles.length;
+  let ready = readyFiles.size;
+  if (ready === total) return null;
+  report(ready, total);
+  const pending = soundFiles.filter(file => !readyFiles.has(file));
+  return Promise.all(pending.map(async file => {
+    const buffer = await loadClip(file);
+    if (buffer) report(++ready, total);
+    return Boolean(buffer);
+  })).then(results => results.every(Boolean));
+}
+
 function downloadClip(file) {
   if (!downloads.has(file)) {
     const url = new URL(file, folder);
     url.search = version;
-    downloads.set(file, fetch(url).then(response => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    downloads.set(file, fetch(url, { signal: controller.signal }).then(response => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.arrayBuffer();
     }).catch(error => {
       downloads.delete(file);
       console.warn(`音效下载失败：${file}`, error);
-    }));
+    }).finally(() => clearTimeout(timeout)));
   }
   return downloads.get(file);
 }
@@ -81,7 +98,8 @@ function loadClip(file) {
       .catch(error => console.warn(`音效解码失败：${file}`, error))
       .then(buffer => {
         downloads.delete(file);
-        if (!buffer) clips.delete(file);
+        if (buffer) readyFiles.add(file);
+        else clips.delete(file);
         return buffer;
       }));
   }
