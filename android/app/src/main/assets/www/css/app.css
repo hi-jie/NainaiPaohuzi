@@ -245,7 +245,7 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
   display: flex; justify-content: space-between; align-items: center; gap: 12px;
   cursor: pointer;
 }
-.menu-options > label, .audio-setting {
+.menu-options > label, .audio-setting, .meld-order-setting {
   min-height: 48px; padding: 8px 16px; border: 1px solid #c0935c; border-radius: 8px;
   background: linear-gradient(#513d2a, #302319); color: #fff0cc;
   box-shadow: inset 0 0 0 2px #150d0980, inset 0 0 0 3px #d8b57842;
@@ -274,13 +274,13 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
 :is(.menu-options, .pause-settings) input[role="switch"]:focus-visible {
   outline: 2px solid #fff0b0; outline-offset: 3px;
 }
-.audio-settings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.shared-settings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .settings-content {
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px;
   width: min(100%, 680px); place-self: center;
 }
 .settings-content:has(#app-update[hidden]) { grid-template-columns: minmax(0, 320px); justify-content: center; }
-.settings-content .audio-settings { grid-template-columns: minmax(0, 1fr); }
+.settings-content .shared-settings { grid-template-columns: minmax(0, 1fr); }
 #app-update { display: grid; gap: 12px; align-content: center; justify-items: center; text-align: center; }
 #app-version { font-size: 22px; font-weight: 750; color: #ffe5a6; }
 .update-controls { display: flex; justify-content: center; gap: 8px; width: 100%; min-height: 46px; }
@@ -290,6 +290,7 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
 #update-description { margin: 8px 0 14px; }
 .audio-setting { padding: 8px 12px 4px; font-size: 20px; }
 .audio-setting label { white-space: nowrap; }
+.shared-settings > .meld-order-setting { grid-column: 1 / -1; padding-inline: 12px; font-size: 20px; }
 .volume-control {
   display: grid; grid-template-columns: minmax(0, 1fr) 4.5ch; align-items: center; gap: 8px;
   font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums;

@@ -7,5 +7,5 @@ export const presets = {
 
 export const defaultSettings = {
   mode: 'six', oneFiveTen: true, discardHu: true, sound: true, music: true,
-  soundVolume: 100, musicVolume: 20
+  soundVolume: 100, musicVolume: 20, eatCardOnTop: true
 };

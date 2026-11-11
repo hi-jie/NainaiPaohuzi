@@ -1,4 +1,4 @@
-import { defaultSettings, presets } from '../rules/presets.mjs?v=202';
+import { defaultSettings, presets } from '../rules/presets.mjs?v=231';
 
 const key = 'hengyang-paohuzi-v1';
 export const defaultNickname = '我';

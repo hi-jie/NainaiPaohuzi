@@ -6,10 +6,10 @@ import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
 import { Round } from './game/state-machine.mjs?v=225';
 import { MahjongRound } from './game/mahjong-round.mjs';
 import { presets } from './rules/presets.mjs?v=141';
-import { load, save } from './storage/save.mjs?v=202';
+import { load, save } from './storage/save.mjs?v=231';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=116';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=229';
-import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=230';
+import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=231';
 import { bindTutorial } from './ui/tutorial.mjs?v=192';
 import { bindProfile } from './ui/profile.mjs?v=202';
 import { bindAppUpdate } from './ui/update.mjs?v=226';
@@ -55,9 +55,9 @@ const modes = home.querySelector('.modes');
 modes.innerHTML = Object.entries(presets).map(([key, { name }]) =>
   `<button type="button" class="primary" data-mode="${key}">${name}</button>`).join('');
 
-const audioControls = document.querySelector('#audio-setting-controls');
-for (const panel of document.querySelectorAll('.audio-settings')) {
-  panel.append(audioControls.content.cloneNode(true));
+const sharedControls = document.querySelector('#shared-setting-controls');
+for (const panel of document.querySelectorAll('.shared-settings')) {
+  panel.append(sharedControls.content.cloneNode(true));
 }
 function showSettingValue(field) {
   const value = data.settings[field.name];
@@ -327,6 +327,7 @@ function continueSavedRound() {
     data.settings.mahjongSeats = mahjongSeats;
   }
   round.rules.sound = data.settings.sound;
+  round.rules.eatCardOnTop = data.settings.eatCardOnTop;
   handLayout = data.round.handLayout;
   if (!round.tablemates) {
     round.tablemates = pickTablemates(round.players.length - 1);
@@ -514,6 +515,14 @@ eatMenu.addEventListener('close', () => {
 });
 pauseMenu.addEventListener('close', () => {
   round.rules.sound = data.settings.sound;
+  if (round.rules.eatCardOnTop !== data.settings.eatCardOnTop) {
+    round.rules.eatCardOnTop = data.settings.eatCardOnTop;
+    if (!table.querySelector('.opening')) {
+      const selectedId = table.querySelector('[data-select-card][aria-pressed="true"]')?.dataset.handCard;
+      setHandLayout(handLayout, selectedId);
+      table.querySelector('[data-command="pause"]').focus({ preventScroll: true });
+    }
+  }
   resumeRound();
 });
 leaveMenu.addEventListener('close', () => {
