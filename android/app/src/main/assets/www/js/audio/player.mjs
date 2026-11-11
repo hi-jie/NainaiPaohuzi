@@ -5,7 +5,7 @@ const effects = {
   select: { file: 'sfx/select-button.mp3', level: 0.38 },
   shuffle: { file: 'sfx/shuffling-deck-of-cards.mp3', level: 0.51 },
   card: { file: 'sfx/taking-playing-card.mp3', level: 0.48, duration: 0.23 },
-  impact: { file: 'sfx/fast-body-fall-impact.mp3', level: 0.5, offset: 0.12, duration: 0.52, duck: false }
+  impact: { file: 'sfx/knockout-body-fall-in-the-boxing-ring-first.mp3', level: 0.38, duck: false }
 };
 const folder = new URL('../../media/audio/', import.meta.url);
 const version = new URL(import.meta.url).search;
@@ -107,7 +107,7 @@ export async function playEffect(name, delays = [0]) {
   if (!canPlaySound()) return;
   stopEffect();
   const request = effectRequest;
-  const { file, level, offset = 0, duration, duck = true } = effects[name];
+  const { file, level, duration, duck = true } = effects[name];
   const buffer = await loadClip(file);
   if (request !== effectRequest || !buffer || !canPlaySound()) return;
 
@@ -119,7 +119,7 @@ export async function playEffect(name, delays = [0]) {
     const source = createSource(buffer, level, duck ? effectGain : gain);
     activeEffects.add(source);
     source.onended = () => activeEffects.delete(source);
-    source.start(when, offset, duration);
+    source.start(when, 0, duration);
     next = when + (duration ?? buffer.duration);
   }
 }
