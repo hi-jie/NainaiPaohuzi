@@ -9,7 +9,7 @@ import { findHu } from '../android/app/src/main/assets/www/js/rules/hu.mjs';
 import { defaultSettings, presets } from '../android/app/src/main/assets/www/js/rules/presets.mjs';
 import { settle } from '../android/app/src/main/assets/www/js/rules/scoring.mjs';
 import { handColumnGroup, moveHandCard, syncHandLayout } from '../android/app/src/main/assets/www/js/ui/hand.mjs';
-import { renderTable } from '../android/app/src/main/assets/www/js/ui/table.mjs';
+import { renderEatChoices, renderTable } from '../android/app/src/main/assets/www/js/ui/table.mjs';
 
 const paohuziModes = ['six', 'ten', 'fifteen'];
 const rules = { ...defaultSettings, ...presets.six, patterns: patterns(false) };
@@ -139,6 +139,16 @@ test('吃和比的牌组互换顺序时只保留一种吃法', () => {
     [[0, 1, 2], [1, 2, 3]], [[0, 1, 2], [2, 3, 4]],
     [[1, 2, 3], [1, 2, 3]], [[1, 2, 3], [2, 3, 4]]
   ]);
+});
+
+test('吃法预览将九张排一行，十二张分成两行', () => {
+  const groups = [[0, 1, 2], [1, 2, 3], [2, 3, 4], [2, 12, 12]];
+  for (const [count, expected] of [[3, [9]], [4, [6, 6]]]) {
+    const preview = renderEatChoices([{ type: '吃', groups: groups.slice(0, count) }], 2);
+    const rows = preview.split('class="eat-row"').slice(1);
+    assert.deepEqual(rows.map(row => [...row.matchAll(/class="card\b/g)].length), expected);
+    assert.equal([...preview.matchAll(/class="eat-source"/g)].length, 1);
+  }
 });
 
 test('吃碰响应未确认时头像和箭头留在出牌者，确认后同步切换', () => {

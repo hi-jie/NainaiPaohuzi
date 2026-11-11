@@ -150,11 +150,13 @@ export function renderEatChoices(options, offeredCard) {
     if (action.type !== '吃') return '';
     const label = `接${cardName(offeredCard)}，${eatGroupNames(action).join('、')}`;
     const offeredIndex = action.groups[0].indexOf(offeredCard);
+    const groups = action.groups.map((cards, groupIndex) => `<span class="eat-group">
+      ${cards.map((card, cardIndex) => groupIndex === 0 && cardIndex === offeredIndex
+        ? `<span class="eat-source">${tile(card)}</span>` : tile(card)).join('')}
+    </span>`);
+    const rows = groups.length > 3 ? [groups.slice(0, 2), groups.slice(2)] : [groups];
     return `<button class="eat-choice" data-action="${index}" aria-pressed="false" aria-label="${label}">
-      ${action.groups.map((cards, groupIndex) => `<span class="eat-group" aria-hidden="true">
-        ${cards.map((card, cardIndex) => groupIndex === 0 && cardIndex === offeredIndex
-          ? `<span class="eat-source">${tile(card)}</span>` : tile(card)).join('')}
-      </span>`).join('')}
+      ${rows.map(row => `<span class="eat-row" aria-hidden="true">${row.join('')}</span>`).join('')}
     </button>`;
   }).join('');
   return `<div class="eat-choices">${choices}</div>`;
