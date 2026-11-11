@@ -242,7 +242,7 @@ main:has(#table:not([hidden])) {
   animation: active-avatar-pulse 1.6s ease-in-out infinite;
 }
 @keyframes active-avatar-pulse {
-  50% { border-color: #a97030; box-shadow: 0 0 0 1px #7c4d23, 0 0 5px 0 #ffcb651a; }
+  50% { box-shadow: 0 0 0 1px #7c4d23, 0 0 5px 0 #ffcb651a; }
 }
 .seat.active .seat-score { color: #ffe291; }
 .seat-score {
