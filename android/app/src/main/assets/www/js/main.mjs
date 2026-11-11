@@ -251,8 +251,9 @@ new ResizeObserver(fitTable).observe(table);
 function scheduleTurn() {
   const action = round.options[0];
   if (!action || (round.seat === 0 && !action.forced)) return;
-  const thinking = round.phase === 'discard' ? 1450 : round.phase === 'draw' ? 950 : 1150;
-  const delay = action.forced ? 650 : thinking + Math.random() * 650;
+  const [minimum, maximum] = round.phase === 'discard' ? [1800, 3500]
+    : round.phase === 'draw' ? [950, 1600] : [1150, 1800];
+  const delay = action.forced ? 650 : minimum + Math.random() * (maximum - minimum);
   timer = setTimeout(() => step(action.forced ? action : chooseAction(round)), delay);
 }
 
