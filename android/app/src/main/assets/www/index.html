@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#113f32">
   <title>衡阳跑胡子</title>
-  <link rel="stylesheet" href="./css/app.css?v=201">
-  <script type="module" src="./js/main.mjs?v=202-cbe0bee8a6aa"></script>
+  <link rel="stylesheet" href="./css/app.css?v=203">
+  <script type="module" src="./js/main.mjs?v=203-cbe0bee8a6aa"></script>
 </head>
 <body>
   <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -67,6 +67,10 @@
         <h2 id="settings-title">设置</h2>
       </header>
       <div class="menu-options audio-settings"></div>
+      <footer class="settings-score-actions">
+        <p id="reset-score-status" role="status"></p>
+        <button id="reset-scores" type="button" aria-haspopup="dialog">积分清零</button>
+      </footer>
     </section>
     <section id="profile" class="front-screen" hidden aria-label="个人页面">
       <header class="menu-header">
@@ -92,6 +96,13 @@
     <section id="table" class="wide" hidden aria-label="牌桌"></section>
     <dialog id="eat-menu" aria-label="选择吃法"></dialog>
   </main>
+  <dialog id="reset-score-menu" class="game-dialog" aria-labelledby="reset-score-title">
+    <form method="dialog" class="dialog-header">
+      <h2 id="reset-score-title">积分清零</h2>
+      <button class="icon-button" aria-label="关闭积分清零"><svg class="nav-icon" aria-hidden="true"><use href="#icon-close"/></svg></button>
+    </form>
+    <div class="reset-score-modes" role="group" aria-label="选择要清零的玩法"></div>
+  </dialog>
   <dialog id="nickname-dialog" class="game-dialog" aria-labelledby="nickname-title">
     <form class="profile-name-edit">
       <h2 id="nickname-title">修改昵称</h2>

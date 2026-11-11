@@ -25,6 +25,8 @@ const profilePage = document.querySelector('#profile');
 const profileButton = document.querySelector('#open-profile');
 const settings = document.querySelector('#settings');
 const settingsButton = document.querySelector('#open-settings');
+const resetScoreStatus = document.querySelector('#reset-score-status');
+const resetScoreMenu = document.querySelector('#reset-score-menu');
 const modeTitle = document.querySelector('#mode-title');
 const modeScore = document.querySelector('#mode-score');
 const seatPicker = document.querySelector('#mahjong-seats');
@@ -91,7 +93,27 @@ seatPicker.addEventListener('click', ({ target }) => {
   mahjongSeats = Number(target.dataset.seats);
   updateSeatPicker();
 });
-settingsButton.addEventListener('click', () => showFront(settings, settings.querySelector('[data-back-home]')));
+settingsButton.addEventListener('click', () => {
+  resetScoreStatus.textContent = '';
+  showFront(settings, settings.querySelector('[data-back-home]'));
+});
+const resetScoreModes = resetScoreMenu.querySelector('.reset-score-modes');
+resetScoreModes.innerHTML = Object.entries(presets).map(([mode, { name }]) =>
+  `<button type="button" data-reset-mode="${mode}">${name}</button>`).join('');
+settings.querySelector('#reset-scores').addEventListener('click', () => resetScoreMenu.showModal());
+resetScoreModes.addEventListener('click', ({ target }) => {
+  const mode = target.dataset.resetMode;
+  if (!mode) return;
+  const scores = { ...data.scores, [mode]: 0 };
+  try {
+    save({ ...data, scores });
+    data.scores = scores;
+    resetScoreStatus.textContent = `${presets[mode].name}积分已清零`;
+  } catch {
+    resetScoreStatus.textContent = '积分清零失败';
+  }
+  resetScoreMenu.close();
+});
 settings.querySelector('[data-back-home]').addEventListener('click', () => showHome(settingsButton));
 setup.querySelector('[data-back-home]').addEventListener('click', () => showHome());
 document.querySelector('#setup-tutorial').addEventListener('click', () => openTutorial(selectedMode));

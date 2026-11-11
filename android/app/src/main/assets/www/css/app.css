@@ -255,6 +255,8 @@ main:has(:is(#round-setup, #profile):not([hidden])) { grid-template-rows: minmax
   outline: 2px solid #fff0b0; outline-offset: 3px;
 }
 .audio-settings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.settings-score-actions { display: flex; justify-content: flex-end; align-items: center; gap: 12px; }
+.reset-score-modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
 .audio-setting { padding: 8px 12px 4px; font-size: 20px; }
 .audio-setting label { white-space: nowrap; }
 .volume-control {
