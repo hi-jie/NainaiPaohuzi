@@ -817,14 +817,10 @@ main:has(#table:not([hidden])) {
   100% { transform: scaleX(1); }
 }
 
-.settlement { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; animation: appear .16s .14s both; }
-#table:has(.settlement:not([hidden])) > .felt { visibility: hidden; }
+.settlement { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; background: #080e0ad1; animation: appear .16s .14s both; }
 .result, .game-dialog, #eat-menu {
   width: min(calc(100% - 18px), 530px); text-align: center; padding: 10px;
-  color: #fff0c8;
-}
-.game-dialog, #eat-menu {
-  border: 3px solid #ad7947; border-radius: 17px;
+  border: 3px solid #ad7947; border-radius: 17px; color: #fff0c8;
   background: radial-gradient(ellipse at top, #65412c, #30241a); box-shadow: 0 12px 35px #0009;
 }
 .result h2 { color: #ffe096; font-size: 24px; margin: 2px; }
