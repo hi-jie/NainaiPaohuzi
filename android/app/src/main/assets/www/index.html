@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#113f32">
   <title>衡阳跑胡子</title>
   <link rel="icon" type="image/png" sizes="192x192" href="./favicon.png">
-  <link rel="stylesheet" href="./css/app.css?v=227">
+  <link rel="stylesheet" href="./css/app.css?v=228">
   <script type="module" src="./js/main.mjs?v=226-cbe0bee8a6aa"></script>
 </head>
 <body>
@@ -66,9 +66,11 @@
       </div>
     </section>
     <section id="settings" class="front-screen" hidden aria-labelledby="settings-title">
-      <button class="icon-button" type="button" data-back-home aria-label="返回首页"><svg class="nav-icon" aria-hidden="true"><use href="#icon-back"/></svg></button>
-      <div class="settings-content">
+      <header class="menu-header">
+        <button class="icon-button" type="button" data-back-home aria-label="返回首页"><svg class="nav-icon" aria-hidden="true"><use href="#icon-back"/></svg></button>
         <h2 id="settings-title">设置</h2>
+      </header>
+      <div class="settings-content">
         <div class="menu-options audio-settings"></div>
         <section id="app-update" aria-label="应用更新" hidden>
           <p id="app-version"></p>
