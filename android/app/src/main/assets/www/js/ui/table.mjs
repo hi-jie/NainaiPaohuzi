@@ -151,7 +151,9 @@ function actionButtons(options, mahjong) {
       return index === firstEat ? '<button data-command="choose-eat" aria-haspopup="dialog">吃</button>' : '';
     }
     const label = shortActionLabel(type);
-    return `<button class="${type === '过' ? 'pass' : 'primary guided'}" data-action="${index}">${label}</button>`;
+    const style = type === '过' ? 'pass' : 'primary guided';
+    const winStyle = type === '胡' ? ' win-action' : '';
+    return `<button class="${style}${winStyle}" data-action="${index}">${label}</button>`;
   }).reverse().join('');
 }
 
