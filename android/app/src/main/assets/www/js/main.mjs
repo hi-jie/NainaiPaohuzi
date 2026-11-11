@@ -25,6 +25,7 @@ const recordsButton = document.querySelector('#open-records');
 const settings = document.querySelector('#settings');
 const settingsButton = document.querySelector('#open-settings');
 const modeTitle = document.querySelector('#mode-title');
+const modeScore = document.querySelector('#mode-score');
 const seatPicker = document.querySelector('#mahjong-seats');
 const paohuziOptions = document.querySelector('#paohuzi-options');
 const openTutorial = bindTutorial(document.querySelector('#tutorial'));
@@ -130,6 +131,7 @@ function showHome(focus = modes.querySelector(`[data-mode="${selectedMode}"]`)) 
 function showSetup(mode) {
   selectedMode = mode;
   modeTitle.textContent = presets[mode].name;
+  modeScore.textContent = data.scores[mode];
   seatPicker.hidden = mode !== 'mahjong';
   paohuziOptions.hidden = mode === 'mahjong';
   updateSeatPicker();

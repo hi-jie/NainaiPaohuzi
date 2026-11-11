@@ -127,10 +127,36 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
 .menu-screen { grid-template-rows: auto 1fr auto; gap: 8px; }
 .menu-header { display: flex; align-items: center; gap: 16px; }
 .menu-header h2 { color: #ffe5a6; font-size: clamp(24px, calc(var(--screen-height) * .072), 38px); }
+#round-setup {
+  grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto minmax(0, 1fr);
+  column-gap: clamp(16px, calc(var(--screen-width) * .045), 44px); row-gap: 8px;
+}
+#round-setup .menu-header { grid-column: 1 / -1; }
 #setup-tutorial { margin-inline-start: auto; }
+.setup-summary {
+  display: grid; place-content: center; justify-items: center; gap: 12px; text-align: center;
+}
+.setup-summary h2 {
+  color: #ffe5a6; font: 800 clamp(32px, calc(var(--screen-height) * .12), 66px)/1.12 var(--display-font);
+  text-shadow: 0 2px 4px #12261b;
+}
+.setup-score {
+  min-width: 120px; margin: 0; padding: 8px 18px; border: 1px solid #b98a58; border-radius: 8px;
+  background: #143a30; color: #ffedc4; font-size: 16px;
+}
+.setup-score dd { margin: 0; font-variant-numeric: tabular-nums; }
+.setup-score strong { font-size: clamp(24px, calc(var(--screen-height) * .084), 44px); line-height: 1.12; }
+.setup-controls {
+  width: min(100%, 380px); place-self: center; display: grid;
+  gap: clamp(8px, calc(var(--screen-height) * .035), 18px);
+}
 .menu-options { width: min(100%, 480px); display: grid; gap: 8px; place-self: center; }
+.setup-controls .menu-options { width: 100%; }
 .seat-picker { grid-template-columns: repeat(3, 1fr); }
-.seat-picker button { min-height: 58px; font-size: 24px; }
+.seat-picker button {
+  min-height: clamp(44px, calc(var(--screen-height) * .14), 58px);
+  padding-inline: 4px; font-size: clamp(17px, calc(var(--screen-height) * .055), 24px);
+}
 :is(.menu-options, .pause-settings) label {
   display: flex; justify-content: space-between; align-items: center; gap: 12px;
   cursor: pointer;
@@ -164,8 +190,6 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
 :is(.menu-options, .pause-settings) input[role="switch"]:focus-visible {
   outline: 2px solid #fff0b0; outline-offset: 3px;
 }
-.menu-footer { display: flex; justify-content: flex-end; }
-#start { min-width: 155px; }
 .audio-settings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .audio-setting { padding: 8px 12px 4px; font-size: 20px; }
 .audio-setting label { white-space: nowrap; }
