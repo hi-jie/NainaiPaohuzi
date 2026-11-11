@@ -871,6 +871,7 @@ main:has(#table:not([hidden])) {
 .game-dialog { width: min(calc(var(--screen-width) - 24px), 390px); padding: 16px; }
 .game-dialog h2 { font-size: 24px; color: #ffe096; }
 .game-dialog .actions { flex-wrap: wrap; }
+#score-reset-dialog .actions { margin-top: 12px; }
 .dialog-header { display: flex; align-items: center; justify-content: space-between; }
 #leave-description, #resume-description { margin: 6px 0 14px; }
 #pause-menu { width: min(calc(var(--screen-width) - 24px), 460px); }

@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#113f32">
   <title>衡阳跑胡子</title>
-  <link rel="stylesheet" href="./css/app.css?v=212">
-  <script type="module" src="./js/main.mjs?v=212-cbe0bee8a6aa"></script>
+  <link rel="stylesheet" href="./css/app.css?v=213">
+  <script type="module" src="./js/main.mjs?v=213-cbe0bee8a6aa"></script>
 </head>
 <body>
   <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -93,6 +93,13 @@
     <section id="table" class="wide" hidden aria-label="牌桌"></section>
     <dialog id="eat-menu" aria-label="选择吃法"></dialog>
   </main>
+  <dialog id="score-reset-dialog" class="game-dialog" aria-labelledby="score-reset-title">
+    <h2 id="score-reset-title"></h2>
+    <form method="dialog" class="actions">
+      <button value="cancel" autofocus>取消</button>
+      <button id="confirm-score-reset" class="primary">清零</button>
+    </form>
+  </dialog>
   <dialog id="nickname-dialog" class="game-dialog" aria-labelledby="nickname-title">
     <form class="profile-name-edit">
       <h2 id="nickname-title">修改昵称</h2>

@@ -25,6 +25,9 @@ const profilePage = document.querySelector('#profile');
 const profileButton = document.querySelector('#open-profile');
 const scoreRecords = profilePage.querySelector('.score-records');
 const profileStatus = profilePage.querySelector('#profile-status');
+const scoreResetDialog = document.querySelector('#score-reset-dialog');
+const scoreResetTitle = scoreResetDialog.querySelector('#score-reset-title');
+const confirmScoreReset = scoreResetDialog.querySelector('#confirm-score-reset');
 const settings = document.querySelector('#settings');
 const settingsButton = document.querySelector('#open-settings');
 const modeTitle = document.querySelector('#mode-title');
@@ -103,7 +106,7 @@ profileButton.addEventListener('click', () => {
   scoreRecords.innerHTML = Object.entries(presets).map(([mode, { name }]) =>
     `<li class="record-entry">
       <dl class="record-card"><dt>${name}</dt><dd class="record-score"><strong>${data.scores[mode]}</strong> 分</dd></dl>
-      <button class="record-reset" type="button" data-reset-mode="${mode}" aria-label="${name}积分清零">
+      <button class="record-reset" type="button" data-reset-mode="${mode}" aria-label="${name}积分清零" aria-haspopup="dialog">
         <svg class="nav-icon" aria-hidden="true"><use href="#icon-refresh"/></svg>清零
       </button>
     </li>`).join('');
@@ -114,12 +117,21 @@ scoreRecords.addEventListener('click', ({ target }) => {
   const button = target.closest('[data-reset-mode]');
   if (!button) return;
   const mode = button.dataset.resetMode;
+  scoreResetTitle.textContent = `清零${presets[mode].name}积分？`;
+  confirmScoreReset.value = mode;
+  scoreResetDialog.returnValue = '';
+  scoreResetDialog.showModal();
+});
+scoreResetDialog.addEventListener('close', () => {
+  const mode = scoreResetDialog.returnValue;
+  if (!Object.hasOwn(presets, mode)) return;
   const scores = { ...data.scores, [mode]: 0 };
   try {
     save({ ...data, scores });
     data.scores = scores;
-    button.closest('.record-entry').querySelector('.record-score strong').textContent = '0';
-    profileStatus.textContent = `${presets[mode].name}积分已清零`;
+    scoreRecords.querySelector(`[data-reset-mode="${mode}"]`).closest('.record-entry')
+      .querySelector('.record-score strong').textContent = '0';
+    profileStatus.textContent = '';
   } catch {
     profileStatus.textContent = '积分清零失败';
   }
