@@ -114,11 +114,12 @@ test('一五十开关改变胡牌拆组', () => {
 
 test('关闭放炮胡后只可胡墩上摸出的牌，不限摸牌人', () => {
   const offer = { card: 17, source: 1, kind: 'discard' };
-  assert.equal(responses(player(waitingHand), 0, offer, rules).some(action => action.type === '胡'), false);
+  const disabled = { ...rules, discardHu: false };
+  assert.equal(responses(player(waitingHand), 0, offer, disabled).some(action => action.type === '胡'), false);
   assert.equal(responses(player(waitingHand), 0, offer, { ...rules, discardHu: true })[0].type, '胡');
   for (const source of [0, 1]) {
-    assert.equal(responses(player(waitingHand), 0, { ...offer, source, kind: 'draw' }, rules)[0].type, '胡');
-    assert.equal(responses(player(waitingHand), 0, { ...offer, source, kind: 'opening' }, rules).some(action => action.type === '胡'), false);
+    assert.equal(responses(player(waitingHand), 0, { ...offer, source, kind: 'draw' }, disabled)[0].type, '胡');
+    assert.equal(responses(player(waitingHand), 0, { ...offer, source, kind: 'opening' }, disabled).some(action => action.type === '胡'), false);
   }
 });
 

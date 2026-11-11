@@ -1,4 +1,4 @@
-import { defaultNickname } from '../storage/save.mjs?v=198';
+import { defaultNickname } from '../storage/save.mjs?v=202';
 
 async function makeAvatar(file) {
   const url = URL.createObjectURL(file);

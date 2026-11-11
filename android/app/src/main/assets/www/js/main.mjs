@@ -6,12 +6,12 @@ import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
 import { Round } from './game/state-machine.mjs?v=141';
 import { MahjongRound } from './game/mahjong-round.mjs';
 import { presets } from './rules/presets.mjs?v=141';
-import { load, save } from './storage/save.mjs?v=198';
+import { load, save } from './storage/save.mjs?v=202';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=116';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=141';
 import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=195';
 import { bindTutorial } from './ui/tutorial.mjs?v=192';
-import { bindProfile } from './ui/profile.mjs?v=199';
+import { bindProfile } from './ui/profile.mjs?v=202';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
