@@ -599,9 +599,11 @@ main:has(#table:not([hidden])) {
 .hand-actions .pass { --control-light: #638b69; --control-face: #3b6b54; --control-dark: #1e3d33; }
 .hand-actions .win-action {
   --control-edge: #e3a84d;
-  --control-light: #b12b24;
-  --control-dark: #791a16;
+  --control-light: #cf3a30;
+  --control-face: #b62821;
+  --control-dark: #8e1c17;
   --control-ink: #ffe187;
+  background: linear-gradient(180deg, var(--control-light), var(--control-face) 44%, var(--control-dark));
 }
 .callout {
   position: absolute; z-index: 1; top: 43px; width: 104px;
