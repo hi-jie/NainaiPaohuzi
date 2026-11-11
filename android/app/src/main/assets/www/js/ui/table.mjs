@@ -381,24 +381,12 @@ function meldCard(area, groups, index, card) {
   return area.children[index].children[groups[index].cards.indexOf(card)];
 }
 
-export function showRoundResult(table, round, score, event, winningMeld) {
+export function showRoundResult(table, round, score) {
   table.querySelector('.winner .callout')?.remove();
   table.querySelector('.table-score span:last-child').textContent = `积分 ${score}`;
   table.querySelector('.felt').inert = true;
   table.insertAdjacentHTML('beforeend', resultView(round, score));
   table.querySelector('[data-command="review-round"]').focus({ preventScroll: true });
-  if (event?.type !== '胡' || round.rules.mode === 'mahjong') return;
-  const { card, seat } = event;
-  const winning = round.result.hu.groups;
-  const played = round.players[seat].groups.length;
-  const index = winningMeld ?? winning.findIndex((group, i) => i >= played && group.cards.includes(card));
-  const source = meldCard(table.querySelector(`.seat-${seat} .groups`), winning, index, card);
-  const destination = meldCard(table.querySelector('.settlement .groups'), winning, index, card);
-  const transfer = animateTransfer(table, card, destination, source.getBoundingClientRect(), 'win');
-  if (transfer) {
-    source.style.visibility = 'hidden';
-    transfer.addEventListener('finish', () => { source.style.visibility = ''; });
-  }
 }
 
 export function captureOfferMotion(table, round) {
@@ -418,7 +406,6 @@ export function captureOfferMotion(table, round) {
 
 function animateTransfer(table, card, destination, from, effect = 'move') {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const win = effect === 'win';
   const frame = table.getBoundingClientRect();
   const portrait = matchMedia('(orientation: portrait)').matches;
   const local = rect => portrait
@@ -429,7 +416,7 @@ function animateTransfer(table, card, destination, from, effect = 'move') {
   const end = local(destination.getBoundingClientRect());
   const ghost = document.createElement('span');
   const concealed = effect === 'draw';
-  ghost.className = `card flying-card${concealed ? ' back' : isRed(card) ? ' red' : ''}${win ? ' winning' : ''}`;
+  ghost.className = `card flying-card${concealed ? ' back' : isRed(card) ? ' red' : ''}`;
   ghost.setAttribute('aria-hidden', 'true');
   if (!concealed) ghost.textContent = cardName(card);
   Object.assign(ghost.style, {
@@ -449,13 +436,10 @@ function animateTransfer(table, card, destination, from, effect = 'move') {
   ] : [{ transform: origin }, { transform: target }];
   destination.style.visibility = 'hidden';
   table.append(ghost);
-  const animation = ghost.animate(frames,
-    { duration: win ? 300 : 220, fill: 'both', easing: 'ease-in-out' });
-  animation.onfinish = () => {
+  ghost.animate(frames, { duration: 220, fill: 'both', easing: 'ease-in-out' }).onfinish = () => {
     destination.style.visibility = '';
     ghost.remove();
   };
-  return animation;
 }
 
 export function animateAction(table, round, event, motion, action) {

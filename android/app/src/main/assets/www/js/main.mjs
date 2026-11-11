@@ -9,7 +9,7 @@ import { presets } from './rules/presets.mjs?v=141';
 import { load, save } from './storage/save.mjs?v=178';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=116';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=141';
-import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=185';
+import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=187';
 
 const home = document.querySelector('#home');
 const setup = document.querySelector('#round-setup');
@@ -154,7 +154,7 @@ function showRound(event, motion, action) {
   const score = data.scores[round.rules.mode];
   if (round.phase === 'finished') {
     showFinishedTable(table, round, score, event);
-    timer = setTimeout(() => showRoundResult(table, round, score, event, motion?.meld), 2200);
+    timer = setTimeout(() => showRoundResult(table, round, score), 2200);
     return;
   }
   paintRound(event, motion, action);
