@@ -1,6 +1,6 @@
 import { chooseAction } from './ai/player.mjs?v=141';
 import { setMusicPlaying, setMusicVolume } from './audio/music.mjs?v=101-cbe0bee8a6aa';
-import { playAction, playEffect, setSoundVolume, stopEffect, stopSound, unlockSound } from './audio/player.mjs?v=177';
+import { playAction, playEffect, setSoundVolume, stopEffect, stopSound, unlockSound } from './audio/player.mjs?v=188';
 import { pickTablemates } from './data/tablemates.mjs?v=179';
 import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
 import { Round } from './game/state-machine.mjs?v=141';
@@ -155,10 +155,19 @@ function showRound(event, motion, action) {
   if (round.phase === 'finished') {
     showFinishedTable(table, round, score, event);
     timer = setTimeout(() => showRoundResult(table, round, score), 2200);
-    return;
+  } else {
+    paintRound(event, motion, action);
+    scheduleTurn();
   }
-  paintRound(event, motion, action);
-  scheduleTurn();
+
+  const callout = table.querySelector('.callout');
+  if (!callout) return;
+  const playImpact = () => { if (round.rules.sound) playEffect('impact'); };
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    playImpact();
+  } else {
+    callout.addEventListener('animationend', playImpact, { once: true });
+  }
 }
 
 function fitTable() {

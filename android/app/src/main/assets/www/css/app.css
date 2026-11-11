@@ -487,7 +487,8 @@ main:has(#table:not([hidden])) {
   position: absolute; z-index: 1; top: 43px; width: 104px;
   color: #ffe487; text-align: center; font: 800 52px/1.05 serif;
   text-shadow: 2px 3px #80331c, -1px -1px #62351c, 0 2px 8px #110d08;
-  animation: callout .55s ease-out both; pointer-events: none; white-space: nowrap;
+  animation: callout-drop .16s cubic-bezier(.5, 0, .86, .35) both;
+  pointer-events: none; white-space: nowrap;
 }
 .seat-1 .callout { left: calc(100% + 4px); }
 .seat-2 .callout { right: calc(100% + 4px); }
@@ -778,7 +779,10 @@ main:has(#table:not([hidden])) {
   main { width: var(--screen-width); }
 }
 @keyframes appear { from { opacity: 0; } to { opacity: 1; } }
-@keyframes callout { from { transform: scale(.88); opacity: .85; } 45% { transform: scale(1.12); } to { transform: none; opacity: 1; } }
+@keyframes callout-drop {
+  from { transform: translateY(-.6em) scale(5); opacity: .16; }
+  to { transform: none; opacity: 1; }
+}
 @media (prefers-reduced-motion: reduce) {
   .settlement, .callout { animation: none; }
 }
