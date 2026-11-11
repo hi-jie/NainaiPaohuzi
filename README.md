@@ -2,11 +2,11 @@
 
 一款给奶奶做的单机衡阳字牌游戏。你和电脑牌友同桌，选好玩法就能开局。安卓安装包内置游戏、字体和音频，断网也能打。
 
-**[下载安卓 APK](https://github.com/hi-jie/NainaiPaohuzi/releases/download/v1.0.0/NainaiPaohuzi-1.0.0-release.apk)** · **[网页试玩](https://hi-jie.github.io/NainaiPaohuzi/)** · [发布记录](https://github.com/hi-jie/NainaiPaohuzi/releases)
+**[下载最新版安卓 APK](https://github.com/hi-jie/NainaiPaohuzi/releases/latest)** · **[网页试玩](https://hi-jie.github.io/NainaiPaohuzi/)** · [发布记录](https://github.com/hi-jie/NainaiPaohuzi/releases)
 
 ## 安装和开局
 
-- 安卓正式版 **1.0.0** 支持 Android 8.0 及以上。已装过调试版的手机需要先卸载旧版，再安装正式版。卸载会清除该版本的本机积分、个人资料和对局存档。
+- 安卓正式版支持 Android 8.0 及以上。在最新版发布页的附件列表中下载 `.apk`。已装过调试版的手机需要先卸载旧版，再安装正式版。卸载会清除该版本的本机积分、个人资料和对局存档。
 - 打开游戏选择玩法。在开始页面点「教程」，可以查看对局流程、动作、胡牌条件和计分规则。
 - 默认开启「一五十」和「放炮胡」，开局前可以调整。麻雀牌可在开局前选择人数。
 
@@ -57,7 +57,7 @@ cd android
 正式包使用 `:app:assembleRelease`，签名配置通过 [Gradle 配置](android/app/build.gradle) 中的环境变量读取。
 
 - [玩法规则确认稿](docs/衡阳跑胡子玩法规则确认稿.md) · [麻雀牌玩法规则](docs/麻雀牌玩法规则.md) · [当前牌局规则与代码审查](docs/当前牌局规则与代码审查.md)
-- [功能规格](docs/功能规格.md) · [项目结构](docs/项目结构.md)
+- [早期功能规格](docs/功能规格.md) · [项目结构](docs/项目结构.md)
 - [音量设计规范](docs/音量设计规范.md) · [背景音乐目录](android/app/src/main/assets/www/media/audio/music) · [衡阳方言录音目录](android/app/src/main/assets/www/media/audio/hengyang)
 
 曲目变更后可运行 `node scripts/update-music.mjs --playlist-only` 更新播放列表。需要转换 OGG 时，运行 `node scripts/update-music.mjs`，脚本通过 FFmpeg 和 ffprobe 生成并校验 MP3，成功后删除对应 OGG。方言录音用 `node scripts/process-voices.mjs` 从原始录音重新生成，需要 FFmpeg。
