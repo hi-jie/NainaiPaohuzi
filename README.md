@@ -1,66 +1,65 @@
-# 单机衡阳跑胡子
+# 衡阳跑胡子
 
-给奶奶玩的离线安卓衡阳跑胡子。每桌由一名真人和两名电脑玩家组成。积分允许为负，每局打完都可以继续开局。
+一款给奶奶做的单机衡阳字牌游戏。你和电脑牌友同桌，选好玩法就能开局。安卓安装包内置游戏、字体和音频，断网也能打。
 
-- [功能规格](docs/功能规格.md)记录玩法、牌局流程、存档和验收要求。
-- [衡阳跑胡子玩法规则确认稿](docs/衡阳跑胡子玩法规则确认稿.md)供熟悉衡阳字牌的牌友核对发牌、行牌、胡牌和结算。
-- [当前牌局规则与代码审查](docs/当前牌局规则与代码审查.md)记录当前代码实际采用的牌型、胡息、胡牌和补牌规则，以及可复现的问题。
-- [项目结构](docs/项目结构.md)记录目录职责、计划文件和构建方式。
+**[下载安卓 APK](https://github.com/hi-jie/NainaiPaohuzi/releases/download/v1.0.0/NainaiPaohuzi-1.0.0-release.apk)** · **[网页试玩](https://hi-jie.github.io/NainaiPaohuzi/)** · [发布记录](https://github.com/hi-jie/NainaiPaohuzi/releases)
 
-## 运行网页版本
+## 安装和开局
 
-打开 [在线试玩](https://hi-jie.github.io/NainaiPaohuzi/) 即可开局。
+- 安卓正式版 **1.0.0** 支持 Android 8.0 及以上。已装过调试版的手机需要先卸载旧版，再安装正式版。卸载会清除该版本的本机积分、个人资料和对局存档。
+- 打开游戏选择玩法。在开始页面点「教程」，可以查看对局流程、动作、胡牌条件和计分规则。
+- 默认开启「一五十」和「放炮胡」，开局前可以调整。麻雀牌可在开局前选择人数。
 
-在项目根目录也可以启动本地静态预览。
+## 玩法
+
+桌上人数包含你和电脑牌友。
+
+| 玩法 | 桌上人数 |
+| --- | --- |
+| 六胡抢 | 4 人 |
+| 十胡卡 | 3 人 |
+| 十五胡 | 3 人 |
+| 麻雀牌 | 3–5 人 |
+
+- **理牌和吃牌**　开局自动理牌，也可以拖动手牌自己分组。出现多种吃法时，可以先看预览再确认。
+- **结算和回看**　胡牌或黄庄后，点「查看牌局」可以回看各家手牌和剩余牌墩。
+- **个人资料与积分**　可设置头像和昵称，各玩法的积分分别保存。个人资料、设置和对局进度保存在本机。
+- **衡阳方言报牌**　摸牌、出牌和吃碰胡等动作有语音提示。设置里可分别开关游戏音效和背景音乐，也可独立调节音量。
+
+## 音乐鸣谢
+
+背景音乐（BGM）来自 **HOYO-MiX**。收录《天使的馈赠》《品茗尝清心（望舒昼间）》《柔风浅酌》和《醵饮同欢》。前两首的素材署名为陈致逸与 HOYO-MiX。[项目曲目列表](android/app/src/main/assets/www/media/audio/music/playlist.mjs)
+
+## 问题反馈
+
+如果遇到安装、显示或玩法问题，可以在 [GitHub Issues](https://github.com/hi-jie/NainaiPaohuzi/issues) 反馈。请附上使用的平台或手机型号、游戏版本，以及出现问题前的操作。
+
+## 开发与维护
+
+<details>
+<summary>本地预览、构建与资料</summary>
+
+在仓库根目录启动静态预览，然后打开 [本地牌桌](http://127.0.0.1:8000/)。
 
 ```powershell
-node scripts/update-music.mjs
 python -m http.server 8000 --bind 127.0.0.1 --directory android/app/src/main/assets/www
 ```
 
-浏览器打开 [本地牌桌](http://127.0.0.1:8000/)。规则测试使用 `node --test`，网页源码直接由浏览器加载。
+在仓库根目录运行 `node --test` 可执行规则测试。网页和安卓应用共用同一套 HTML、CSS 和 JavaScript。
 
-## 构建离线安卓 APK
-
-使用 JDK 17、Android SDK Platform 35 和 Build Tools 34.0.0。将 `ANDROID_HOME` 指向 SDK 目录，或在 `android/local.properties` 中填写 `sdk.dir`。首次构建会下载 Gradle 和构建依赖。
+安卓构建使用 JDK 17、Android SDK Platform 35 和 Build Tools 34.0.0。设置 `ANDROID_HOME`，或在 `android/local.properties` 填写 `sdk.dir`。首次构建会下载 Gradle 和依赖。
 
 ```powershell
 cd android
 .\gradlew.bat :app:assembleDebug
-adb install -r .\app\build\outputs\apk\debug\app-debug.apk
 ```
 
-验收包支持 Android 8.0 及以上，使用手机自带的 Android System WebView。网页、字体和音乐随 APK 安装，积分和设置保存在应用内。安装后可开启飞行模式验证开局和播放，退出再打开可核对积分是否保留。
+正式包使用 `:app:assembleRelease`，签名配置通过 [Gradle 配置](android/app/build.gradle) 中的环境变量读取。
 
-## 背景音乐
+- [玩法规则确认稿](docs/衡阳跑胡子玩法规则确认稿.md) · [麻雀牌玩法规则](docs/麻雀牌玩法规则.md) · [当前牌局规则与代码审查](docs/当前牌局规则与代码审查.md)
+- [功能规格](docs/功能规格.md) · [项目结构](docs/项目结构.md)
+- [音量设计规范](docs/音量设计规范.md) · [背景音乐目录](android/app/src/main/assets/www/media/audio/music) · [衡阳方言录音目录](android/app/src/main/assets/www/media/audio/hengyang)
 
-把 MP3、M4A、OGG 或 WAV 文件放进 [音乐目录](android/app/src/main/assets/www/media/audio/music)，可以使用中文文件名。同名曲目优先使用 MP3。在项目根目录运行以下命令。
+曲目变更后可运行 `node scripts/update-music.mjs --playlist-only` 更新播放列表。需要转换 OGG 时，运行 `node scripts/update-music.mjs`，脚本通过 FFmpeg 和 ffprobe 生成并校验 MP3，成功后删除对应 OGG。方言录音用 `node scripts/process-voices.mjs` 从原始录音重新生成，需要 FFmpeg。
 
-- `node scripts/update-music.mjs` 用 FFmpeg 将 OGG 转为 MP3，转换成功后删除 OGG，再更新本地曲目列表。同名 MP3 已存在时，会先核对时长并检查能否完整解码。FFmpeg 和 `ffprobe` 需在 `PATH` 中。
-- `node scripts/update-music.mjs --publish` 更新曲目、提交并推送到 `main`，由 GitHub Pages 自动部署。
-
-新加的 OGG 曲目会用 FFmpeg 生成同名 MP3。删除歌曲时，删除该曲目的 OGG 和 MP3 文件。
-
-打开游戏时优先加载已启用的游戏音效，再随机加载并播放一首背景音乐，播完再加载下一首。首页、设置和牌局均可播放音乐。首页和牌局的设置都可以开关背景音乐和调整音量，默认 20%。
-
-## 衡阳方言音效
-
-[方言录音目录](android/app/src/main/assets/www/media/audio/hengyang)中的 WAV 随网页和 APK 提供。摸牌和出牌时读牌面，小字用 `x` 开头（如 `xyi.wav` 是「一」），大字用 `d` 开头（如 `dyi.wav` 是「壹」）。吃、碰、偎、提、跑、胡、过有各自的录音，同一玩家在本局第二次起跑牌时播放 `cpao.wav`。麻雀牌只报自己摸的牌和所有玩家打出的牌。
-
-[通用音效目录](android/app/src/main/assets/www/media/audio/sfx)的 `button.mp3` 用于普通按钮，`select.mp3` 用于选择玩法和人数，`shuffle.mp3` 用于开局洗牌，`card.mp3` 用于发牌、摸牌和出牌，`impact.mp3` 用于动作大字落地。通用音效与方言共用「游戏音效」开关和音量，默认 100%。
-
-原始录音放在该目录的 `original/` 下，在项目根目录运行 `node scripts/process-voices.mjs`。需要 FFmpeg 在 `PATH` 中。脚本从原始文件生成同名 WAV，裁掉首尾空白和开口前较轻的吸气声，给字头和字尾保留少量余量。轻度降噪、增强人声清晰度、压缩过大音量差，再通过两遍测量统一到 −14 LUFS，真峰值上限 −3.5 dBTP。输出为 24 kHz、16 位单声道，直接供游戏播放。重复运行会从 `original/` 重新生成。参见[音量设计规范](docs/音量设计规范.md)。
-
-## 首版规则取值
-
-- 默认六胡抢，开启一五十和放炮胡。一五十计 3 胡息，壹伍拾计 6 胡息。
-- 开启放炮胡可胡别人从手里打的牌。关闭后只可胡墩上摸出的牌，自己或别人摸都可以，首发亮张暂不算摸牌。
-- 胡优先于跑、碰和吃。偎、提与胡相遇暂沿用偎、提优先。
-- 黄庄原庄续坐。十胡卡有多种合法拆法时按最终积分最高的算。正好 10 胡按同玩法的 15 胡计分，结算仍显示实际 10 胡息。11 胡 1 囤、12 胡 2 囤，之后每满 3 胡加一囤。六胡抢和十五胡从起胡线算 1 囤，每多满 3 胡加一囤。十五胡黑胡最低 10 胡，10–14 胡暂记 1 囤。
-- 自摸或胡别人摸亮的牌，两家各付一份。放炮时由放炮者付两份。名堂暂按乘法叠加，十红与十三红取最高一档。
-- 地方细则待牌友确认，尤其是挡底、起手多龙、三龙直胡、飘胡、冲跑和翻醒。当前以普通组牌、基础名堂及确认稿中的动作顺序跑通对局。
-- 本地保存积分和设置。
-
-每局开场自动理牌。直接拖动手牌可排序和组牌，拖进一列会插入那一列，拖到列间可另起一列。手动移动后，本局保留手动排列，上方会显示「自动理牌」。点它即可恢复自动分组，按钮随后收起。手牌列较多时会收紧间距，让所有列同时显示。轻点手牌仍可选中出牌。
-
-点「吃」后选一组预览，亮起的手牌会用于吃牌或比牌，再点「确认吃」执行。列表打开时仍可点牌桌上的其他操作。
+</details>
