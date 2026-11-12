@@ -3,7 +3,7 @@ import { setMusicPlaying, setMusicVolume } from './audio/music.mjs?v=208-cbe0bee
 import { playAction, playEffect, setSoundEnabled, setSoundVolume, stopEffect, stopSound, unlockSound } from './audio/player.mjs?v=210';
 import { pickTablemates } from './data/tablemates.mjs?v=179';
 import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
-import { Round } from './game/state-machine.mjs?v=225';
+import { Round } from './game/state-machine.mjs?v=242';
 import { MahjongRound } from './game/mahjong-round.mjs';
 import { presets } from './rules/presets.mjs?v=141';
 import { load, save } from './storage/save.mjs?v=238';

@@ -41,8 +41,15 @@ export class Round {
   }
 
   static fromSave(state) {
-    const players = state.players.map(player => ({
-      ...player, passedChi: new Set(player.passedChi), passedPeng: new Set(player.passedPeng)
+    const players = state.players.map((player, seat) => ({
+      ...player, passedChi: new Set(player.passedChi), passedPeng: new Set(player.passedPeng),
+      groups: player.groups.map(group => {
+        if (group.offeredCard !== undefined || !['碰', '偎', '跑', '提'].includes(group.type)) return group;
+        const card = group.cards[0];
+        const wasTaken = state.events.some(event =>
+          event.seat === seat && event.type === group.type && event.card === card && !event.fromHand);
+        return wasTaken ? { ...group, offeredCard: card } : group;
+      })
     }));
     return Object.assign(Object.create(Round.prototype), state, { players });
   }
@@ -196,7 +203,7 @@ export class Round {
       for (const cards of companions) player.groups.push({ type, cards });
     } else {
       const size = type === '偎' || type === '碰' ? 3 : 4;
-      const group = { type, cards: Array(size).fill(card) };
+      const group = { type, cards: Array(size).fill(card), offeredCard: card };
       if (action.previous >= 0) player.groups[action.previous] = group;
       else player.groups.push(group);
     }

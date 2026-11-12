@@ -731,7 +731,7 @@ main:has(#table:not([hidden])) {
 }
 .wide .hand-stack { flex: 0 1 auto; width: var(--strip-width); max-width: none; align-self: end; }
 .wide .hand-stack.loose { margin-left: 0; }
-.card:is(.hinted, .meld-offered), .hand .card:is(.eat-preview, [aria-pressed="true"]) {
+.card:is(.hinted, .meld-offered:where(:not(.back))), .hand .card:is(.eat-preview, [aria-pressed="true"]) {
   background: linear-gradient(#fff7c8, #ffdf87);
   border-color: #9b581b;
 }

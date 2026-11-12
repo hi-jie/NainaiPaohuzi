@@ -278,6 +278,30 @@ test('落地牌按牌序显示，只有吃进的牌加边框标记', () => {
   assert.deepEqual(displayOrder(round), [['二', '*二', '贰']]);
 });
 
+test('碰、偎、跑、提只标记新进的牌，暗牌仍显示牌背', () => {
+  for (const [type, copies, seat, source, kind] of [
+    ['碰', 2, 0, 1, 'discard'], ['偎', 2, 1, 1, 'draw'],
+    ['跑', 3, 0, 1, 'discard'], ['提', 3, 0, 0, 'draw']
+  ]) {
+    const round = new Round(defaultSettings, 0);
+    round.players = Array.from({ length: 4 }, () => player([]));
+    round.players[seat].hand = [...Array(copies).fill(1), 8];
+    if (kind === 'discard') round.players[source].discards.push(1);
+    round.reveal(source, 1, kind);
+    round.act(round.options.find(action => action.type === type));
+
+    const html = renderTable(round, 0);
+    const expected = seat === 1 ? '<span class="card back meld-offered">◆</span>'
+      : '<span class="card red meld-offered">二</span>';
+    assert.ok(html.includes(expected));
+    assert.equal([...html.matchAll(/meld-offered/g)].length, 1);
+
+    const saved = JSON.parse(JSON.stringify(round.toSave()));
+    delete saved.players[seat].groups[0].offeredCard;
+    assert.ok(renderTable(Round.fromSave(saved), 0).includes(expected));
+  }
+});
+
 test('放炮胡只取走本次打出的那一张，先前同名弃牌仍保留', () => {
   const round = new Round({ ...defaultSettings, discardHu: true }, 0);
   round.players = [player(waitingHand), { ...player([]), discards: [17, 17] }, player([]), player([])];
@@ -436,7 +460,7 @@ test('偎牌遇别人打出第四张必须跑，并升级桌面牌', () => {
   round.reveal(1, 8, 'discard');
   assert.deepEqual(round.options.map(action => action.type), ['跑']);
   round.act(round.options[0]);
-  assert.deepEqual(round.players[0].groups, [{ type: '跑', cards: [8, 8, 8, 8] }]);
+  assert.deepEqual(round.players[0].groups, [{ type: '跑', cards: [8, 8, 8, 8], offeredCard: 8 }]);
   assert.deepEqual(round.players[1].discards, []);
   assert.equal(round.phase, 'discard');
 });
