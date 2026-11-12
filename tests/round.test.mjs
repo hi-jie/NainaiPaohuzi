@@ -439,8 +439,8 @@ test('可以先报吃，高优先级的碰截走牌或过后自动执行吃', ()
   }
 });
 
-test('同一玩家可直接选优先级最高的碰，也可选吃并放弃碰', () => {
-  for (const type of ['碰', '吃']) {
+test('同一玩家能碰也能吃时可任选，点一次过同时放弃两种动作', () => {
+  for (const type of ['碰', '吃', '过']) {
     const round = new Round(defaultSettings, 0);
     round.players = [player([0, 1, 2, 2, 3, 4, 9, 12, 12]), { ...player([]), discards: [2] }, player([]), player([])];
     round.reveal(1, 2, 'discard');
@@ -453,8 +453,13 @@ test('同一玩家可直接选优先级最高的碰，也可选吃并放弃碰',
     }
     assert.equal(round.pendingPlayerAction.type, type);
     round.act(round.pendingPlayerAction);
-    assert.equal(round.players[0].groups[0].type, type);
-    assert.equal(round.players[0].passedPeng.has(2), type === '吃');
+    if (type === '过') {
+      assert.deepEqual(round.players[0].groups, []);
+      assert.equal(round.phase, 'draw');
+      assert.equal(round.playerResponses, null);
+    } else assert.equal(round.players[0].groups[0].type, type);
+    assert.equal(round.players[0].passedPeng.has(2), type !== '碰');
+    assert.equal(round.players[0].passedChi.has(2), type === '过');
   }
 });
 

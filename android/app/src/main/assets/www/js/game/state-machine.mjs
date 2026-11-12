@@ -273,11 +273,21 @@ export class Round {
 
     const { card, source, kind } = this.offer;
     if (type === '过') {
-      const declined = this.options[0];
-      if (seat === 0 && this.pendingResponse?.priority === declined.priority) delete this.pendingResponse;
-      if (declined.type === '吃') player.passedChi.add(card);
-      if (declined.type === '碰') player.passedPeng.add(card);
-      if (declined.type === '胡') player.passedHu = declined.hu.huxi;
+      let declined = [this.options[0]];
+      if (seat === 0 && this.pendingResponse?.priority === declined[0].priority) {
+        const passAll = this.pendingResponse.type === '过';
+        delete this.pendingResponse;
+        if (passAll) {
+          declined = this.playerResponseGroups().map(choices => choices[0]);
+          const priorities = new Set(declined.map(choice => choice.priority));
+          this.queue = this.queue.filter(candidate => candidate.seat !== 0 || !priorities.has(candidate.priority));
+        }
+      }
+      for (const choice of declined) {
+        if (choice.type === '吃') player.passedChi.add(card);
+        if (choice.type === '碰') player.passedPeng.add(card);
+        if (choice.type === '胡') player.passedHu = choice.hu.huxi;
+      }
       if (this.phase === 'after-meld') this.finishMeld(this.repeatQuad);
       else this.advanceResponse();
       return;
