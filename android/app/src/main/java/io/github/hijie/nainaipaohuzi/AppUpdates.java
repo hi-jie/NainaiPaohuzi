@@ -77,7 +77,19 @@ public final class AppUpdates {
         }
         downloadId = preferences.getLong("downloadId", 0);
         downloadVersion = preferences.getLong("downloadVersion", 0);
-        if (downloadId != 0 && downloadVersion <= versionCode(installed)) clearDownload();
+        if (downloadId != 0 && (downloadVersion <= versionCode(installed) || !hasFinishedDownload())) {
+            clearDownload();
+        }
+    }
+
+    private boolean hasFinishedDownload() {
+        try (Cursor result = downloads.query(new DownloadManager.Query().setFilterById(downloadId))) {
+            return result != null && result.moveToFirst()
+                    && result.getInt(result.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+                    == DownloadManager.STATUS_SUCCESSFUL;
+        } catch (IllegalArgumentException | IllegalStateException | SecurityException error) {
+            return false;
+        }
     }
 
     void sendState() {
@@ -202,6 +214,18 @@ public final class AppUpdates {
         refreshDownload();
     }
 
+    void cancelDownload() {
+        if (downloadId == 0 || ready) return;
+        try {
+            downloads.remove(downloadId);
+        } catch (IllegalArgumentException | IllegalStateException | SecurityException error) {
+            publish("取消下载失败，请重试。", null);
+            return;
+        }
+        resetDownload();
+        publish("已取消下载", null);
+    }
+
     void pause() {
         foreground = false;
         handler.removeCallbacks(refresh);
@@ -245,12 +269,13 @@ public final class AppUpdates {
         validating = true;
         progress = 100;
         publish("正在校验安装包…", null);
+        long expectedId = downloadId;
         long expectedVersion = downloadVersion;
         File file = downloadFile(expectedVersion);
         worker.execute(() -> {
             boolean valid = isValidUpdate(file, expectedVersion);
             activity.runOnUiThread(() -> {
-                if (closed) return;
+                if (closed || downloadId != expectedId) return;
                 validating = false;
                 if (!valid) downloadFailed("安装包校验失败，请重新检查更新。");
                 else {
@@ -303,10 +328,16 @@ public final class AppUpdates {
                 // Clear the app's state even if the system download service is unavailable.
             }
         }
+        resetDownload();
+    }
+
+    private void resetDownload() {
+        handler.removeCallbacks(refresh);
         downloadId = 0;
         downloadVersion = 0;
         progress = -1;
         ready = false;
+        validating = false;
         preferences.edit().clear().apply();
     }
 

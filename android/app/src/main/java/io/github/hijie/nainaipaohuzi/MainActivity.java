@@ -122,6 +122,7 @@ public class MainActivity extends Activity {
                         case EXIT_URL -> finish();
                         case "paohuzi://check-update" -> updates.check();
                         case "paohuzi://download-update" -> updates.download();
+                        case "paohuzi://cancel-update-download" -> updates.cancelDownload();
                         case "paohuzi://install-update" -> updates.install();
                         default -> { }
                     }

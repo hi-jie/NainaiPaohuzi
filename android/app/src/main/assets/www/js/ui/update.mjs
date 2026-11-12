@@ -5,6 +5,7 @@ export function bindAppUpdate() {
   const check = document.querySelector('#check-update');
   const install = document.querySelector('#install-update');
   const download = document.querySelector('#update-download');
+  const cancel = document.querySelector('#cancel-update-download');
   const progress = document.querySelector('#update-progress');
   const percent = document.querySelector('#update-percent');
   const status = document.querySelector('#update-status');
@@ -18,6 +19,7 @@ export function bindAppUpdate() {
   document.querySelector('#download-update').addEventListener('click', () => {
     location.href = 'paohuzi://download-update';
   });
+  cancel.addEventListener('click', () => { location.href = 'paohuzi://cancel-update-download'; });
   install.addEventListener('click', () => { location.href = 'paohuzi://install-update'; });
 
   function showVersion(name) {
@@ -34,6 +36,7 @@ export function bindAppUpdate() {
     check.textContent = detail.checking ? '检查中…' : '检查更新';
     install.hidden = !detail.ready || detail.downloading;
     download.hidden = !detail.downloading;
+    cancel.hidden = !detail.downloading;
     if (detail.progress < 0) progress.removeAttribute('value');
     else progress.value = detail.progress;
     percent.textContent = detail.progress < 0 ? '正在下载…' : `${detail.progress}%`;
