@@ -39,8 +39,11 @@ function tile(card, hidden = false, selection, hinted = false, handId, offered =
   return `<span class="${classes}"${handAttribute}>${hidden ? '◆' : cardName(card)}</span>`;
 }
 
-function meld({ type, cards, offeredCard }, visibleCount = cards.length, reveal = false) {
-  const offeredIndex = cards.lastIndexOf(offeredCard);
+function meld({ type, cards, offeredCard, stinky }, { openMelds = true, showAll = true, reveal = false } = {}) {
+  const weiOrTi = type === '偎' || type === '提';
+  const showTop = weiOrTi && (openMelds || stinky);
+  const visibleCount = showAll || !weiOrTi ? cards.length : Number(Boolean(showTop));
+  const offeredIndex = showTop ? cards.indexOf(offeredCard) : cards.lastIndexOf(offeredCard);
   const tiles = cards.map((card, index) =>
     tile(card, !reveal && index >= visibleCount, undefined, false, undefined, index === offeredIndex));
   return `<span class="meld${reveal && visibleCount < cards.length ? ' reveal-meld' : ''}" data-meld="${type}" data-cards="${cards.join(' ')}">${tiles.join('')}</span>`;
@@ -103,8 +106,7 @@ function seatView(round, seat, identity, activeSeat, event, response, openingSta
   const callout = event?.type === '偎' && playedGroups.some(group =>
     group.type === '偎' && group.offeredCard === event.card && group.stinky) ? '臭偎'
     : winner && round.result.openingName ? round.result.openingName : event?.type;
-  const faceUp = group => seat === 0 || !['偎', '提'].includes(group.type) ? group.cards.length
-    : Number(round.rules.openMelds !== false || Boolean(group.stinky));
+  const meldDisplay = { openMelds: round.rules.openMelds, showAll: seat === 0, reveal: showdown };
   const spread = openingStage === 'deal' || openingStage === 'reveal';
   const arranging = openingStage === 'sort';
   const showHand = !openingStage || arranging;
@@ -129,7 +131,7 @@ function seatView(round, seat, identity, activeSeat, event, response, openingSta
     </div>
     ${event?.seat === seat && !['摸', '出'].includes(event.type) ? `<span class="callout" aria-hidden="true">${callout}</span>` : ''}
     <div class="seat-cards">
-      <div class="groups">${showHand ? groups.map(group => meld(group, faceUp(group), showdown)).join('') : ''}</div>
+      <div class="groups">${showHand ? groups.map(group => meld(group, meldDisplay)).join('') : ''}</div>
       ${showdown
         ? (!winner || revealedHand.length ? `<div class="revealed-hand" aria-label="${name}的手牌">${revealSlots(revealedHand)}</div>` : '')
         : `<div class="seat-backs" aria-hidden="true">${'<span></span>'.repeat(backs)}</div>`}
@@ -200,7 +202,7 @@ function resultView(round, score, profile) {
     bonuses.length ? bonuses.map(([name, multiple]) => `${name} ×${multiple}`).join('、') : openingName
   ].filter(Boolean);
   const details = winner === null ? '' : `
-    <div class="groups">${hu.groups.map(group => meld(group)).join('')}${(hu.loose ?? []).map(card => `<span class="meld">${tile(card)}</span>`).join('')}</div>
+    <div class="groups">${hu.groups.map(group => meld(group, { openMelds: round.rules.openMelds })).join('')}${(hu.loose ?? []).map(card => `<span class="meld">${tile(card)}</span>`).join('')}</div>
     <p>${kind ? (kind === 'self' ? '自摸' : '接炮') : scoring.join(' · ')}</p>`;
   return `<div class="settlement"><section class="panel result" aria-live="polite">
     <small>本局结算</small>
@@ -415,6 +417,10 @@ export function showRoundResult(table, round, score, profile) {
   table.querySelector('[data-command="review-round"]').focus({ preventScroll: true });
 }
 
+function offeredTile(stack) {
+  return stack.querySelector('.meld-offered') ?? stack.lastElementChild;
+}
+
 export function captureOfferMotion(table, round) {
   const { phase, seat } = round;
   const center = centerOffer(round);
@@ -428,7 +434,7 @@ export function captureOfferMotion(table, round) {
     const { type } = round.events.at(-1);
     const { groups } = round.players[seat];
     const index = groups.findIndex(group => group.type === type && group.cards[0] === offer.card);
-    const card = table.querySelector(`.seat-${seat} .groups`).children[index].lastElementChild;
+    const card = offeredTile(table.querySelector(`.seat-${seat} .groups`).children[index]);
     return { offer, meld: index, from: (flying ?? card).getBoundingClientRect() };
   }
 }
@@ -510,7 +516,7 @@ export function animateAction(table, round, event, motion, action) {
     const { groups } = round.players[seat];
     const index = action.previous >= 0 ? action.previous : groups.length - (action.groups?.length ?? 1);
     const stack = seatView(seat).querySelector('.groups').children[index];
-    const destination = stack.querySelector('.meld-offered') ?? stack.lastElementChild;
+    const destination = offeredTile(stack);
     animateTransfer(table, card, destination, motion.from, motion.concealed ? 'draw' : 'move');
   } else if (motion?.offer.kind === 'opening' && motion.meld === undefined && round.phase !== 'response' && round.phase !== 'opening-ti') {
     const { offer: { source, card }, from } = motion;

@@ -311,7 +311,7 @@ test('冲跑成功后本局禁吃碰，仍可强制偎或胡，旧存档可恢�
   assert.equal(responses({ ...restored, hand: waitingHand }, 1, huOffer, rules)[0].type, '胡');
 });
 
-test('明提明偎各亮一张，暗提暗偎仅臭偎亮一张并保留暗牌语音', () => {
+test('明提明偎和臭偎高亮顶部牌面，暗提暗偎高亮底部牌背', () => {
   for (const [type, hand, stinky] of [['提', [1, 1, 1, 8], false], ['偎', [1, 1, 8], false], ['偎', [1, 1, 8], true]]) {
     for (const openMelds of [true, false]) {
       const round = new Round({ ...defaultSettings, openMelds }, 0);
@@ -327,8 +327,10 @@ test('明提明偎各亮一张，暗提暗偎仅臭偎亮一张并保留暗牌�
       const [, center] = renderTable(round, 0).match(/class="landing">([\s\S]*?)<\/div>/);
       assert.equal(center.includes('class="card back"'), !visible);
       round.act(round.options[0]);
-      const [, tiles] = renderTable(round, 0).match(new RegExp(`data-meld="${type}"[^>]*>(.*?)</span></span>`));
-      assert.equal([...tiles.matchAll(/>二</g)].length, Number(visible));
+      const [, markup] = renderTable(round, 0).match(new RegExp(`data-meld="${type}"[^>]*>((?:<span class="card[^>]*>[^<]+</span>)+)`));
+      const tiles = [...markup.matchAll(/<span class="([^"]+)">([^<]+)<\/span>/g)];
+      assert.equal(tiles.filter(([, , face]) => face === '二').length, Number(visible));
+      assert.equal(tiles.findIndex(([, classes]) => classes.includes('meld-offered')), visible ? 0 : tiles.length - 1);
       if (type === '偎') {
         round.players[0] = player([1, 2, 3]);
         round.waitForDiscard(0);
@@ -467,12 +469,12 @@ test('落地牌按牌序显示，只有吃进的牌加边框标记', () => {
   assert.deepEqual(displayOrder(round), [['二', '*二', '贰']]);
 });
 
-test('碰、偎、跑、提只标记新进的牌，暗牌仍显示牌背', () => {
-  for (const [type, copies, seat, source, kind] of [
+test('碰、偎、跑、提只标记一张新进牌，旧存档也可恢复标记', () => {
+  for (const [type, copies, seat, source, kind, openMelds = true] of [
     ['碰', 2, 0, 1, 'discard'], ['偎', 2, 1, 1, 'draw'],
-    ['跑', 3, 0, 1, 'discard'], ['提', 3, 0, 0, 'draw']
+    ['跑', 3, 0, 1, 'discard'], ['提', 3, 0, 0, 'draw'], ['提', 3, 0, 0, 'draw', false]
   ]) {
-    const round = new Round(defaultSettings, 0);
+    const round = new Round({ ...defaultSettings, openMelds }, 0);
     round.players = Array.from({ length: 4 }, () => player([]));
     round.players[seat].hand = [...Array(copies).fill(1), 8];
     if (kind === 'discard') round.players[source].discards.push(1);
@@ -480,9 +482,10 @@ test('碰、偎、跑、提只标记新进的牌，暗牌仍显示牌背', () =>
     round.act(round.options.find(action => action.type === type));
 
     const html = renderTable(round, 0);
-    const expected = seat === 1 ? '<span class="card back meld-offered">◆</span>'
-      : '<span class="card red meld-offered">二</span>';
-    assert.ok(html.includes(expected));
+    const [, markup] = html.match(new RegExp(`data-meld="${type}"[^>]*>((?:<span class="card[^>]*>[^<]+</span>)+)`));
+    const expected = '<span class="card red meld-offered">二</span>';
+    const highlighted = openMelds && (type === '偎' || type === '提') ? markup.startsWith(expected) : markup.endsWith(expected);
+    assert.ok(highlighted);
     assert.equal([...html.matchAll(/meld-offered/g)].length, 1);
 
     const saved = JSON.parse(JSON.stringify(round.toSave()));
