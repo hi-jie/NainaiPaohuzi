@@ -254,7 +254,7 @@ test('等吃期间牌只在墩旁，吃完进入落地牌，过后等下一张�
   }
 });
 
-test('吃进的牌默认放主组末尾，关闭后与比牌一样按顺序排', () => {
+test('落地牌按牌序显示，只有吃进的牌加边框标记', () => {
   const round = new Round(defaultSettings, 0);
   round.players = [player([0, 1, 2, 6, 8, 9]), { ...player([]), discards: [1] }, player([]), player([])];
   round.reveal(1, 1, 'discard');
@@ -264,16 +264,18 @@ test('吃进的牌默认放主组末尾，关闭后与比牌一样按顺序排',
   assert.deepEqual(groups.map(huxi), [3, 3]);
 
   const displayOrder = current => [...renderTable(current, 0).matchAll(/data-meld="吃"[^>]*>((?:<span class="card[^>]*>[^<]+<\/span>)+)/g)]
-    .map(([, group]) => [...group.matchAll(/>([^<>]+)<\/span>/g)].map(([, card]) => card));
-  assert.deepEqual(displayOrder(round), [['一', '三', '二'], ['二', '七', '十']]);
-  assert.deepEqual(displayOrder(restored), displayOrder(round));
-  delete restored.rules.eatCardOnTop;
-  assert.deepEqual(displayOrder(restored), displayOrder(round));
-  restored.rules.eatCardOnTop = false;
-  assert.deepEqual(displayOrder(restored), [['一', '二', '三'], ['二', '七', '十']]);
+    .map(([, group]) => [...group.matchAll(/class="([^"]+)">([^<>]+)<\/span>/g)]
+      .map(([, classes, card]) => classes.includes('meld-offered') ? `*${card}` : card));
+  assert.deepEqual(displayOrder(round), [['一', '*二', '三'], ['二', '七', '十']]);
   restored.rules.eatCardOnTop = true;
+  assert.deepEqual(displayOrder(restored), displayOrder(round));
   delete groups[0].offeredCard;
   assert.deepEqual(displayOrder(restored), [['一', '二', '三'], ['二', '七', '十']]);
+
+  round.players = [player([1, 8, 11]), { ...player([]), discards: [1] }, player([]), player([])];
+  round.reveal(1, 1, 'discard');
+  round.act(round.options.find(action => action.type === '吃' && action.groups[0].includes(11)));
+  assert.deepEqual(displayOrder(round), [['二', '*二', '贰']]);
 });
 
 test('放炮胡只取走本次打出的那一张，先前同名弃牌仍保留', () => {

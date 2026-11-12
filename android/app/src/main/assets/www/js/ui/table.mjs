@@ -1,4 +1,4 @@
-import { cardName, huxi, isRed, takeCards } from '../rules/cards.mjs';
+import { cardName, huxi, isRed } from '../rules/cards.mjs';
 import { nextSeat } from '../rules/actions.mjs?v=141';
 import { createHandLayout, eatPreviewIds, handColumnGroup } from './hand.mjs?v=235';
 import { tablemates } from '../data/tablemates.mjs?v=179';
@@ -30,8 +30,8 @@ function avatar(seat, { name, image }) {
   return `<span class="avatar avatar-${seat}" role="img" aria-label="${name}"></span>`;
 }
 
-function tile(card, hidden = false, selection, hinted = false, handId) {
-  const classes = `card${hidden ? ' back' : isRed(card) ? ' red' : ''}${hinted ? ' hinted' : ''}`;
+function tile(card, hidden = false, selection, hinted = false, handId, offered = false) {
+  const classes = `card${hidden ? ' back' : isRed(card) ? ' red' : ''}${hinted ? ' hinted' : ''}${offered ? ' meld-offered' : ''}`;
   const handAttribute = handId === undefined ? '' : ` data-hand-card="${handId}"`;
   if (selection !== undefined) {
     return `<button class="${classes}"${handAttribute} data-select-card="${selection}" aria-pressed="false" aria-label="选择${cardName(card)}">${cardName(card)}</button>`;
@@ -39,10 +39,11 @@ function tile(card, hidden = false, selection, hinted = false, handId) {
   return `<span class="${classes}"${handAttribute}>${hidden ? '◆' : cardName(card)}</span>`;
 }
 
-function meld({ type, cards, offeredCard }, concealed = false, reveal = false, eatCardOnTop = true) {
-  const displayCards = offeredCard !== undefined && eatCardOnTop
-    ? [...takeCards(cards, [offeredCard]), offeredCard] : cards;
-  return `<span class="meld${concealed && reveal ? ' reveal-meld' : ''}" data-meld="${type}" data-cards="${cards.join(' ')}">${displayCards.map((card, index) => tile(card, concealed && !reveal && index > 0)).join('')}</span>`;
+function meld({ type, cards, offeredCard }, concealed = false, reveal = false) {
+  const offeredIndex = cards.lastIndexOf(offeredCard);
+  const tiles = cards.map((card, index) =>
+    tile(card, concealed && !reveal && index > 0, undefined, false, undefined, index === offeredIndex));
+  return `<span class="meld${concealed && reveal ? ' reveal-meld' : ''}" data-meld="${type}" data-cards="${cards.join(' ')}">${tiles.join('')}</span>`;
 }
 
 function revealSlots(cards) {
@@ -122,7 +123,7 @@ function seatView(round, seat, identity, activeSeat, event, response, openingSta
     </div>
     ${event?.seat === seat && !['摸', '出'].includes(event.type) ? `<span class="callout" aria-hidden="true">${event.type}</span>` : ''}
     <div class="seat-cards">
-      <div class="groups">${showHand ? groups.map(group => meld(group, seat !== 0 && ['偎', '提'].includes(group.type), showdown, round.rules.eatCardOnTop)).join('') : ''}</div>
+      <div class="groups">${showHand ? groups.map(group => meld(group, seat !== 0 && ['偎', '提'].includes(group.type), showdown)).join('') : ''}</div>
       ${showdown
         ? (winner ? '' : `<div class="revealed-hand" aria-label="${name}的手牌">${revealSlots(hand)}</div>`)
         : `<div class="seat-backs" aria-hidden="true">${'<span></span>'.repeat(backs)}</div>`}
@@ -164,7 +165,7 @@ export function renderEatChoices(options, offeredCard) {
   const choices = options.map((action, index) => {
     if (action.type !== '吃') return '';
     const label = `接${cardName(offeredCard)}，${eatGroupNames(action).join('、')}`;
-    const offeredIndex = action.groups[0].indexOf(offeredCard);
+    const offeredIndex = action.groups[0].lastIndexOf(offeredCard);
     const groups = action.groups.map((cards, groupIndex) => `<span class="eat-group">
       ${cards.map((card, cardIndex) => groupIndex === 0 && cardIndex === offeredIndex
         ? `<span class="eat-source">${tile(card)}</span>` : tile(card)).join('')}
@@ -189,7 +190,7 @@ function resultView(round, score, profile) {
   const { winner, hu, names: bonuses, tun, delta, kind } = round.result;
   const identities = delta.map((_, seat) => seatIdentity(round, seat, profile));
   const details = winner === null ? '' : `
-    <div class="groups">${hu.groups.map(group => meld(group, false, false, round.rules.eatCardOnTop)).join('')}</div>
+    <div class="groups">${hu.groups.map(group => meld(group)).join('')}</div>
     <p>${kind ? (kind === 'self' ? '自摸' : '接炮') : `${hu.huxi} 胡息 · ${tun} 囤 · ${bonuses.map(([name, multiple]) => `${name} ×${multiple}`).join('、')}`}</p>`;
   return `<div class="settlement"><section class="panel result" aria-live="polite">
     <small>本局结算</small>
@@ -495,9 +496,7 @@ export function animateAction(table, round, event, motion, action) {
     const { groups } = round.players[seat];
     const index = action.previous >= 0 ? action.previous : groups.length - (action.groups?.length ?? 1);
     const stack = seatView(seat).querySelector('.groups').children[index];
-    const destination = event.type === '吃' && round.rules.eatCardOnTop === false
-      ? stack.children[groups[index].cards.indexOf(card)]
-      : stack.lastElementChild;
+    const destination = stack.querySelector('.meld-offered') ?? stack.lastElementChild;
     animateTransfer(table, card, destination, motion.from);
   } else if (motion?.offer.kind === 'opening' && motion.meld === undefined && round.phase !== 'response' && round.phase !== 'opening-ti') {
     const { offer: { source, card }, from } = motion;

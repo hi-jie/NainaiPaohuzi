@@ -6,10 +6,10 @@ import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
 import { Round } from './game/state-machine.mjs?v=225';
 import { MahjongRound } from './game/mahjong-round.mjs';
 import { presets } from './rules/presets.mjs?v=141';
-import { load, save } from './storage/save.mjs?v=231';
+import { load, save } from './storage/save.mjs?v=238';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=116';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=235';
-import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=235';
+import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=238';
 import { bindTutorial } from './ui/tutorial.mjs?v=192';
 import { bindProfile } from './ui/profile.mjs?v=202';
 import { bindAppUpdate } from './ui/update.mjs?v=237';
@@ -328,7 +328,6 @@ function continueSavedRound() {
     data.settings.mahjongSeats = mahjongSeats;
   }
   round.rules.sound = data.settings.sound;
-  round.rules.eatCardOnTop = data.settings.eatCardOnTop;
   handLayout = data.round.handLayout;
   if (!round.tablemates) {
     round.tablemates = pickTablemates(round.players.length - 1);
@@ -516,14 +515,6 @@ eatMenu.addEventListener('close', () => {
 });
 pauseMenu.addEventListener('close', () => {
   round.rules.sound = data.settings.sound;
-  if (round.rules.eatCardOnTop !== data.settings.eatCardOnTop) {
-    round.rules.eatCardOnTop = data.settings.eatCardOnTop;
-    if (!table.querySelector('.opening')) {
-      const selectedId = table.querySelector('[data-select-card][aria-pressed="true"]')?.dataset.handCard;
-      setHandLayout(handLayout, selectedId);
-      table.querySelector('[data-command="pause"]').focus({ preventScroll: true });
-    }
-  }
   resumeRound();
 });
 leaveMenu.addEventListener('close', () => {
