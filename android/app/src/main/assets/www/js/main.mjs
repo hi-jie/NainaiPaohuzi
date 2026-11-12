@@ -3,13 +3,13 @@ import { setMusicPlaying, setMusicVolume } from './audio/music.mjs?v=208-cbe0bee
 import { playAction, playEffect, setSoundEnabled, setSoundVolume, stopEffect, stopSound, unlockSound } from './audio/player.mjs?v=250';
 import { pickTablemates } from './data/tablemates.mjs?v=179';
 import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
-import { Round } from './game/state-machine.mjs?v=253';
+import { Round } from './game/state-machine.mjs?v=255';
 import { MahjongRound } from './game/mahjong-round.mjs';
 import { presets } from './rules/presets.mjs?v=250';
 import { load, save } from './storage/save.mjs?v=250';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=254';
-import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=235';
-import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=253';
+import { createHandLayout, eatPreviewIds, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=235';
+import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=255';
 import { bindTutorial } from './ui/tutorial.mjs?v=250';
 import { bindProfile } from './ui/profile.mjs?v=202';
 import { bindAppUpdate } from './ui/update.mjs?v=252';
@@ -251,6 +251,11 @@ function fitTable() {
 new ResizeObserver(fitTable).observe(table);
 
 function scheduleTurn() {
+  const pending = round.pendingPlayerAction;
+  if (pending) {
+    timer = setTimeout(() => step(pending), 0);
+    return;
+  }
   const action = round.options[0];
   if (!action || (round.seat === 0 && !action.forced)) return;
   if (round.phase === 'last-draw') {
@@ -346,23 +351,45 @@ function continueSavedRound() {
 function step(action) {
   const before = round.events.length;
   const seat = round.seat;
+  const implicitPass = action.type === '过' && round.pendingResponse?.type !== '过' && Boolean(round.pendingPlayerAction);
   const motion = captureOfferMotion(table, round);
-  const usedCards = handLayout && seat === 0
-    ? [...table.querySelectorAll('.hand :is([aria-pressed="true"], .eat-preview, .hinted)[data-hand-card]')]
-    : [];
+  let usedCards = new Set();
+  if (handLayout && seat === 0) {
+    usedCards = action.type === '吃' && round.rules.mode !== 'mahjong'
+      ? eatPreviewIds(handLayout, round.rules.patterns, [...action.cards, ...action.groups.slice(1).flat()])
+      : new Set(Array.from(table.querySelectorAll('.hand :is([aria-pressed="true"], .hinted)[data-hand-card]'),
+        card => Number(card.dataset.handCard)));
+  }
   round.act(action);
+  if (eatMenu.open && !round.playerResponses?.some(choice => choice.type === '吃')) eatMenu.close();
   if (handLayout) {
     handLayout = syncHandLayout(handLayout, round.players[0].hand, round.rules.patterns,
-      new Set(usedCards.map(card => Number(card.dataset.handCard))), round.rules.mode === 'mahjong');
+      usedCards, round.rules.mode === 'mahjong');
   }
   const event = round.events.length > before ? round.events.at(-1) : null;
   if (round.phase === 'finished') {
     data.scores[round.rules.mode] += round.result.delta[0];
   }
   saveRound();
-  const soundEvent = action.type === '过' ? { type: '过', seat } : event;
+  const soundEvent = action.type === '过' && !implicitPass ? { type: '过', seat } : event;
   if (soundEvent && round.rules.sound) playAction(soundEvent, round);
   showRound(event, motion, action);
+}
+
+function submitPlayerAction(index) {
+  const responses = round.playerResponses;
+  const action = (responses ?? round.options)[index];
+  if (!action) return;
+  if (responses) {
+    round.submitPlayerResponse(action);
+    if (!round.pendingPlayerAction) {
+      saveRound();
+      paintRound();
+      return;
+    }
+  }
+  clearTimeout(timer);
+  step(responses ? round.pendingPlayerAction : action);
 }
 
 function selectDiscard(button) {
@@ -376,7 +403,7 @@ function selectDiscard(button) {
 function placeEatMenu() {
   const scale = Number(table.style.getPropertyValue('--table-scale'));
   const frame = table.parentElement.getBoundingClientRect();
-  const button = table.querySelector('.hand-actions button').getBoundingClientRect();
+  const button = table.querySelector('[data-command="choose-eat"]').getBoundingClientRect();
   const portrait = matchMedia('(orientation: portrait)').matches;
   const left = portrait ? button.top - frame.top : button.left - frame.left;
   const bottom = portrait ? frame.right - button.left : button.bottom - frame.top;
@@ -398,7 +425,7 @@ function updateEatSelection(choice) {
   if (choice) {
     const { patterns } = round.rules;
     const layout = handLayout ?? createHandLayout(round.players[0].hand, patterns);
-    previewEat(table, round.options[Number(choice.dataset.action)], layout, patterns);
+    previewEat(table, round.playerResponses[Number(choice.dataset.action)], layout, patterns);
   } else {
     previewEat(table);
   }
@@ -450,9 +477,9 @@ table.addEventListener('click', ({ target }) => {
     if (eatMenu.open) {
       const choice = eatMenu.querySelector('.eat-choice[aria-pressed="true"]');
       eatMenu.close();
-      if (choice) step(round.options[Number(choice.dataset.action)]);
+      if (choice) submitPlayerAction(Number(choice.dataset.action));
     } else {
-      eatMenu.innerHTML = renderEatChoices(round.options, round.offer.card);
+      eatMenu.innerHTML = renderEatChoices(round.playerResponses, round.offer.card);
       eatMenu.show();
       updateEatSelection(null);
       placeEatMenu();
@@ -460,6 +487,10 @@ table.addEventListener('click', ({ target }) => {
     return;
   }
   eatMenu.close();
+  if (button.dataset.action !== undefined) {
+    submitPlayerAction(Number(button.dataset.action));
+    return;
+  }
   clearTimeout(timer);
   if (button.dataset.command === 'home') {
     showHome();
@@ -484,8 +515,6 @@ table.addEventListener('click', ({ target }) => {
   } else if (button.dataset.command === 'discard') {
     const selected = table.querySelector('[data-select-card][aria-pressed="true"]');
     step(round.options[Number(selected.dataset.selectCard)]);
-  } else {
-    step(round.options[Number(button.dataset.action)]);
   }
 });
 eatMenu.addEventListener('click', ({ target }) => {

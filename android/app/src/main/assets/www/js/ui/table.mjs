@@ -245,7 +245,8 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
   const mahjong = round.rules.mode === 'mahjong';
   const showdown = phase === 'finished';
   const offer = centerOffer(round);
-  const response = seat === 0 && phase === 'response' ? options[0] : null;
+  const playerResponses = round.playerResponses;
+  const response = playerResponses?.[0] ?? (seat === 0 && phase === 'response' && options[0].forced ? options[0] : null);
   const handHint = seat === 0 && phase === 'opening-ti' ? options[0] : response;
   const arrowSeat = offer && ['response', 'claim'].includes(phase) ? offer.source : seat;
   const source = offer?.source ?? event?.seat ?? round.dealer;
@@ -261,6 +262,11 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
   else if (myTurn && phase === 'discard') {
     actions = '<button class="primary" data-command="discard" disabled>出牌</button>';
     if (mahjong) actions += actionButtons(options, true);
+  } else if (playerResponses) {
+    if (round.pendingResponse) {
+      const { type } = round.pendingResponse;
+      actions = `<span class="pending-action" role="status">${type === '过' ? '已过' : `已选${type}`}，等待其他玩家</span>`;
+    } else actions = actionButtons(playerResponses, false);
   } else if (myTurn && !options[0].forced) actions = actionButtons(options, mahjong);
   const lastLabel = offer?.kind === 'draw' ? '摸牌' : offer?.kind === 'discard' ? '出牌' : '庄家亮张';
   return `<div class="felt${mahjong ? ' mahjong' : ''}${round.rules.mode === 'six' ? ' six-hu' : ''}${round.players.length > 3 ? ' many-seats' : ''}${round.players.length === 5 ? ' five-seats' : ''}${openingStage ? ' opening' : ''}${showdown ? ' showdown' : ''}"${openingStage ? ` data-stage="${openingStage}"` : ''}>

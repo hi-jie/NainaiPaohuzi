@@ -412,6 +412,66 @@ test('吃碰响应未确认时头像和箭头留在出牌者，确认后同步�
   }
 });
 
+test('可以先报吃，高优先级的碰截走牌或过后自动执行吃', () => {
+  for (const opponentTakes of [true, false]) {
+    const round = new Round(defaultSettings, 0);
+    round.players = [player([0, 1, 8]), { ...player([]), discards: [2] }, player([2, 2, 9]), player([])];
+    round.reveal(1, 2, 'discard');
+    assert.equal(round.seat, 2);
+    assert.match(renderTable(round, 0), /data-command="choose-eat"/);
+    round.submitPlayerResponse(round.playerResponses.find(action => action.type === '吃'));
+    assert.equal(round.pendingPlayerAction, null);
+    assert.deepEqual(round.players[0].hand, [0, 1, 8]);
+    assert.match(renderTable(round, 0), /已选吃，等待其他玩家/);
+
+    const restored = Round.fromSave(JSON.parse(JSON.stringify(round.toSave())));
+    restored.act(restored.options.find(action => action.type === (opponentTakes ? '碰' : '过')));
+    if (!opponentTakes) {
+      assert.equal(restored.pendingPlayerAction.type, '吃');
+      restored.act(restored.pendingPlayerAction);
+    }
+    assert.equal(restored.phase, 'discard');
+    assert.equal(restored.seat, opponentTakes ? 2 : 0);
+    assert.deepEqual(restored.players[1].discards, []);
+    assert.equal(restored.pendingResponse, undefined);
+    assert.equal(restored.players[0].passedChi.has(2), false);
+    assert.equal(restored.players[restored.seat].groups.length, 1);
+  }
+});
+
+test('同一玩家可直接选优先级最高的碰，也可选吃并放弃碰', () => {
+  for (const type of ['碰', '吃']) {
+    const round = new Round(defaultSettings, 0);
+    round.players = [player([0, 1, 2, 2, 3, 4, 9, 12, 12]), { ...player([]), discards: [2] }, player([]), player([])];
+    round.reveal(1, 2, 'discard');
+    const types = new Set(round.playerResponses.map(action => action.type));
+    assert.deepEqual(types, new Set(['碰', '吃', '过']));
+    round.submitPlayerResponse(round.playerResponses.find(action => action.type === type));
+    if (type === '吃') {
+      assert.equal(round.pendingPlayerAction.type, '过');
+      round.act(round.pendingPlayerAction);
+    }
+    assert.equal(round.pendingPlayerAction.type, type);
+    round.act(round.pendingPlayerAction);
+    assert.equal(round.players[0].groups[0].type, type);
+    assert.equal(round.players[0].passedPeng.has(2), type === '吃');
+  }
+});
+
+test('对家的暗偎保密，明偎时可先选动作并由强制偎截走', () => {
+  for (const openMelds of [false, true]) {
+    const round = new Round({ ...defaultSettings, openMelds }, 0);
+    round.players = [player([0, 1, 8]), player([2, 2, 9]), player([]), player([])];
+    round.reveal(1, 2, 'draw');
+    assert.equal(round.options[0].type, '偎');
+    assert.equal(round.playerResponses.some(action => action.type === '吃'), openMelds);
+    if (openMelds) round.submitPlayerResponse(round.playerResponses.find(action => action.type === '吃'));
+    round.act(round.options[0]);
+    assert.equal(round.pendingResponse, undefined);
+    assert.deepEqual(round.players[0].hand, [0, 1, 8]);
+  }
+});
+
 test('等吃期间牌只在墩旁，吃完进入落地牌，过后等下一张才进弃牌', () => {
   const assertDiscardCount = (round, count) => {
     const [seat] = renderTable(round, 0).match(/<section class="seat seat-1\b[^>]*>[\s\S]*?<\/section>/);

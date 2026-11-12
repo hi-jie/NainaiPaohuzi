@@ -613,6 +613,7 @@ main:has(#table:not([hidden])) {
   box-shadow: 0 2px #211310;
 }
 .hand-actions [data-command="choose-eat"] { flex: none; width: calc(4em + 24px); }
+.hand-actions .pending-action { align-self: center; color: #ffe6b9; font-size: 16px; white-space: nowrap; }
 .hand-actions [data-command="discard"]:disabled { opacity: .5; cursor: default; }
 .hand-actions .pass { --control-light: #638b69; --control-face: #3b6b54; --control-dark: #1e3d33; }
 .hand-actions .win-action {

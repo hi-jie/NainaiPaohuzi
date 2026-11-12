@@ -1,5 +1,5 @@
 import { countCard, patterns, sortCards, takeCards } from '../rules/cards.mjs';
-import { canHuFrom, nextSeat, ownForcedMeld, responses } from '../rules/actions.mjs?v=250';
+import { canHuFrom, concealedDraw, nextSeat, ownForcedMeld, responses } from '../rules/actions.mjs?v=250';
 import { findHu } from '../rules/hu.mjs?v=250';
 import { defaultSettings, presets } from '../rules/presets.mjs?v=250';
 import { settle } from '../rules/scoring.mjs?v=250';
@@ -8,6 +8,8 @@ import { shuffledDeck } from './deck.mjs';
 function openingQuads(hand) {
   return [...new Set(hand)].filter(card => countCard(hand, card) === 4);
 }
+
+const responsePass = { type: '过' };
 
 function restoreDiscardHistory(events, seats) {
   const history = Array.from({ length: seats }, () => ({ ownDiscards: [], chongpao: false }));
@@ -158,6 +160,7 @@ export class Round {
   }
 
   reveal(source, card, kind) {
+    delete this.pendingResponse;
     this.offer = { source, card, kind };
     this.queue = [];
     let seat = source;
@@ -172,6 +175,37 @@ export class Round {
     this.advanceResponse();
   }
 
+  playerResponseGroups() {
+    if (this.phase !== 'response' || this.pendingResponse) return [];
+    if (this.seat !== 0 && concealedDraw(this)) return [];
+    const groups = [];
+    for (const { seat, choices } of [{ seat: this.seat, choices: this.options }, ...this.queue]) {
+      if (seat !== 0) continue;
+      if (choices[0].forced) break;
+      groups.push(choices.filter(choice => choice.type !== '过'));
+    }
+    return groups;
+  }
+
+  get playerResponses() {
+    if (this.phase !== 'response') return null;
+    const choices = this.playerResponseGroups().flat();
+    return choices.length ? [...choices, responsePass] : [];
+  }
+
+  submitPlayerResponse(action) {
+    const groups = this.playerResponseGroups();
+    const choices = action === responsePass ? groups[0] : groups.find(group => group.includes(action));
+    if (!choices) throw new Error('动作已失效');
+    this.pendingResponse = { priority: choices[0].priority, index: choices.indexOf(action), type: action.type };
+  }
+
+  get pendingPlayerAction() {
+    if (this.phase !== 'response' || this.seat !== 0 || !this.pendingResponse) return null;
+    const { priority, index } = this.pendingResponse;
+    return this.options[0].priority === priority && index >= 0 ? this.options[index] : this.options.at(-1);
+  }
+
   advanceResponse() {
     const candidate = this.queue.shift();
     if (candidate) {
@@ -182,6 +216,7 @@ export class Round {
       return;
     }
     const { source, kind } = this.offer;
+    delete this.pendingResponse;
     if (kind === 'opening') {
       this.waitForOpeningTi(0);
     } else if (kind === 'draw' && !this.deck.length) {
@@ -239,6 +274,7 @@ export class Round {
     const { card, source, kind } = this.offer;
     if (type === '过') {
       const declined = this.options[0];
+      if (seat === 0 && this.pendingResponse?.priority === declined.priority) delete this.pendingResponse;
       if (declined.type === '吃') player.passedChi.add(card);
       if (declined.type === '碰') player.passedPeng.add(card);
       if (declined.type === '胡') player.passedHu = declined.hu.huxi;
@@ -246,6 +282,7 @@ export class Round {
       else this.advanceResponse();
       return;
     }
+    delete this.pendingResponse;
     if (type === '胡') {
       if (this.phase === 'response' && kind === 'discard') this.players[source].discards.pop();
       if (kind === 'opening' && action.hu.usesOpening === false) {
