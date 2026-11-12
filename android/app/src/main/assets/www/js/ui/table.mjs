@@ -1,5 +1,5 @@
 import { cardName, huxi, isRed } from '../rules/cards.mjs';
-import { nextSeat } from '../rules/actions.mjs?v=247';
+import { concealedDraw, nextSeat } from '../rules/actions.mjs?v=250';
 import { createHandLayout, eatPreviewIds, handColumnGroup } from './hand.mjs?v=235';
 import { tablemates } from '../data/tablemates.mjs?v=179';
 
@@ -39,11 +39,11 @@ function tile(card, hidden = false, selection, hinted = false, handId, offered =
   return `<span class="${classes}"${handAttribute}>${hidden ? '◆' : cardName(card)}</span>`;
 }
 
-function meld({ type, cards, offeredCard }, concealed = false, reveal = false) {
+function meld({ type, cards, offeredCard }, visibleCount = cards.length, reveal = false) {
   const offeredIndex = cards.lastIndexOf(offeredCard);
   const tiles = cards.map((card, index) =>
-    tile(card, concealed && !reveal && index > 0, undefined, false, undefined, index === offeredIndex));
-  return `<span class="meld${concealed && reveal ? ' reveal-meld' : ''}" data-meld="${type}" data-cards="${cards.join(' ')}">${tiles.join('')}</span>`;
+    tile(card, !reveal && index >= visibleCount, undefined, false, undefined, index === offeredIndex));
+  return `<span class="meld${reveal && visibleCount < cards.length ? ' reveal-meld' : ''}" data-meld="${type}" data-cards="${cards.join(' ')}">${tiles.join('')}</span>`;
 }
 
 function revealSlots(cards) {
@@ -70,7 +70,7 @@ function playerHand(round, layout, canDiscard, response, canDrag) {
 
 function centerOffer(round) {
   if (round.rules.mode === 'mahjong') return round.offer;
-  if (round.phase === 'response') return round.offer;
+  if (round.phase === 'response' || round.phase === 'opening-ti') return round.offer;
   if (round.phase !== 'draw') return null;
   const last = round.events.at(-1);
   if (last?.type === '摸' || last?.type === '出') {
@@ -93,14 +93,18 @@ function totalHuxi(groups) {
 
 function seatView(round, seat, identity, activeSeat, event, response, openingStage, actions = '', handLayout) {
   const { hand, groups: playedGroups } = round.players[seat];
-  const callout = event?.type === '偎' && playedGroups.some(group =>
-    group.type === '偎' && group.offeredCard === event.card && group.stinky) ? '臭偎' : event?.type;
   const { name } = identity;
   const mahjong = round.rules.mode === 'mahjong';
   const discards = tableDiscards(round, seat);
   const showdown = round.phase === 'finished';
   const winner = showdown && round.result.winner === seat;
   const groups = winner ? round.result.hu.groups : playedGroups;
+  const revealedHand = winner ? round.result.hu.loose ?? [] : hand;
+  const callout = event?.type === '偎' && playedGroups.some(group =>
+    group.type === '偎' && group.offeredCard === event.card && group.stinky) ? '臭偎'
+    : winner && round.result.openingName ? round.result.openingName : event?.type;
+  const faceUp = group => seat === 0 || !['偎', '提'].includes(group.type) ? group.cards.length
+    : Number(round.rules.openMelds !== false || Boolean(group.stinky));
   const spread = openingStage === 'deal' || openingStage === 'reveal';
   const arranging = openingStage === 'sort';
   const showHand = !openingStage || arranging;
@@ -125,9 +129,9 @@ function seatView(round, seat, identity, activeSeat, event, response, openingSta
     </div>
     ${event?.seat === seat && !['摸', '出'].includes(event.type) ? `<span class="callout" aria-hidden="true">${callout}</span>` : ''}
     <div class="seat-cards">
-      <div class="groups">${showHand ? groups.map(group => meld(group, seat !== 0 && ['偎', '提'].includes(group.type), showdown)).join('') : ''}</div>
+      <div class="groups">${showHand ? groups.map(group => meld(group, faceUp(group), showdown)).join('') : ''}</div>
       ${showdown
-        ? (winner ? '' : `<div class="revealed-hand" aria-label="${name}的手牌">${revealSlots(hand)}</div>`)
+        ? (!winner || revealedHand.length ? `<div class="revealed-hand" aria-label="${name}的手牌">${revealSlots(revealedHand)}</div>` : '')
         : `<div class="seat-backs" aria-hidden="true">${'<span></span>'.repeat(backs)}</div>`}
       ${seat !== 0 ? discardArea : ''}
     </div>
@@ -189,11 +193,15 @@ export function previewEat(table, action, layout, patterns) {
 }
 
 function resultView(round, score, profile) {
-  const { winner, hu, names: bonuses, tun, delta, kind } = round.result;
+  const { winner, hu, names: bonuses, tun, delta, kind, openingName } = round.result;
   const identities = delta.map((_, seat) => seatIdentity(round, seat, profile));
+  const scoring = winner === null || kind ? [] : [
+    `${hu.huxi} 胡息`, `${tun} 囤`, hu.special,
+    bonuses.length ? bonuses.map(([name, multiple]) => `${name} ×${multiple}`).join('、') : openingName
+  ].filter(Boolean);
   const details = winner === null ? '' : `
-    <div class="groups">${hu.groups.map(group => meld(group)).join('')}</div>
-    <p>${kind ? (kind === 'self' ? '自摸' : '接炮') : `${hu.huxi} 胡息 · ${tun} 囤 · ${bonuses.map(([name, multiple]) => `${name} ×${multiple}`).join('、')}`}</p>`;
+    <div class="groups">${hu.groups.map(group => meld(group)).join('')}${(hu.loose ?? []).map(card => `<span class="meld">${tile(card)}</span>`).join('')}</div>
+    <p>${kind ? (kind === 'self' ? '自摸' : '接炮') : scoring.join(' · ')}</p>`;
   return `<div class="settlement"><section class="panel result" aria-live="polite">
     <small>本局结算</small>
     <h2 class="avatar-label">${winner === null ? '黄庄' : `${avatar(winner, identities[winner])}${identities[winner].name}胡牌`}</h2>
@@ -240,7 +248,8 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
   const arrowSeat = offer && ['response', 'claim'].includes(phase) ? offer.source : seat;
   const source = offer?.source ?? event?.seat ?? round.dealer;
   const visibleCard = offer?.card ?? round.opening;
-  const revealTile = !mahjong && ['reveal', 'sort'].includes(openingStage) && !round.hasOpeningTi;
+  const revealTile = !mahjong && ['reveal', 'sort'].includes(openingStage);
+  const hideOffer = offer?.source !== 0 && concealedDraw(round);
   const flatDeck = !openingStage || ['reveal', 'sort'].includes(openingStage);
   const playing = !openingStage && phase !== 'finished';
   const activeSeat = playing ? arrowSeat : null;
@@ -274,7 +283,7 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
         </div>`}
         <div class="last-play from-${source}">
           <div class="landing">${revealTile && openingStage === 'reveal' ? '<i class="opening-back"></i>' : ''}
-            ${offer || revealTile ? tile(visibleCard, false, undefined, response !== null || showdown) : ''}
+            ${offer || revealTile ? tile(visibleCard, hideOffer, undefined, response !== null || showdown) : ''}
           </div>
           ${offer && !showdown ? `<span>${lastLabel}</span>` : ''}
         </div>
@@ -409,7 +418,10 @@ export function showRoundResult(table, round, score, profile) {
 export function captureOfferMotion(table, round) {
   const { phase, seat } = round;
   const center = centerOffer(round);
-  if (center) return { offer: center, from: table.querySelector('.landing .card').getBoundingClientRect() };
+  if (center) return {
+    offer: center, from: table.querySelector('.landing .card').getBoundingClientRect(),
+    concealed: center.source !== 0 && concealedDraw(round)
+  };
   if (phase === 'after-meld') {
     const { offer } = round;
     const flying = table.querySelector('.flying-card');
@@ -499,7 +511,7 @@ export function animateAction(table, round, event, motion, action) {
     const index = action.previous >= 0 ? action.previous : groups.length - (action.groups?.length ?? 1);
     const stack = seatView(seat).querySelector('.groups').children[index];
     const destination = stack.querySelector('.meld-offered') ?? stack.lastElementChild;
-    animateTransfer(table, card, destination, motion.from);
+    animateTransfer(table, card, destination, motion.from, motion.concealed ? 'draw' : 'move');
   } else if (motion?.offer.kind === 'opening' && motion.meld === undefined && round.phase !== 'response' && round.phase !== 'opening-ti') {
     const { offer: { source, card }, from } = motion;
     const seat = seatView(source);

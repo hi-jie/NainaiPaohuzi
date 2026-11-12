@@ -1,8 +1,8 @@
 import { countCard, patterns, sortCards, takeCards } from '../rules/cards.mjs';
-import { canHuFrom, nextSeat, responses } from '../rules/actions.mjs?v=247';
-import { findHu } from '../rules/hu.mjs?v=247';
-import { presets } from '../rules/presets.mjs?v=141';
-import { settle } from '../rules/scoring.mjs?v=124';
+import { canHuFrom, nextSeat, ownForcedMeld, responses } from '../rules/actions.mjs?v=250';
+import { findHu } from '../rules/hu.mjs?v=250';
+import { defaultSettings, presets } from '../rules/presets.mjs?v=250';
+import { settle } from '../rules/scoring.mjs?v=250';
 import { shuffledDeck } from './deck.mjs';
 
 function openingQuads(hand) {
@@ -26,7 +26,7 @@ function restoreDiscardHistory(events, seats) {
 
 export class Round {
   constructor(settings, dealer, random = Math.random, deck = shuffledDeck(random), { deferOpening = false } = {}) {
-    this.rules = { ...settings, ...presets[settings.mode], patterns: patterns(settings.oneFiveTen) };
+    this.rules = { openMelds: defaultSettings.openMelds, ...settings, ...presets[settings.mode], patterns: patterns(settings.oneFiveTen) };
     this.dealer = dealer;
     this.deck = [...deck];
     this.players = Array.from({ length: this.rules.seats }, () => ({
@@ -34,7 +34,6 @@ export class Round {
       ownDiscards: [], chongpao: false
     }));
     this.events = [];
-    this.discardCount = 0;
 
     let seat = dealer;
     for (let turn = 0; turn < this.players.length * this.rules.dealt; turn++) {
@@ -70,10 +69,20 @@ export class Round {
         return wasTaken ? { ...group, offeredCard: card, ...(stinky ? { stinky } : {}) } : group;
       })
     }));
-    const round = Object.assign(Object.create(Round.prototype), state, { players });
+    const rules = { openMelds: defaultSettings.openMelds, ...state.rules };
+    const round = Object.assign(Object.create(Round.prototype), state, { players, rules });
     if (legacy && round.phase === 'response') {
       const { source, card, kind } = round.offer;
       round.reveal(source, card, kind);
+    }
+    if (state.rules.openMelds === undefined && rules.mode === 'fifteen') {
+      const belowMinimum = choices => choices[0]?.type === '胡' && choices[0].hu.huxi < rules.minimum;
+      if (round.phase === 'response') {
+        round.queue = round.queue.filter(({ choices }) => !belowMinimum(choices));
+        if (belowMinimum(round.options)) round.advanceResponse();
+      } else if (round.phase === 'after-meld' && belowMinimum(round.options)) {
+        round.finishMeld(round.repeatQuad);
+      }
     }
     if (round.phase === 'draw' && !round.deck.length) round.waitForDraw(round.seat);
     return round;
@@ -81,11 +90,7 @@ export class Round {
 
   revealOpening() {
     delete this.openingHand;
-    this.waitForOpeningTi(0);
-  }
-
-  get hasOpeningTi() {
-    return this.players.some(({ hand }) => openingQuads(hand).length > 0);
+    this.reveal(this.dealer, this.opening, 'opening');
   }
 
   waitForOpeningTi(fromSeat) {
@@ -102,7 +107,23 @@ export class Round {
       }
       seat = nextSeat(seat, this.players.length);
     } while (seat !== 0);
-    this.reveal(this.dealer, this.opening, 'opening');
+    if (!this.offer) {
+      // Older saves started the automatic Ti before the opening response.
+      this.reveal(this.dealer, this.opening, 'opening');
+      return;
+    }
+    const player = this.players[this.dealer];
+    const forced = ownForcedMeld(player, this.opening);
+    if (forced) {
+      this.phase = 'response';
+      this.seat = this.dealer;
+      this.options = [forced];
+      return;
+    }
+    this.offer = null;
+    player.hand.push(this.opening);
+    sortCards(player.hand);
+    this.waitForDiscard(this.dealer);
   }
 
   record(type, seat, card) {
@@ -137,7 +158,7 @@ export class Round {
   }
 
   reveal(source, card, kind) {
-    this.offer = { source, card, kind, first: kind === 'discard' && this.discardCount === 1 };
+    this.offer = { source, card, kind };
     this.queue = [];
     let seat = source;
     do {
@@ -161,13 +182,10 @@ export class Round {
       return;
     }
     const { source, card, kind } = this.offer;
-    this.offer = null;
     if (kind === 'opening') {
-      const hand = this.players[source].hand;
-      hand.push(card);
-      sortCards(hand);
-      this.waitForDiscard(source);
+      this.waitForOpeningTi(0);
     } else {
+      this.offer = null;
       if (kind === 'draw') this.players[source].discards.push(card);
       this.waitForDraw(nextSeat(source, this.players.length));
     }
@@ -200,7 +218,6 @@ export class Round {
       player.discards.push(action.card);
       player.ownDiscards.push(action.card);
       player.passedChi.add(action.card);
-      this.discardCount++;
       this.record(type, seat, action.card);
       this.reveal(seat, action.card, 'discard');
       return;
@@ -218,6 +235,10 @@ export class Round {
     }
     if (type === '胡') {
       if (this.phase === 'response' && kind === 'discard') this.players[source].discards.pop();
+      if (kind === 'opening' && action.hu.usesOpening === false) {
+        this.players[source].hand.push(card);
+        sortCards(this.players[source].hand);
+      }
       this.record(type, seat, card);
       this.finish(settle(seat, this.offer, action.hu, this.rules));
       return;
@@ -235,7 +256,7 @@ export class Round {
       const size = type === '偎' || type === '碰' ? 3 : 4;
       const group = { type, cards: Array(size).fill(card), offeredCard: card };
       if (type === '偎' && player.passedPeng.has(card)) group.stinky = true;
-      if (type === '跑' && kind === 'discard' && player.groups[action.previous]?.type === '偎') {
+      if (type === '跑' && kind === 'discard' && this.rules.openMelds && player.groups[action.previous]?.type === '偎') {
         this.players[source].chongpao = true;
       }
       if (action.previous >= 0) player.groups[action.previous] = group;

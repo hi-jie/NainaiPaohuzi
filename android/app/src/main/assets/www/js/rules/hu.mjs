@@ -1,5 +1,39 @@
 import { countCard, hasCards, huxi, isRed, sortCards, takeCards } from './cards.mjs';
-import { tunForHuxi } from './scoring.mjs?v=65';
+import { tunForHuxi } from './scoring.mjs?v=250';
+
+function dealtGroups(hand, count, type) {
+  return [...new Set(hand)].filter(card => countCard(hand, card) === count)
+    .map(card => ({ type, cards: Array(count).fill(card) }));
+}
+
+export function findOpeningHu(player, card, dealer, rules) {
+  const dealt = dealer ? [...player.hand, card] : player.hand;
+  const quads = dealtGroups(dealt, 4, '提');
+  const kans = dealtGroups(dealt, 3, '坎');
+  const fiveKan = kans.length >= 5 || (dealer && dealtGroups(player.hand, 3, '坎').length >= 5);
+  if (quads.length >= 3 || fiveKan) {
+    const groups = [...quads, ...kans];
+    return {
+      huxi: groups.reduce((total, group) => total + huxi(group), 0),
+      groups,
+      loose: sortCards(takeCards(dealt, groups.flatMap(group => group.cards))),
+      red: dealt.filter(isRed).length,
+      special: quads.length >= 3 ? '三提' : '五坎',
+      usesOpening: dealer
+    };
+  }
+
+  const existingQuads = dealtGroups(player.hand, 4, '提');
+  const hand = takeCards(player.hand, existingQuads.flatMap(group => group.cards));
+  const groups = [...player.groups, ...existingQuads];
+  const matching = countCard(hand, card);
+  if (dealer && (matching === 2 || matching === 3)) {
+    const own = Array(matching).fill(card);
+    groups.push({ type: matching === 2 ? '偎' : '提', cards: [...own, card] });
+    return findHu({ ...player, hand: takeCards(hand, own), groups }, null, false, rules);
+  }
+  return findHu({ ...player, hand, groups }, card, dealer, rules);
+}
 
 function bestSplit(hand, pairs, score, search) {
   const { patterns, openTriplet, minimum, compare, memo } = search;
@@ -63,7 +97,7 @@ function evaluate(hand, fixed, rules, compare, passedHu, openTriplet = -1) {
   }
   if (hand.length % 3 === 1) return null;
   const red = hand.filter(isRed).length + locked.flatMap(group => group.cards).filter(isRed).length;
-  const minimum = Math.max(passedHu + 1, rules.mode === 'fifteen' && red === 0 ? 10 : rules.minimum);
+  const minimum = Math.max(passedHu + 1, rules.minimum);
   const score = locked.reduce((total, group) => total + huxi(group), 0);
   const search = { patterns: rules.patterns, openTriplet, minimum, compare, memo: new Map() };
   const split = bestSplit(hand, hand.length % 3 === 2 ? 1 : 0, score, search);

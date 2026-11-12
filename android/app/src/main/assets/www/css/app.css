@@ -271,6 +271,8 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
 }
 :is(.menu-options, .pause-settings) input[role="switch"]:checked::before { transform: translateX(32px); }
 :is(.menu-options, .pause-settings) input[role="switch"]:checked::after { content: "开"; left: 7px; right: auto; }
+#paohuzi-options input[name="openMelds"]::after { content: "暗"; }
+#paohuzi-options input[name="openMelds"]:checked::after { content: "明"; }
 :is(.menu-options, .pause-settings) input[role="switch"]:focus-visible {
   outline: 2px solid #fff0b0; outline-offset: 3px;
 }

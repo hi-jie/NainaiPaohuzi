@@ -1,16 +1,16 @@
 import { chooseAction } from './ai/player.mjs?v=141';
 import { setMusicPlaying, setMusicVolume } from './audio/music.mjs?v=208-cbe0bee8a6aa';
-import { playAction, playEffect, setSoundEnabled, setSoundVolume, stopEffect, stopSound, unlockSound } from './audio/player.mjs?v=210';
+import { playAction, playEffect, setSoundEnabled, setSoundVolume, stopEffect, stopSound, unlockSound } from './audio/player.mjs?v=250';
 import { pickTablemates } from './data/tablemates.mjs?v=179';
 import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
-import { Round } from './game/state-machine.mjs?v=248';
+import { Round } from './game/state-machine.mjs?v=250';
 import { MahjongRound } from './game/mahjong-round.mjs';
-import { presets } from './rules/presets.mjs?v=141';
-import { load, save } from './storage/save.mjs?v=238';
+import { presets } from './rules/presets.mjs?v=250';
+import { load, save } from './storage/save.mjs?v=250';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=116';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=235';
-import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=247';
-import { bindTutorial } from './ui/tutorial.mjs?v=248';
+import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=250';
+import { bindTutorial } from './ui/tutorial.mjs?v=250';
 import { bindProfile } from './ui/profile.mjs?v=202';
 import { bindAppUpdate } from './ui/update.mjs?v=249';
 
@@ -37,6 +37,7 @@ const modeTitle = document.querySelector('#mode-title');
 const modeScore = document.querySelector('#mode-score');
 const seatPicker = document.querySelector('#mahjong-seats');
 const paohuziOptions = document.querySelector('#paohuzi-options');
+const meldVisibility = document.querySelector('#meld-visibility');
 const openTutorial = bindTutorial(document.querySelector('#tutorial'));
 const data = load();
 const refreshProfile = bindProfile(profilePage, profileButton, document.querySelector('#nickname-dialog'), data.profile, profile => {
@@ -63,6 +64,7 @@ function showSettingValue(field) {
   const value = data.settings[field.name];
   if (field.type === 'checkbox') {
     field.checked = value;
+    if (field.name === 'openMelds') meldVisibility.textContent = value ? '明提明偎' : '暗提暗偎';
   } else {
     field.value = value;
     field.nextElementSibling.value = `${value}%`;

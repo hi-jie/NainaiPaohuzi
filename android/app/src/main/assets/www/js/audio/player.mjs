@@ -1,3 +1,5 @@
+import { concealedDraw } from '../rules/actions.mjs?v=250';
+
 const numbers = ['yi', 'er', 'san', 'si', 'wu', 'liu', 'qi', 'ba', 'jiu', 'shi'];
 const actions = { 吃: 'chi', 碰: 'peng', 偎: 'wei', 提: 'ti', 跑: 'pao', 胡: 'hu', 过: 'guo' };
 const effects = {
@@ -29,9 +31,10 @@ let queue = [];
 let active;
 const activeEffects = new Set();
 
-export function voiceClip({ type, seat, card }, { rules, players }) {
+export function voiceClip({ type, seat, card }, round) {
+  const { rules, players } = round;
   if (type === '摸' || type === '出') {
-    if (type === '摸' && rules.mode === 'mahjong' && seat !== 0) return;
+    if (type === '摸' && seat !== 0 && (rules.mode === 'mahjong' || concealedDraw(round))) return;
     return `${card < 10 ? 'x' : 'd'}${numbers[card % 10]}`;
   }
   if (type === '跑' && players[seat].groups.filter(group => group.type === '跑').length > 1) return 'cpao';

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { chooseAction } from '../android/app/src/main/assets/www/js/ai/player.mjs';
+import { voiceClip } from '../android/app/src/main/assets/www/js/audio/player.mjs';
 import { cutDeck, shuffledDeck } from '../android/app/src/main/assets/www/js/game/deck.mjs';
 import { Round } from '../android/app/src/main/assets/www/js/game/state-machine.mjs';
 import { nextSeat, responses } from '../android/app/src/main/assets/www/js/rules/actions.mjs';
@@ -87,7 +88,7 @@ test('开局按逆时针发牌和提牌，补牌凑成的四张也继续提', ()
   const round = new Round(defaultSettings, 0, Math.random, first.concat(rest).reverse(), { deferOpening: true });
   assert.deepEqual(round.players.map(({ hand }) => hand), hands.map(hand => [...hand].sort((a, b) => a - b)));
   assert.deepEqual(round.players[0].groups, []);
-  assert.doesNotMatch(renderTable(round, 0, null, 'reveal'), /class="landing">\s*<[is]/);
+  assert.match(renderTable(round, 0, null, 'reveal'), /class="landing">[\s\S]*?<span class="card">玖<\/span>/);
   round.revealOpening();
   assert.equal(round.phase, 'opening-ti');
   assert.equal(round.seat, 0);
@@ -123,15 +124,98 @@ test('一五十开关改变胡牌拆组', () => {
   assert.equal(huxi({ type: '吃', cards: [10, 14, 19] }), 6);
 });
 
-test('关闭放炮胡后只可胡墩上摸出的牌，不限摸牌人', () => {
+test('关闭放炮胡仍能胡墩牌和开局亮张', () => {
   const offer = { card: 17, source: 1, kind: 'discard' };
   const disabled = { ...rules, discardHu: false };
   assert.equal(responses(player(waitingHand), 0, offer, disabled).some(action => action.type === '胡'), false);
   assert.equal(responses(player(waitingHand), 0, offer, { ...rules, discardHu: true })[0].type, '胡');
   for (const source of [0, 1]) {
     assert.equal(responses(player(waitingHand), 0, { ...offer, source, kind: 'draw' }, disabled)[0].type, '胡');
-    assert.equal(responses(player(waitingHand), 0, { ...offer, source, kind: 'opening' }, disabled).some(action => action.type === '胡'), false);
+    assert.equal(responses(player(waitingHand), 0, { ...offer, source, kind: 'opening' }, disabled)[0].type, '胡');
   }
+});
+
+test('三个玩法先亮张，庄家先判天胡，闲家再判地胡', () => {
+  for (const mode of paohuziModes) {
+    const makeRound = () => {
+      const round = new Round({ ...defaultSettings, mode, discardHu: false }, 0, undefined, undefined, { deferOpening: true });
+      const dealerHand = waitingHand.slice();
+      const otherHand = waitingHand.map(card => card === 3 ? 13 : card);
+      if (mode !== 'six') {
+        dealerHand.push(4, 4, 4, 14, 14, 14);
+        otherHand.push(8, 8, 8, 19, 19, 19);
+      }
+      round.players[0] = player(dealerHand);
+      round.players[2] = player(otherHand);
+      round.players[1] = player([18, 18, 18, 18]);
+      if (mode === 'six') round.players[3] = player([]);
+      round.opening = 17;
+      round.revealOpening();
+      return round;
+    };
+    const dealer = makeRound();
+    assert.equal(dealer.seat, 0);
+    assert.deepEqual(dealer.options.map(({ type }) => type), ['胡', '过']);
+    assert.equal(dealer.events.length, 0);
+    dealer.act(dealer.options[0]);
+    assert.equal(dealer.result.openingName, '天胡');
+    const idle = makeRound();
+    idle.act(idle.options[1]);
+    assert.equal(idle.seat, 2);
+    assert.equal(idle.events.length, 0);
+    idle.act(idle.options[0]);
+    assert.equal(idle.result.openingName, '地胡');
+    assert.equal(idle.result.names.some(([name]) => name === '地胡'), mode !== 'six');
+    assert.match(renderTable(idle, 0, idle.events.at(-1)), /class="callout"[^>]*>地胡</);
+  }
+});
+
+test('庄家亮张凑成第三提、闲家起手五坎都直接胡', () => {
+  const threeTi = new Round(defaultSettings, 0, undefined, undefined, { deferOpening: true });
+  threeTi.players = [player([0, 0, 0, 0, 3, 3, 3, 3, 13, 13, 13, 7, 8, 10]), player([]), player([]), player([])];
+  threeTi.opening = 13;
+  threeTi.revealOpening();
+  assert.equal(threeTi.options[0].forced, true);
+  threeTi.act(threeTi.options[0]);
+  assert.equal(threeTi.result.hu.special, '三提');
+  assert.equal(threeTi.result.hu.huxi, 30);
+  assert.deepEqual(threeTi.result.hu.loose, [7, 8, 10]);
+  assert.deepEqual(threeTi.events.map(({ type }) => type), ['胡']);
+
+  const fiveKan = new Round({ ...defaultSettings, mode: 'fifteen' }, 0, undefined, undefined, { deferOpening: true });
+  const hand = [0, 2, 3, 4, 10].flatMap(card => [card, card, card]).concat(5, 7, 8, 14, 15);
+  fiveKan.players = [player([1]), player([]), player(hand)];
+  fiveKan.opening = 17;
+  fiveKan.revealOpening();
+  assert.equal(fiveKan.seat, 2);
+  assert.equal(fiveKan.options[0].forced, true);
+  fiveKan.act(fiveKan.options[0]);
+  assert.equal(fiveKan.result.hu.special, '五坎');
+  assert.equal(fiveKan.result.openingName, '地胡');
+  assert.deepEqual(fiveKan.players[0].hand, [1, 17]);
+  assert.deepEqual(fiveKan.result.hu.loose, [5, 7, 8, 14, 15]);
+});
+
+test('十五胡黑胡也要满十五息，旧存档里的低息胡不能确认', () => {
+  const black = player([2, 12, 12, 5, 5, 15, 7, 17, 17], [
+    { type: '碰', cards: [3, 3, 3] }, { type: '碰', cards: [18, 18, 18] },
+    { type: '坎', cards: [0, 0, 0] }, { type: '坎', cards: [4, 4, 4] }
+  ]);
+  const fifteen = { ...rules, ...presets.fifteen, mode: 'fifteen' };
+  const tenHuxi = findHu(black, null, false, { ...fifteen, minimum: 10 });
+  assert.equal(tenHuxi.red, 0);
+  assert.equal(tenHuxi.huxi, 10);
+  assert.equal(findHu(black, null, false, fifteen), null);
+  black.groups[0] = { type: '跑', cards: [3, 3, 3, 3] };
+  assert.equal(findHu(black, null, false, fifteen).huxi, 15);
+
+  const round = new Round({ ...defaultSettings, mode: 'fifteen' }, 0);
+  const saved = JSON.parse(JSON.stringify(round.toSave()));
+  delete saved.rules.openMelds;
+  Object.assign(saved, { phase: 'after-meld', seat: 0, repeatQuad: true, options: [{ type: '胡', hu: tenHuxi }, { type: '过' }] });
+  const restored = Round.fromSave(saved);
+  assert.deepEqual(restored.options, [{ type: '摸' }]);
+  assert.equal(restored.rules.openMelds, true);
 });
 
 test('吃和比的牌组互换顺序时只保留一种吃法', () => {
@@ -225,6 +309,36 @@ test('冲跑成功后本局禁吃碰，仍可强制偎或胡，旧存档可恢�
   assert.equal(responses(restored, 1, { card: 5, source: 1, kind: 'draw' }, rules)[0].type, '偎');
   const huOffer = { card: 17, source: 0, kind: 'draw' };
   assert.equal(responses({ ...restored, hand: waitingHand }, 1, huOffer, rules)[0].type, '胡');
+});
+
+test('明提明偎各亮一张，暗提暗偎仅臭偎亮一张并保留暗牌语音', () => {
+  for (const [type, hand, stinky] of [['提', [1, 1, 1, 8], false], ['偎', [1, 1, 8], false], ['偎', [1, 1, 8], true]]) {
+    for (const openMelds of [true, false]) {
+      const round = new Round({ ...defaultSettings, openMelds }, 0);
+      const opponent = player(hand);
+      if (stinky) opponent.passedPeng.add(1);
+      round.players = [player([]), opponent, player([]), player([])];
+      round.deck = [1];
+      round.waitForDraw(1);
+      round.act(round.options[0]);
+      assert.equal(round.options[0].type, type);
+      const visible = openMelds || stinky;
+      assert.equal(voiceClip(round.events.at(-1), round), visible ? 'xer' : undefined);
+      const [, center] = renderTable(round, 0).match(/class="landing">([\s\S]*?)<\/div>/);
+      assert.equal(center.includes('class="card back"'), !visible);
+      round.act(round.options[0]);
+      const [, tiles] = renderTable(round, 0).match(new RegExp(`data-meld="${type}"[^>]*>(.*?)</span></span>`));
+      assert.equal([...tiles.matchAll(/>二</g)].length, Number(visible));
+      if (type === '偎') {
+        round.players[0] = player([1, 2, 3]);
+        round.waitForDiscard(0);
+        round.act(round.options.find(action => action.card === 1));
+        assert.equal(round.options[0].type, '跑');
+        round.act(round.options[0]);
+        assert.equal(round.players[0].chongpao, openMelds);
+      }
+    }
+  }
 });
 
 test('吃法预览将九张排一行，十二张分成两行', () => {
@@ -466,7 +580,7 @@ test('三种玩法的跑和碰都优先于座次靠前的吃', () => {
   }
 });
 
-test('三种玩法自摸不加倍，其他名堂照常计分', () => {
+test('六胡抢按囤计分，十胡卡和十五胡自摸不另加倍', () => {
   for (const mode of paohuziModes) {
     const preset = presets[mode];
     const settings = { ...rules, ...preset, mode };
@@ -474,8 +588,20 @@ test('三种玩法自摸不加倍，其他名堂照常计分', () => {
     const selfDraw = settle(0, { kind: 'draw', source: 0 }, hu, settings);
     const otherDraw = settle(0, { kind: 'draw', source: 1 }, hu, settings);
     assert.deepEqual(selfDraw.delta, otherDraw.delta);
-    assert.deepEqual(selfDraw.delta, [3 * (preset.seats - 1) * selfDraw.tun, ...Array(preset.seats - 1).fill(-3 * selfDraw.tun)]);
-    assert.deepEqual(selfDraw.names, [['点胡', 3], ['自摸', 1]]);
+    const unit = (mode === 'six' ? 1 : 3) * selfDraw.tun;
+    assert.deepEqual(selfDraw.delta, [(preset.seats - 1) * unit, ...Array(preset.seats - 1).fill(-unit)]);
+    assert.deepEqual(selfDraw.names, mode === 'six' ? [] : [['点胡', 3], ['自摸', 1]]);
+  }
+});
+
+test('十胡卡和十五胡的十到十二红同乘二，首张弃牌不算地胡', () => {
+  for (const mode of ['ten', 'fifteen']) {
+    const settings = { ...rules, ...presets[mode], mode };
+    for (const red of [10, 11, 12]) {
+      const result = settle(0, { kind: 'discard', source: 1, first: true }, { huxi: 15, red }, settings);
+      assert.deepEqual(result.names, [['十红', 2]]);
+      assert.deepEqual(result.delta, [4 * result.tun, -4 * result.tun, 0]);
+    }
   }
 });
 
@@ -576,7 +702,7 @@ test('三种玩法都能打到胡牌或黄庄', () => {
         return state / 2 ** 32;
       };
       const round = new Round({
-        ...defaultSettings, mode, oneFiveTen: seed % 2 === 0, discardHu: seed % 3 === 0
+        ...defaultSettings, mode, oneFiveTen: seed % 2 === 0, discardHu: seed % 3 === 0, openMelds: seed % 2 === 1
       }, seed % presets[mode].seats, random);
       for (let steps = 0; round.phase !== 'finished'; steps++) {
         assert.ok(steps < 400, `${mode} seed ${seed}`);

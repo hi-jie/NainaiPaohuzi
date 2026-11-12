@@ -1,12 +1,29 @@
 import { countCard, hasCards, takeCards } from './cards.mjs';
-import { findHu } from './hu.mjs?v=247';
+import { findHu, findOpeningHu } from './hu.mjs?v=250';
 
 // Seat indices are bottom, left, right and (in four-player rounds) top.
 const nextByCount = { 3: [2, 0, 1], 4: [2, 0, 3, 1], 5: [2, 0, 3, 4, 1] };
 export const nextSeat = (seat, seats = 3) => nextByCount[seats][seat];
 
 export function canHuFrom(kind, rules) {
-  return kind === 'draw' || rules.discardHu;
+  return kind !== 'discard' || rules.discardHu;
+}
+
+export function ownForcedMeld(player, card) {
+  const count = countCard(player.hand, card);
+  if (count === 2) return { type: '偎', cards: [card, card], priority: 1, forced: true };
+  const previous = player.groups.findIndex(group => group.type === '偎' && group.cards[0] === card);
+  if (count === 3 || previous >= 0) {
+    return { type: '提', cards: count === 3 ? [card, card, card] : [], previous, priority: 1, forced: true };
+  }
+  return null;
+}
+
+export function concealedDraw(round) {
+  const { phase, offer, options, rules } = round;
+  if (rules.openMelds !== false || phase !== 'response' || offer?.kind !== 'draw') return false;
+  const action = options[0];
+  return action.type === '提' || (action.type === '偎' && !round.players[offer.source].passedPeng.has(offer.card));
 }
 
 function companions(hand, card, patterns) {
@@ -35,34 +52,34 @@ function eatOptions(player, card, rules) {
 export function responses(player, seat, { card, source, kind }, rules) {
   const self = seat === source;
   if (self && kind === 'discard') return [];
-  if (kind === 'opening' && !self && rules.mode === 'fifteen') return [];
+  if (kind === 'opening') {
+    const hu = findOpeningHu(player, card, self, rules);
+    return hu ? [{ type: '胡', hu, priority: 2, ...(hu.special ? { forced: true } : {}) }] : [];
+  }
+
+  const ownDraw = self && kind === 'draw';
+  if (ownDraw) {
+    const forced = ownForcedMeld(player, card);
+    if (forced) return [forced];
+  }
 
   const count = countCard(player.hand, card);
   const previous = player.groups.findIndex(group =>
     ['偎', '碰'].includes(group.type) && group.cards[0] === card);
   const previousType = previous === -1 ? null : player.groups[previous].type;
-  const ownDraw = self && kind !== 'discard';
   const actions = [];
-
-  if (ownDraw && count === 2) {
-    return [{ type: '偎', cards: [card, card], priority: 1, forced: true }];
-  }
-  if (ownDraw && (count === 3 || previousType === '偎')) {
-    return [{ type: '提', cards: count === 3 ? [card, card, card] : [], previous, priority: 1, forced: true }];
-  }
 
   if (canHuFrom(kind, rules)) {
     const hu = findHu(player, card, ownDraw, rules);
     if (hu) actions.push({ type: '胡', hu, priority: 2 });
   }
-  if (kind === 'opening' && !self) return actions;
   if (count === 3 || previousType === '偎' || (previousType === '碰' && kind !== 'discard')) {
     actions.push({
       type: '跑', cards: count === 3 ? [card, card, card] : [], previous,
       priority: 3, forced: true
     });
   }
-  if (kind === 'opening' || player.chongpao) return actions;
+  if (player.chongpao) return actions;
   if (!self && count === 2 && !player.passedPeng.has(card) && !player.ownDiscards.includes(card)) {
     actions.push({ type: '碰', cards: [card, card], priority: 3 });
   }

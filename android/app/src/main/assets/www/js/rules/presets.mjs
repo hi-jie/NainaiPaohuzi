@@ -6,6 +6,6 @@ export const presets = {
 };
 
 export const defaultSettings = {
-  mode: 'six', oneFiveTen: true, discardHu: true, sound: true, music: true,
+  mode: 'six', oneFiveTen: true, discardHu: true, openMelds: true, sound: true, music: true,
   soundVolume: 100, musicVolume: 20
 };
