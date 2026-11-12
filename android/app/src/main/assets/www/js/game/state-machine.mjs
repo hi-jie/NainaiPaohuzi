@@ -1,6 +1,6 @@
 import { countCard, patterns, sortCards, takeCards } from '../rules/cards.mjs';
-import { canHuFrom, nextSeat, responses } from '../rules/actions.mjs?v=141';
-import { findHu } from '../rules/hu.mjs?v=65';
+import { canHuFrom, nextSeat, responses } from '../rules/actions.mjs?v=247';
+import { findHu } from '../rules/hu.mjs?v=247';
 import { presets } from '../rules/presets.mjs?v=141';
 import { settle } from '../rules/scoring.mjs?v=124';
 import { shuffledDeck } from './deck.mjs';
@@ -9,13 +9,29 @@ function openingQuads(hand) {
   return [...new Set(hand)].filter(card => countCard(hand, card) === 4);
 }
 
+function restoreDiscardHistory(events, seats) {
+  const history = Array.from({ length: seats }, () => ({ ownDiscards: [], chongpao: false }));
+  const wei = Array.from({ length: seats }, () => new Set());
+  for (const [index, event] of events.entries()) {
+    const { type, seat, card } = event;
+    if (type === '出') history[seat].ownDiscards.push(card);
+    if (type === '偎') wei[seat].add(card);
+    if (type === '提') wei[seat].delete(card);
+    if (type !== '跑' || !wei[seat].delete(card)) continue;
+    const prior = events[index - 1];
+    if (prior?.type === '出' && prior.card === card) history[prior.seat].chongpao = true;
+  }
+  return history;
+}
+
 export class Round {
   constructor(settings, dealer, random = Math.random, deck = shuffledDeck(random), { deferOpening = false } = {}) {
     this.rules = { ...settings, ...presets[settings.mode], patterns: patterns(settings.oneFiveTen) };
     this.dealer = dealer;
     this.deck = [...deck];
     this.players = Array.from({ length: this.rules.seats }, () => ({
-      hand: [], groups: [], discards: [], passedChi: new Set(), passedPeng: new Set(), passedHu: -1
+      hand: [], groups: [], discards: [], passedChi: new Set(), passedPeng: new Set(), passedHu: -1,
+      ownDiscards: [], chongpao: false
     }));
     this.events = [];
     this.discardCount = 0;
@@ -41,17 +57,25 @@ export class Round {
   }
 
   static fromSave(state) {
+    const legacy = state.players.some(player => !player.ownDiscards);
+    const history = legacy ? restoreDiscardHistory(state.events, state.players.length) : [];
     const players = state.players.map((player, seat) => ({
-      ...player, passedChi: new Set(player.passedChi), passedPeng: new Set(player.passedPeng),
+      ...history[seat], ...player, passedChi: new Set(player.passedChi), passedPeng: new Set(player.passedPeng),
       groups: player.groups.map(group => {
-        if (group.offeredCard !== undefined || !['碰', '偎', '跑', '提'].includes(group.type)) return group;
+        if (!['碰', '偎', '跑', '提'].includes(group.type)) return group;
         const card = group.cards[0];
-        const wasTaken = state.events.some(event =>
+        const wasTaken = group.offeredCard !== undefined || state.events.some(event =>
           event.seat === seat && event.type === group.type && event.card === card && !event.fromHand);
-        return wasTaken ? { ...group, offeredCard: card } : group;
+        const stinky = group.type === '偎' && player.passedPeng.includes(card);
+        return wasTaken ? { ...group, offeredCard: card, ...(stinky ? { stinky } : {}) } : group;
       })
     }));
-    return Object.assign(Object.create(Round.prototype), state, { players });
+    const round = Object.assign(Object.create(Round.prototype), state, { players });
+    if (legacy && round.phase === 'response') {
+      const { source, card, kind } = round.offer;
+      round.reveal(source, card, kind);
+    }
+    return round;
   }
 
   revealOpening() {
@@ -169,6 +193,7 @@ export class Round {
     if (type === '出') {
       player.hand = takeCards(player.hand, [action.card]);
       player.discards.push(action.card);
+      player.ownDiscards.push(action.card);
       player.passedChi.add(action.card);
       this.discardCount++;
       this.record(type, seat, action.card);
@@ -204,6 +229,10 @@ export class Round {
     } else {
       const size = type === '偎' || type === '碰' ? 3 : 4;
       const group = { type, cards: Array(size).fill(card), offeredCard: card };
+      if (type === '偎' && player.passedPeng.has(card)) group.stinky = true;
+      if (type === '跑' && kind === 'discard' && player.groups[action.previous]?.type === '偎') {
+        this.players[source].chongpao = true;
+      }
       if (action.previous >= 0) player.groups[action.previous] = group;
       else player.groups.push(group);
     }

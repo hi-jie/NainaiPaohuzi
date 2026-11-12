@@ -14,7 +14,8 @@ import { previewEat, renderEatChoices, renderTable } from '../android/app/src/ma
 const paohuziModes = ['six', 'ten', 'fifteen'];
 const rules = { ...defaultSettings, ...presets.six, patterns: patterns(false) };
 const player = (hand, groups = []) => ({
-  hand, groups, discards: [], passedChi: new Set(), passedPeng: new Set(), passedHu: -1
+  hand, groups, discards: [], passedChi: new Set(), passedPeng: new Set(), passedHu: -1,
+  ownDiscards: [], chongpao: false
 });
 const waitingHand = [0, 1, 2, 3, 3, 3, 5, 6, 7, 10, 11, 12, 15, 16];
 
@@ -150,6 +151,80 @@ test('吃和比的牌组互换顺序时只保留一种吃法', () => {
     [[0, 1, 2], [1, 2, 3]], [[0, 1, 2], [2, 3, 4]],
     [[1, 2, 3], [1, 2, 3]], [[1, 2, 3], [2, 3, 4]]
   ]);
+});
+
+test('第四张同牌不能把原有坎拆散来胡，仍可跑后胡', () => {
+  const hand = [0, 0, 1, 1, 1, 2, 2, 6, 6, 9, 9, 13, 14, 15];
+  assert.equal(findHu(player(hand), 1, false, rules), null);
+  const offer = { card: 1, source: 2, kind: 'draw' };
+  assert.deepEqual(responses(player(hand), 0, offer, rules).map(action => action.type), ['跑']);
+
+  const round = new Round(defaultSettings, 0);
+  const groups = [[10, 11, 12], [6, 16, 16], [4, 14, 14]].map(cards => ({ type: '吃', cards }));
+  round.players = [player([2, 2, 2, 7, 7], groups), player([]), player([]), player([])];
+  round.reveal(1, 2, 'draw');
+  assert.equal(round.options[0].type, '跑');
+  round.act(round.options[0]);
+  assert.equal(round.options[0].type, '胡');
+  assert.equal(round.options[0].hu.huxi, 12);
+});
+
+test('自己打过的同牌不能碰，忍碰后摸到同牌算臭偎', () => {
+  const offer = { card: 1, source: 1, kind: 'discard' };
+  const ownDiscard = { ...player([1, 1, 8]), ownDiscards: [1] };
+  assert.equal(responses(ownDiscard, 0, offer, rules).some(action => action.type === '碰'), false);
+
+  const round = new Round(defaultSettings, 0);
+  round.players = [player([1, 1, 8]), { ...player([]), discards: [1] }, player([]), player([])];
+  round.reveal(1, 1, 'discard');
+  assert.equal(round.options[0].type, '碰');
+  const legacy = JSON.parse(JSON.stringify(round.toSave()));
+  delete legacy.players[0].ownDiscards;
+  legacy.events.unshift({ type: '出', seat: 0, card: 1 });
+  assert.equal(Round.fromSave(legacy).options.some(action => action.type === '碰'), false);
+
+  round.act(round.options.find(action => action.type === '过'));
+  round.reveal(0, 1, 'draw');
+  assert.equal(round.options[0].type, '偎');
+  round.act(round.options[0]);
+  assert.equal(round.players[0].groups[0].stinky, true);
+  assert.match(renderTable(round, 0, round.events.at(-1)), /class="callout" aria-hidden="true">臭偎</);
+
+  const saved = JSON.parse(JSON.stringify(round.toSave()));
+  delete saved.players[0].groups[0].stinky;
+  assert.equal(Round.fromSave(saved).players[0].groups[0].stinky, true);
+});
+
+test('冲跑成功后本局禁吃碰，仍可强制偎或胡，旧存档可恢复限制', () => {
+  const round = new Round(defaultSettings, 0);
+  round.players = [
+    player([8], [{ type: '偎', cards: [1, 1, 1], offeredCard: 1 }]),
+    player([1, 2, 3, 5, 5]), player([]), player([])
+  ];
+  round.record('偎', 0, 1);
+  round.waitForDiscard(1);
+  round.act(round.options.find(action => action.card === 1));
+  assert.equal(round.options[0].type, '跑');
+  assert.equal(round.players[1].chongpao, false);
+  round.act(round.options[0]);
+  assert.equal(round.players[1].chongpao, true);
+
+  const saved = JSON.parse(JSON.stringify(round.toSave()));
+  for (const seat of saved.players) {
+    delete seat.ownDiscards;
+    delete seat.chongpao;
+  }
+  const restored = Round.fromSave(saved).players[1];
+  assert.deepEqual(restored.ownDiscards, [1]);
+  assert.equal(restored.chongpao, true);
+  for (const [card, type] of [[4, '吃'], [5, '碰']]) {
+    const offer = { card, source: 3, kind: 'draw' };
+    assert.ok(responses({ ...restored, chongpao: false }, 1, offer, rules).some(action => action.type === type));
+    assert.equal(responses(restored, 1, offer, rules).some(action => action.type === type), false);
+  }
+  assert.equal(responses(restored, 1, { card: 5, source: 1, kind: 'draw' }, rules)[0].type, '偎');
+  const huOffer = { card: 17, source: 0, kind: 'draw' };
+  assert.equal(responses({ ...restored, hand: waitingHand }, 1, huOffer, rules)[0].type, '胡');
 });
 
 test('吃法预览将九张排一行，十二张分成两行', () => {

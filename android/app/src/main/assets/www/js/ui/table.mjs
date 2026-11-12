@@ -1,5 +1,5 @@
 import { cardName, huxi, isRed } from '../rules/cards.mjs';
-import { nextSeat } from '../rules/actions.mjs?v=141';
+import { nextSeat } from '../rules/actions.mjs?v=247';
 import { createHandLayout, eatPreviewIds, handColumnGroup } from './hand.mjs?v=235';
 import { tablemates } from '../data/tablemates.mjs?v=179';
 
@@ -93,6 +93,8 @@ function totalHuxi(groups) {
 
 function seatView(round, seat, identity, activeSeat, event, response, openingStage, actions = '', handLayout) {
   const { hand, groups: playedGroups } = round.players[seat];
+  const callout = event?.type === '偎' && playedGroups.some(group =>
+    group.type === '偎' && group.offeredCard === event.card && group.stinky) ? '臭偎' : event?.type;
   const { name } = identity;
   const mahjong = round.rules.mode === 'mahjong';
   const discards = tableDiscards(round, seat);
@@ -121,7 +123,7 @@ function seatView(round, seat, identity, activeSeat, event, response, openingSta
       <span class="dealer" ${round.dealer === seat ? '' : 'inert aria-hidden="true"'}>庄</span>
       ${showHand && !mahjong ? `<strong class="seat-score">${totalHuxi(playedGroups)}胡息</strong>` : ''}
     </div>
-    ${event?.seat === seat && !['摸', '出'].includes(event.type) ? `<span class="callout" aria-hidden="true">${event.type}</span>` : ''}
+    ${event?.seat === seat && !['摸', '出'].includes(event.type) ? `<span class="callout" aria-hidden="true">${callout}</span>` : ''}
     <div class="seat-cards">
       <div class="groups">${showHand ? groups.map(group => meld(group, seat !== 0 && ['偎', '提'].includes(group.type), showdown)).join('') : ''}</div>
       ${showdown

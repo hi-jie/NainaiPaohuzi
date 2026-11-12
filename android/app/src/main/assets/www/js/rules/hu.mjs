@@ -36,7 +36,10 @@ export function findHu(player, card, selfDraw, rules) {
     ? (a, b) => tunForHuxi(a, rules) - tunForHuxi(b, rules) || a - b
     : (a, b) => a - b;
   if (card !== null) {
-    if (countCard(hand, card) === 2 && !selfDraw) {
+    const count = countCard(hand, card);
+    // A fourth copy must go through the forced meld before checking Hu.
+    if (count === 3) return null;
+    if (count === 2 && !selfDraw) {
       // Compare a winning triplet with using the same card in a sequence.
       const triplet = { type: '碰', cards: [card, card, card] };
       const tripletHu = evaluate(takeCards(hand, [card, card]), [...fixed, triplet], rules, compare, passedHu);

@@ -1,5 +1,5 @@
 import { countCard, hasCards, takeCards } from './cards.mjs';
-import { findHu } from './hu.mjs?v=65';
+import { findHu } from './hu.mjs?v=247';
 
 // Seat indices are bottom, left, right and (in four-player rounds) top.
 const nextByCount = { 3: [2, 0, 1], 4: [2, 0, 3, 1], 5: [2, 0, 3, 4, 1] };
@@ -62,8 +62,8 @@ export function responses(player, seat, { card, source, kind }, rules) {
       priority: 3, forced: true
     });
   }
-  if (kind === 'opening') return actions;
-  if (!self && count === 2 && !player.passedPeng.has(card)) {
+  if (kind === 'opening' || player.chongpao) return actions;
+  if (!self && count === 2 && !player.passedPeng.has(card) && !player.ownDiscards.includes(card)) {
     actions.push({ type: '碰', cards: [card, card], priority: 3 });
   }
   if ((ownDraw || seat === nextSeat(source, rules.seats)) && !player.passedChi.has(card)) {
