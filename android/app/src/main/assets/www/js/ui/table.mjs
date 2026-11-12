@@ -114,7 +114,7 @@ function seatView(round, seat, identity, activeSeat, event, response, openingSta
     ${discards.map((card, index) => seat === 0
       ? `<span class="discard-slot" style="z-index:${discards.length - index}">${tile(card)}</span>` : tile(card)).join('')}
   </div>`;
-  return `<section class="seat seat-${seat}${active ? ' active' : ''}${yourDiscard ? ' choosing-card' : ''}${winner ? ' winner' : ''}"${active ? ' aria-current="true"' : ''}>
+  return `<section class="seat seat-${seat}${active ? ' active' : ''}${winner ? ' winner' : ''}"${active ? ' aria-current="true"' : ''}>
     <div class="seat-heading">
       ${avatar(seat, identity)}
       <span class="seat-name" title="${name}">${name}</span>
