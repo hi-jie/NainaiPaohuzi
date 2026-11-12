@@ -519,9 +519,20 @@ main:has(#table:not([hidden])) {
   flex: 0 1 auto; align-self: end;
   width: var(--strip-width); height: var(--strip-height); border-radius: 4px;
 }
-.felt.dragging-hand::before {
+.felt.dragging-hand::before,
+main:has(> #table:not([hidden]) > .felt.dragging-hand)::before {
   content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none;
   background: #0009; backdrop-filter: blur(5px); animation: appear .15s ease-out;
+}
+main:has(> #table:not([hidden]) > .felt.dragging-hand)::before {
+  /* Fill the safe-area margins around the existing table mask. */
+  clip-path: polygon(evenodd,
+    0 0, 100% 0, 100% 100%, 0 100%, 0 0,
+    var(--safe-left) var(--safe-top),
+    calc(100% - var(--safe-right)) var(--safe-top),
+    calc(100% - var(--safe-right)) calc(100% - var(--safe-bottom)),
+    var(--safe-left) calc(100% - var(--safe-bottom)),
+    var(--safe-left) var(--safe-top));
 }
 .hand-drag-guides {
   position: absolute; inset: 0; z-index: 5; pointer-events: none;
@@ -758,7 +769,8 @@ main:has(#table:not([hidden])) {
   .seat.active .avatar, .turn-arrow::before { animation: none; }
   :is(.reveal-slot .card, .reveal-meld .card + .card) { animation: none; }
   :is(.reveal-slot .card, .reveal-meld .card + .card)::after { display: none; }
-  .felt.dragging-hand::before { animation: none; }
+  .felt.dragging-hand::before,
+  main:has(> #table:not([hidden]) > .felt.dragging-hand)::before { animation: none; }
   .landing .card.hinted { animation: none; }
   .hand .card { transition: none; }
 }
