@@ -432,7 +432,8 @@ main:has(#table:not([hidden])) {
 .meld > .meld-offered::before {
   content: ""; position: absolute; inset: 0 0 auto; box-sizing: border-box;
   height: calc(var(--strip-peek) - 1px);
-  border: 1.5px solid #237561; border-radius: inherit; pointer-events: none;
+  border: 2px solid var(--seat-card-edge, #bd955d); border-radius: inherit; pointer-events: none;
+  box-shadow: 0 0 5px #ffd477b3, inset 0 0 3px #ffd47780;
 }
 .meld > .meld-offered:last-child::before { bottom: 0; height: auto; }
 .discarded {
