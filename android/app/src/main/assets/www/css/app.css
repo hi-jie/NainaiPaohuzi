@@ -428,14 +428,6 @@ main:has(#table:not([hidden])) {
 .meld > .card + .card,
 .hand-stack > .card:not([hidden]) ~ .card:not([hidden]) { margin-top: calc(var(--strip-peek) - var(--strip-height)); }
 .meld > .card:last-child { height: calc(var(--strip-peek) + var(--meld-tail, 2px)); }
-.meld:has(> .meld-offered) > .card { position: relative; }
-.meld > .meld-offered::before {
-  content: ""; position: absolute; inset: 0 0 auto; box-sizing: border-box;
-  height: calc(var(--strip-peek) - 1px);
-  border: 2px solid var(--seat-card-edge, #bd955d); border-radius: inherit; pointer-events: none;
-  box-shadow: 0 0 5px #ffd477b3, inset 0 0 3px #ffd47780;
-}
-.meld > .meld-offered:last-child::before { bottom: 0; height: auto; }
 .discarded {
   display: grid; grid-template-columns: repeat(auto-fill, var(--strip-width)); grid-auto-rows: var(--strip-peek);
   align-items: start; column-gap: var(--discard-gap);
@@ -740,11 +732,11 @@ main:has(#table:not([hidden])) {
 }
 .wide .hand-stack { flex: 0 1 auto; width: var(--strip-width); max-width: none; align-self: end; }
 .wide .hand-stack.loose { margin-left: 0; }
-.card.hinted, .hand .card:is(.eat-preview, [aria-pressed="true"]) {
+.card:is(.hinted, .meld-offered), .hand .card:is(.eat-preview, [aria-pressed="true"]) {
   background: linear-gradient(#fff7c8, #ffdf87);
   border-color: #9b581b;
 }
-.hand .card:is(.hinted, .eat-preview, [aria-pressed="true"]) {
+.meld > .card.meld-offered, .hand .card:is(.hinted, .eat-preview, [aria-pressed="true"]) {
   box-shadow: 0 0 0 2px #db8e29;
 }
 .landing .card.hinted {
