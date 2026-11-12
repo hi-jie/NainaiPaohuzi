@@ -181,14 +181,23 @@ export class Round {
       if (!this.options[0].forced) this.options.push({ type: '过' });
       return;
     }
-    const { source, card, kind } = this.offer;
+    const { source, kind } = this.offer;
     if (kind === 'opening') {
       this.waitForOpeningTi(0);
+    } else if (kind === 'draw' && !this.deck.length) {
+      this.phase = 'last-draw';
+      this.seat = source;
+      this.options = [{ type: '黄庄', forced: true }];
     } else {
-      this.offer = null;
-      if (kind === 'draw') this.players[source].discards.push(card);
-      this.waitForDraw(nextSeat(source, this.players.length));
+      this.finishUnclaimedOffer();
     }
+  }
+
+  finishUnclaimedOffer() {
+    const { source, card, kind } = this.offer;
+    this.offer = null;
+    if (kind === 'draw') this.players[source].discards.push(card);
+    this.waitForDraw(nextSeat(source, this.players.length));
   }
 
   act(action) {
@@ -196,6 +205,10 @@ export class Round {
     const seat = this.seat;
     const player = this.players[seat];
     const { type } = action;
+    if (type === '黄庄') {
+      this.finishUnclaimedOffer();
+      return;
+    }
     if (this.phase === 'opening-ti') {
       player.hand = takeCards(player.hand, action.cards);
       player.groups.push({ type, cards: action.cards });

@@ -73,7 +73,7 @@ function playerHand(round, layout, canDiscard, response, canDrag) {
 
 function centerOffer(round) {
   if (round.rules.mode === 'mahjong') return round.offer;
-  if (round.phase === 'response' || round.phase === 'opening-ti') return round.offer;
+  if (['response', 'opening-ti', 'last-draw'].includes(round.phase)) return round.offer;
   if (round.phase !== 'draw') return null;
   const last = round.events.at(-1);
   if (last?.type === '摸' || last?.type === '出') {

@@ -522,6 +522,15 @@ test('最后一张牌无人取用时自动黄庄，下家接庄并亮牌', () =>
   round.waitForDraw(3);
   round.act(round.options[0]);
 
+  assert.equal(round.phase, 'last-draw');
+  assert.deepEqual(round.players[3].discards, []);
+  const holding = renderTable(round, 0, round.events.at(-1));
+  assert.match(holding, /class="landing">\s*<span class="card red">十<\/span>/);
+  assert.doesNotMatch(holding, /class="revealed-hand"|data-action=/);
+  const restored = Round.fromSave(JSON.parse(JSON.stringify(round.toSave())));
+  assert.deepEqual(restored, round);
+  round.act(round.options[0]);
+
   assert.equal(round.phase, 'finished');
   assert.deepEqual(round.options, []);
   assert.deepEqual(round.result, { winner: null, delta: [0, 0, 0, 0], nextDealer: 2 });
