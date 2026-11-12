@@ -732,13 +732,18 @@ main:has(#table:not([hidden])) {
 .wide .hand-stack { flex: 0 1 auto; width: var(--strip-width); max-width: none; align-self: end; }
 .wide .hand-stack.loose { margin-left: 0; }
 .card:is(.hinted, .meld-offered:where(:not(.back))), .hand .card:is(.eat-preview, [aria-pressed="true"]) {
-  background: linear-gradient(#fff7c8, #ffdf87);
+  --card-highlight-fill: linear-gradient(#fff7c8, #ffdf87);
+  background: var(--card-highlight-fill);
   border-color: #9b581b;
 }
 .hand .card:is(.hinted, .eat-preview, [aria-pressed="true"]) {
   box-shadow: 0 0 0 2px #db8e29;
 }
 .meld > .card.meld-offered { box-shadow: 0 0 0 1px #db8e29; }
+.meld > .card.meld-offered:not(.back) {
+  background-image: repeating-linear-gradient(135deg, #a66a343b 0 1px, transparent 1px 5px),
+    var(--card-highlight-fill);
+}
 .landing .card.hinted {
   box-shadow: 0 0 0 2px #ffe1a0, 0 0 16px 3px #ffc75a90;
   animation: claim-glow .45s ease-out;
