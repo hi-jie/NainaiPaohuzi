@@ -44,10 +44,5 @@ export function bindAppUpdate() {
     }
   });
 
-  fetch('./update.json', { cache: 'no-cache' })
-    .then(response => response.ok ? response.json() : null)
-    .then(info => {
-      if (controls.hidden && typeof info?.versionName === 'string') showVersion(info.versionName);
-    })
-    .catch(() => {});
+  if (version.dataset.webVersion) showVersion(version.dataset.webVersion);
 }

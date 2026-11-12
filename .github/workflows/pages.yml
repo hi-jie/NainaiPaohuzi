@@ -3,22 +3,9 @@ name: Deploy GitHub Pages
 on:
   push:
     branches: [main]
-  release:
-    types: [published]
   workflow_dispatch:
 
 jobs:
-  dispatch-release:
-    if: github.event_name == 'release' && !github.event.release.prerelease
-    runs-on: ubuntu-latest
-    permissions:
-      actions: write
-    steps:
-      - name: Trigger Pages deployment from main
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref main
-
   deploy:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -35,17 +22,13 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - run: node scripts/update-music.mjs --playlist-only
-      - name: Stage Pages with the latest released Android APK
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Set the version shown in web settings
         run: |
-          mkdir -p "$RUNNER_TEMP/android-release"
-          gh release download --repo "$GITHUB_REPOSITORY" --pattern 'NainaiPaohuzi-*-release.apk' --dir "$RUNNER_TEMP/android-release"
-          cp -a android/app/src/main/assets/www "$RUNNER_TEMP/pages"
-          python3 scripts/stage-android-update.py "$RUNNER_TEMP/android-release" "$RUNNER_TEMP/pages"
+          version=$(jq -er '.versionName | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))' android/app/version.json)
+          sed -i "s/data-web-version=\"\"/data-web-version=\"$version\"/" android/app/src/main/assets/www/index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
-          path: ${{ runner.temp }}/pages
+          path: android/app/src/main/assets/www
       - uses: actions/deploy-pages@v4
         id: deployment

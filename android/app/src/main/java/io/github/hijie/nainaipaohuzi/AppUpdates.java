@@ -16,6 +16,7 @@ import android.provider.Settings;
 
 import androidx.core.content.FileProvider;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -30,16 +31,20 @@ import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class AppUpdates {
     static final int ALLOW_UPDATE_INSTALL = 2;
-    private static final String PAGES = "https://hi-jie.github.io/NainaiPaohuzi/";
+    private static final String RELEASES = "https://gitee.com/api/v5/repos/hi-jie/nainai-paohuzi/releases";
+    private static final Pattern RELEASE_TAG = Pattern.compile("v([0-9]+\\.[0-9]+\\.[0-9]+)");
+    private static final Pattern RELEASE_CODE = Pattern.compile("(?m)^versionCode: ([1-9][0-9]{0,9})$");
     private static final int SIGNING_FLAGS = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
             ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
 
     public static final class UpdateFileProvider extends FileProvider {}
 
-    private record Update(long code, String name, String apk) {}
+    private record Update(long code, String name, String downloadUrl) {}
 
     private final Activity activity;
     private final Consumer<JSONObject> render;
@@ -102,7 +107,7 @@ public final class AppUpdates {
         worker.execute(() -> {
             Update latest = null;
             try {
-                latest = readLatest();
+                latest = readLatest(versionCode(installed));
             } catch (IOException | JSONException ignored) {
                 // The user can retry after the connection recovers.
             }
@@ -121,31 +126,50 @@ public final class AppUpdates {
         });
     }
 
-    private static Update readLatest() throws IOException, JSONException {
-        HttpURLConnection connection = (HttpURLConnection) new URL(
-                PAGES + "update.json?check=" + System.currentTimeMillis()).openConnection();
+    private static Update readLatest(long installedCode) throws IOException, JSONException {
+        JSONObject release = new JSONObject(readResponse(RELEASES + "/latest"));
+        Matcher tag = RELEASE_TAG.matcher(release.getString("tag_name"));
+        Matcher version = RELEASE_CODE.matcher(release.getString("body"));
+        long releaseId = release.getLong("id");
+        if (!tag.matches() || !version.find() || release.optBoolean("prerelease") || releaseId <= 0) {
+            throw new IOException("Invalid Gitee release");
+        }
+        String name = tag.group(1);
+        long code = Long.parseLong(version.group(1));
+        if (code > Integer.MAX_VALUE || version.find()) throw new IOException("Invalid release version code");
+        if (code <= installedCode) return new Update(code, name, null);
+
+        String fileName = "NainaiPaohuzi-" + name + "-release.apk";
+        String attachmentsUrl = RELEASES + "/" + releaseId + "/attach_files";
+        JSONArray attachments = new JSONArray(readResponse(attachmentsUrl));
+        for (int index = 0; index < attachments.length(); index++) {
+            JSONObject attachment = attachments.getJSONObject(index);
+            if (!fileName.equals(attachment.optString("name"))) continue;
+            long attachmentId = attachment.getLong("id");
+            if (attachmentId > 0 && attachment.getLong("size") > 0) {
+                return new Update(code, name, attachmentsUrl + "/" + attachmentId + "/download");
+            }
+        }
+        throw new IOException("Gitee release has no matching APK");
+    }
+
+    private static String readResponse(String url) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setConnectTimeout(10000);
         connection.setReadTimeout(10000);
         connection.setUseCaches(false);
         connection.setInstanceFollowRedirects(false);
+        connection.setRequestProperty("Accept", "application/json");
         try {
-            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) throw new IOException("Update feed unavailable");
+            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) throw new IOException("Gitee API unavailable");
             try (InputStreamReader reader = new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8)) {
                 StringBuilder text = new StringBuilder();
                 char[] buffer = new char[512];
                 for (int count; (count = reader.read(buffer)) != -1;) {
-                    if (text.length() + count > 4096) throw new IOException("Update feed exceeds size limit");
+                    if (text.length() + count > 65536) throw new IOException("Gitee API response exceeds size limit");
                     text.append(buffer, 0, count);
                 }
-                JSONObject data = new JSONObject(text.toString());
-                long code = data.getLong("versionCode");
-                String name = data.getString("versionName");
-                String apk = data.getString("apk");
-                if (code <= 0 || !name.matches("[0-9]+\\.[0-9]+\\.[0-9]+")
-                        || !apk.equals("NainaiPaohuzi-" + name + "-release.apk")) {
-                    throw new IOException("Invalid update feed");
-                }
-                return new Update(code, name, apk);
+                return text.toString();
             }
         } finally {
             connection.disconnect();
@@ -158,7 +182,7 @@ public final class AppUpdates {
         offered = null;
         clearDownload();
         try {
-            DownloadManager.Request request = new DownloadManager.Request(Uri.parse(PAGES + update.apk()))
+            DownloadManager.Request request = new DownloadManager.Request(Uri.parse(update.downloadUrl()))
                     .setTitle("衡阳跑胡子 " + update.name())
                     .setMimeType("application/vnd.android.package-archive")
                     .setDestinationInExternalFilesDir(activity, "updates", fileName(update.code()));

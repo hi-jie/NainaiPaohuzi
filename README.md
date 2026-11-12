@@ -2,7 +2,7 @@
 
 一款给奶奶做的单机衡阳字牌游戏。你和电脑牌友同桌，选好玩法就能开局。安卓安装包内置游戏、字体和音频，断网也能打。
 
-**[下载最新版安卓 APK](https://github.com/hi-jie/NainaiPaohuzi/releases/latest)** · **[网页试玩](https://hi-jie.github.io/NainaiPaohuzi/)** · [发布记录](https://github.com/hi-jie/NainaiPaohuzi/releases)
+**[下载最新版安卓 APK](https://github.com/hi-jie/NainaiPaohuzi/releases/latest)** · **[网页试玩](https://hi-jie.github.io/NainaiPaohuzi/)** · [Gitee 发布记录](https://gitee.com/hi-jie/nainai-paohuzi/releases)
 
 ## 安装和开局
 
@@ -54,7 +54,7 @@ cd android
 .\gradlew.bat :app:assembleDebug
 ```
 
-正式签名打包、GitHub Release、Pages 更新源和真机升级验证见 [安卓正式版发布流程](docs/安卓正式版发布流程.md)。
+正式签名打包、双仓库发布、Gitee 更新源和真机升级验证见 [安卓正式版发布流程](docs/安卓正式版发布流程.md)。
 
 - [玩法规则确认稿](docs/衡阳跑胡子玩法规则确认稿.md) · [麻雀牌玩法规则](docs/麻雀牌玩法规则.md) · [当前牌局规则与代码审查](docs/当前牌局规则与代码审查.md)
 - [早期功能规格](docs/功能规格.md) · [项目结构](docs/项目结构.md)

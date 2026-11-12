@@ -2,7 +2,7 @@ plugins {
     id 'com.android.application' version '8.6.1'
 }
 
-def appVersion = new groovy.json.JsonSlurper().parse(file('src/main/assets/www/update.json'))
+def appVersion = new groovy.json.JsonSlurper().parse(file('version.json'))
 
 android {
     namespace 'io.github.hijie.nainaipaohuzi'
