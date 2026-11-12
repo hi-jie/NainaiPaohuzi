@@ -75,6 +75,7 @@ export class Round {
       const { source, card, kind } = round.offer;
       round.reveal(source, card, kind);
     }
+    if (round.phase === 'draw' && !round.deck.length) round.waitForDraw(round.seat);
     return round;
   }
 
@@ -122,6 +123,14 @@ export class Round {
   }
 
   waitForDraw(seat) {
+    if (!this.deck.length) {
+      this.finish({
+        winner: null,
+        delta: this.players.map(() => 0),
+        nextDealer: nextSeat(this.dealer, this.players.length)
+      });
+      return;
+    }
     this.phase = 'draw';
     this.seat = seat;
     this.options = [{ type: '摸' }];
@@ -181,10 +190,6 @@ export class Round {
       return;
     }
     if (type === '摸') {
-      if (!this.deck.length) {
-        this.finish({ winner: null, delta: this.players.map(() => 0) });
-        return;
-      }
       const card = this.deck.pop();
       this.record(type, seat, card);
       this.reveal(seat, card, 'draw');

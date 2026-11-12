@@ -305,7 +305,7 @@ test('等吃期间牌只在墩旁，吃完进入落地牌，过后等下一张�
     for (const decision of ['吃', '过']) {
       const round = new Round(defaultSettings, 0);
       round.players = [player([0, 1, 8]), player(kind === 'discard' ? [2] : []), player([]), player([])];
-      round.deck = kind === 'draw' ? [9, 2] : [9];
+      round.deck = kind === 'draw' ? [7, 9, 2] : [7, 9];
       if (kind === 'draw') round.waitForDraw(1);
       else round.waitForDiscard(1);
       round.act(round.options[0]);
@@ -398,19 +398,37 @@ test('放炮胡只取走本次打出的那一张，先前同名弃牌仍保留',
   assert.doesNotMatch(reveal, /class="(?:hand|settlement)"/);
 });
 
-test('跑胡子黄庄后亮出每家的手牌和暗偎', () => {
+test('最后一张牌无人取用时自动黄庄，下家接庄并亮牌', () => {
   const round = new Round(defaultSettings, 0);
   round.players = [player([0]), player([1], [{ type: '偎', cards: [4, 4, 4] }]), player([2]), player([3])];
-  round.deck = [];
-  round.waitForDraw(0);
+  round.deck = [9];
+  round.waitForDraw(3);
   round.act(round.options[0]);
 
-  assert.equal(round.result.winner, null);
+  assert.equal(round.phase, 'finished');
+  assert.deepEqual(round.options, []);
+  assert.deepEqual(round.result, { winner: null, delta: [0, 0, 0, 0], nextDealer: 2 });
+  assert.deepEqual(round.players[3].discards, [9]);
   const table = renderTable(round, 0);
   assert.equal([...table.matchAll(/class="reveal-slot"/g)].length, 4);
   assert.doesNotMatch(table, /class="revealed-deck"/);
   assert.match(table, /class="meld reveal-meld" data-meld="偎"/);
   assert.doesNotMatch(table, /class="seat-backs"|data-select-card/);
+});
+
+test('空墩仍允许吃牌和后续出牌，待动作结束才自动黄庄', () => {
+  const round = new Round(defaultSettings, 3);
+  round.players = [player([0, 1, 8]), player([]), player([]), player([])];
+  round.deck = [2];
+  round.waitForDraw(1);
+  round.act(round.options[0]);
+  assert.equal(round.phase, 'response');
+  assert.equal(round.deck.length, 0);
+  round.act(round.options.find(action => action.type === '吃'));
+  assert.equal(round.phase, 'discard');
+  round.act(round.options[0]);
+  assert.equal(round.phase, 'finished');
+  assert.deepEqual(round.result, { winner: null, delta: [0, 0, 0, 0], nextDealer: 1 });
 });
 
 test('存档恢复当前响应、后续响应和过牌限制', () => {
@@ -584,9 +602,10 @@ test('四人六胡抢逆时针轮转，上家可吃，旧三人存档仍可恢�
   const state = round.toSave();
   delete state.rules.seats;
   state.players.pop();
+  state.dealer = 0;
+  delete state.openingHand;
+  Object.assign(state, { deck: [], phase: 'draw', seat: 1, options: [{ type: '摸' }] });
   const restored = Round.fromSave(state);
-  restored.deck = [];
-  restored.waitForDraw(2);
-  restored.act(restored.options[0]);
-  assert.deepEqual(restored.result.delta, [0, 0, 0]);
+  assert.equal(restored.phase, 'finished');
+  assert.deepEqual(restored.result, { winner: null, delta: [0, 0, 0], nextDealer: 2 });
 });

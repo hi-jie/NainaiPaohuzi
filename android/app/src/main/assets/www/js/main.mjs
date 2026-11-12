@@ -3,14 +3,14 @@ import { setMusicPlaying, setMusicVolume } from './audio/music.mjs?v=208-cbe0bee
 import { playAction, playEffect, setSoundEnabled, setSoundVolume, stopEffect, stopSound, unlockSound } from './audio/player.mjs?v=210';
 import { pickTablemates } from './data/tablemates.mjs?v=179';
 import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
-import { Round } from './game/state-machine.mjs?v=247';
+import { Round } from './game/state-machine.mjs?v=248';
 import { MahjongRound } from './game/mahjong-round.mjs';
 import { presets } from './rules/presets.mjs?v=141';
 import { load, save } from './storage/save.mjs?v=238';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=116';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=235';
 import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=247';
-import { bindTutorial } from './ui/tutorial.mjs?v=247';
+import { bindTutorial } from './ui/tutorial.mjs?v=248';
 import { bindProfile } from './ui/profile.mjs?v=202';
 import { bindAppUpdate } from './ui/update.mjs?v=237';
 
@@ -329,10 +329,9 @@ function continueSavedRound() {
   }
   round.rules.sound = data.settings.sound;
   handLayout = data.round.handLayout;
-  if (!round.tablemates) {
-    round.tablemates = pickTablemates(round.players.length - 1);
-    saveRound();
-  }
+  const needsTablemates = !round.tablemates;
+  if (needsTablemates) round.tablemates = pickTablemates(round.players.length - 1);
+  if (needsTablemates || round.phase === 'finished') saveRound();
   showTable();
   if (round.openingHand) beginPlay();
   else showRound();
