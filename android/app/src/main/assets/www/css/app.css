@@ -520,13 +520,17 @@ main:has(#table:not([hidden])) {
   width: var(--strip-width); height: var(--strip-height); border-radius: 4px;
 }
 #table:has(> .felt.dragging-hand), .felt.dragging-hand { overflow: visible; }
+.felt.dragging-hand {
+  --drag-safe-left: calc(-1 * var(--safe-left) / var(--table-scale));
+  --drag-safe-right: calc(-1 * var(--safe-right) / var(--table-scale));
+}
 .felt.dragging-hand::before {
   content: ""; position: absolute; z-index: 4; pointer-events: none;
   /* Convert the viewport safe insets to the scaled table's coordinates. */
   inset: calc(-1 * var(--safe-top) / var(--table-scale))
-    calc(-1 * var(--safe-right) / var(--table-scale))
+    var(--drag-safe-right)
     calc(-1 * var(--safe-bottom) / var(--table-scale))
-    calc(-1 * var(--safe-left) / var(--table-scale));
+    var(--drag-safe-left);
   background: #0009; backdrop-filter: blur(5px); animation: appear .15s ease-out;
 }
 .hand-drag-guides {
@@ -535,7 +539,11 @@ main:has(#table:not([hidden])) {
   color: #ffe8ad; font-size: 22px; font-weight: 400;
 }
 .hand-drag-guides span {
-  display: grid; place-items: center; border-bottom: 1px solid #ffe1a080;
+  position: relative; display: grid; place-items: center; border-bottom: 1px solid transparent;
+}
+.hand-drag-guides span::after {
+  content: ""; position: absolute; bottom: -1px; left: var(--drag-safe-left); right: var(--drag-safe-right);
+  border-bottom: 1px solid #ffe1a080;
 }
 #table:not(.wide) .felt.dragging-hand .seat-0 {
   inset-inline: 0; margin-inline: auto; transform: none;
