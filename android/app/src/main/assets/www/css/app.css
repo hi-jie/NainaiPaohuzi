@@ -740,8 +740,7 @@ main:has(#table:not([hidden])) {
 }
 .meld > .card.meld-offered { box-shadow: 0 0 0 1px #db8e29; }
 .meld > .card.meld-offered:not(.back) {
-  background-image: repeating-linear-gradient(135deg, #a66a343b 0 .65px, transparent .65px 3px),
-    linear-gradient(#f9e8ab, #f4ce74);
+  background-image: linear-gradient(#f9e8ab, #f4ce74);
 }
 .landing .card.hinted {
   box-shadow: 0 0 0 2px #ffe1a0, 0 0 16px 3px #ffc75a90;
