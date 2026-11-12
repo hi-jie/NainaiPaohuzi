@@ -403,7 +403,7 @@ function selectDiscard(button) {
 function placeEatMenu() {
   const scale = Number(table.style.getPropertyValue('--table-scale'));
   const frame = table.parentElement.getBoundingClientRect();
-  const button = table.querySelector('[data-command="choose-eat"]').getBoundingClientRect();
+  const button = table.querySelector('.hand-actions button').getBoundingClientRect();
   const portrait = matchMedia('(orientation: portrait)').matches;
   const left = portrait ? button.top - frame.top : button.left - frame.left;
   const bottom = portrait ? frame.right - button.left : button.bottom - frame.top;
