@@ -45,11 +45,10 @@ function findDrop(drag, x, y) {
   const { source, columns, area } = drag;
   if (y < area.cancel || y > area.bottom) return null;
   const midpoint = column => (column.left + column.right) / 2;
-  if (y < area.top) {
+  if (y < area.top || x < columns[0].left || x > columns.at(-1).right) {
     const next = columns.find(column => x < midpoint(column));
     return { column: next?.column ?? columns.length, newColumn: true, before: next?.element ?? drag.held };
   }
-  if (x < columns[0].left || x > columns.at(-1).right) return null;
   const stack = columns.find((column, index) => index === columns.length - 1 ||
     x < (column.right + columns[index + 1].left) / 2);
   if (stack.cards.length >= 4) return null;

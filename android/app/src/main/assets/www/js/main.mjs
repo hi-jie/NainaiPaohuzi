@@ -7,7 +7,7 @@ import { Round } from './game/state-machine.mjs?v=253';
 import { MahjongRound } from './game/mahjong-round.mjs';
 import { presets } from './rules/presets.mjs?v=250';
 import { load, save } from './storage/save.mjs?v=250';
-import { bindHandDrag } from './ui/hand-drag.mjs?v=116';
+import { bindHandDrag } from './ui/hand-drag.mjs?v=254';
 import { createHandLayout, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=235';
 import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=253';
 import { bindTutorial } from './ui/tutorial.mjs?v=250';
