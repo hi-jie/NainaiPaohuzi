@@ -692,10 +692,13 @@ main:has(#table:not([hidden])) {
 .many-seats .seat-4 .callout { left: 100%; top: 4px; }
 .six-hu.many-seats { --right-seat-cards-width: 165px; }
 .six-hu.many-seats .seat-0 { --seat-cards-width: 250px; }
-.six-hu.many-seats .seat.seat-1 { top: 76px; left: 34px; }
+.six-hu.many-seats .seat.seat-1,
+.mahjong.many-seats:not(.five-seats) .seat.seat-1 { top: 76px; left: 34px; }
 .six-hu.many-seats .seat.seat-2 { --seat-cards-width: var(--right-seat-cards-width); }
-.wide .six-hu.many-seats .seat.seat-2 { top: 182px; }
-.six-hu.many-seats .seat-3 { right: 46px; }
+.wide .six-hu.many-seats .seat.seat-2,
+.wide .mahjong.many-seats:not(.five-seats) .seat.seat-2 { top: 182px; }
+.six-hu.many-seats .seat-3,
+.mahjong.many-seats:not(.five-seats) .seat-3 { right: 46px; }
 .many-seats :is(.seat-3, .seat-4) .dealer,
 .six-hu.many-seats .seat-1 .dealer {
   top: calc(var(--avatar-size) / 2); bottom: auto;
@@ -704,13 +707,11 @@ main:has(#table:not([hidden])) {
 .many-seats .seat-4 .dealer,
 .six-hu.many-seats .seat-1 .dealer { inset-inline: auto calc(100% + 8px); }
 .mahjong .seat { --mahjong-back-row: var(--seat-backs-height); }
-.mahjong.many-seats .seat { --seat-heading-top: 26px; }
-.mahjong.many-seats .seat-3 { top: 26px; }
-.mahjong.many-seats .seat-4 { top: 62px; }
+.mahjong.five-seats .seat { --seat-heading-top: 26px; }
 .mahjong.five-seats .seat:is(.seat-1, .seat-2) {
   top: calc(50% - 17px - var(--avatar-size) + var(--seat-backs-height));
 }
-.mahjong.five-seats .seat.seat-3 { top: 62px; }
+.mahjong.five-seats .seat:is(.seat-3, .seat-4) { top: 62px; }
 .mahjong.showdown .seat { --mahjong-back-row: 28px; }
 .mahjong.showdown .seat.winner { --mahjong-back-row: 76px; }
 .mahjong .seat-cards > .groups { display: none; }
