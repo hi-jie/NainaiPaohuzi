@@ -2,6 +2,10 @@ Copyright 2017-2022 Adobe (http://www.adobe.com/), with Reserved Font
 Name 'Source'. Source is a trademark of Adobe in the United States
 and/or other countries.
 
+Paohuzi UI Song is a renamed subset of Source Han Serif CN Bold 2.003.
+Copyright 2017-2024 Adobe (http://www.adobe.com/), with Reserved Font
+Name 'Source'.
+
 This Font Software is licensed under the SIL Open Font License,
 Version 1.1.
 

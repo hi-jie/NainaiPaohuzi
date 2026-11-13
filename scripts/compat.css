@@ -1,5 +1,16 @@
 
 /* Chrome 69 equivalents for the layout operations that need element context. */
+@font-face {
+  font-family: "Paohuzi UI Song";
+  src: url("../media/fonts/ui-song.woff") format("woff");
+  font-weight: 700;
+  font-display: swap;
+}
+:root { --display-font: "Paohuzi UI Song", serif; }
+.home-brand h1, .callout { font-family: var(--display-font); }
+button.icon-button { display: inline-flex; align-items: center; justify-content: center; }
+button.icon-button > .nav-icon { display: block; flex: none; }
+
 .home-top, #open-profile, .menu-header, #profile .record-reset, .title-tiles, .update-controls,
 .table-hud, .seat-heading, .avatar-label, .seat .groups, .revealed-hand, .revealed-deck,
 .hand, .wide .hand, .wide .hand:not(.opening-row), .actions, .hand-actions, .eat-row, .result .groups {
