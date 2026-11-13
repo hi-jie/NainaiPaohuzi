@@ -442,7 +442,7 @@ main:has(#table:not([hidden])) {
   direction: rtl; justify-self: end;
   width: min(100%, calc(5 * var(--strip-width) + 4px + (var(--table-width) - 864px) / 2));
 }
-.seat-2 .seat-backs { justify-content: flex-end; }
+.seat-2 .seat-backs, .many-seats .seat-3 .seat-backs { justify-content: flex-end; }
 .showdown .seat-cards {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: var(--meld-row-height) minmax(var(--seat-backs-height), auto) auto;
@@ -681,15 +681,11 @@ main:has(#table:not([hidden])) {
 .many-seats .groups { flex-direction: row; }
 .many-seats .discarded { width: 100%; direction: ltr; }
 .many-seats .own-discards .discarded { direction: rtl; }
-.many-seats .seat-backs { justify-content: flex-start; }
 .many-seats .revealed-hand { direction: ltr; }
 .many-seats :is(.seat-2, .seat-3) .seat-heading { left: auto; right: 0; }
 .many-seats :is(.seat-2, .seat-3) .seat-cards { left: auto; right: var(--seat-card-offset); }
 .many-seats :is(.seat-2, .seat-3) .groups { flex-direction: row-reverse; }
-.many-seats :is(.seat-2, .seat-3) :is(.discarded, .revealed-hand, .seat-backs) { direction: rtl; }
-.many-seats :is(.seat-2, .seat-3) .seat-backs span + span {
-  margin-left: 0; margin-inline-start: calc(-1 * var(--seat-back-step));
-}
+.many-seats :is(.seat-2, .seat-3) :is(.discarded, .revealed-hand) { direction: rtl; }
 .many-seats .play-area { top: -80px; --deck-center: -25px; }
 .many-seats .last-play { --strip-height: 46px; }
 .many-seats .seat-3 .callout { right: 100%; top: 4px; }

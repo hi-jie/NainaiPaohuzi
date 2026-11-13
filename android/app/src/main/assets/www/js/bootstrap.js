@@ -21,7 +21,7 @@
   if (useCompat) {
     var stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './compat/app.css?v=259';
+    stylesheet.href = './compat/app.css?v=261';
     stylesheet.onload = function () {
       document.querySelector('link[href^="./css/app.css"]').disabled = true;
       document.head.appendChild(script);
