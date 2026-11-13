@@ -715,6 +715,9 @@ main:has(#table:not([hidden])) {
 .mahjong.showdown .winner .seat-cards > .groups { display: flex; }
 .mahjong .seat-cards { grid-template-rows: var(--mahjong-back-row) auto; }
 .mahjong .seat:not(.seat-0) .seat-cards { top: var(--seat-heading-top); }
+.mahjong.five-seats:not(.showdown) .seat:not(.seat-0) .seat-cards {
+  top: calc(var(--seat-heading-top) + var(--avatar-size) - var(--mahjong-back-row));
+}
 .mahjong .seat-0 .seat-cards { grid-template-rows: var(--mahjong-back-row); }
 .mahjong .seat-0 .seat-heading {
   top: calc(100% - var(--seat-cards-bottom) - var(--mahjong-back-row));
