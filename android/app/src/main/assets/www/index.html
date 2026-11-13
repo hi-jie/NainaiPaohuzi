@@ -160,7 +160,8 @@
         ['屏幕尺寸', (screen.width || 0) + ' × ' + (screen.height || 0)],
         ['main 高度', mainHeight, !mainRect || Math.round(mainRect.height) <= 0],
         ['首页位置', homeRect ? Math.round(homeRect.left) + ', ' + Math.round(homeRect.top) + '，' + Math.round(homeRect.width) + '×' + Math.round(homeRect.height) : '未找到 #home'],
-        ['Chrome 版本', chrome ? chrome + '（本游戏脚本需要 97+，CSS 布局需要 108+）' : '未能识别', !chrome || chrome < 97]
+        ['Chrome 版本', chrome || '未能识别', !chrome || chrome < 69],
+        ['渲染模式', document.documentElement.dataset.renderer || '未选择']
       ]);
       var features = [
         ['ES 模块（<script type="module">）', typeof HTMLScriptElement !== 'undefined' && 'noModule' in HTMLScriptElement.prototype],
@@ -227,7 +228,7 @@
     window.addEventListener('load', schedule);
   })();
   </script>
-  <script type="module" src="./js/main.mjs?v=258"></script>
+  <script defer src="./js/bootstrap.js?v=259"></script>
 </head>
 <body>
   <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -305,6 +306,7 @@
             <button id="cancel-update-download" type="button" hidden>取消下载</button>
           </div>
           <p id="update-status" role="status" hidden></p>
+          <label hidden><input type="checkbox" id="force-compat"> 强制兼容模式</label>
         </section>
       </div>
     </section>

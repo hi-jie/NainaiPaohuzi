@@ -1,0 +1,81 @@
+
+/* Chrome 69 equivalents for the layout operations that need element context. */
+.home-top, #open-profile, .menu-header, #profile .record-reset, .title-tiles, .update-controls,
+.table-hud, .seat-heading, .avatar-label, .seat .groups, .revealed-hand, .revealed-deck,
+.hand, .wide .hand, .wide .hand:not(.opening-row), .actions, .hand-actions, .eat-row, .result .groups {
+  grid-gap: 0;
+}
+:root { --compat-height: 100vh; }
+main { --layout-top: 4px; --layout-right: 4px; --layout-bottom: 4px; --layout-left: 4px; }
+.home-top > :not([hidden]) ~ :not([hidden]) { margin-left: var(--compat-home-gap); }
+.profile-photo .profile-avatar { height: var(--compat-profile-avatar); }
+#open-profile { max-width: 220px; }
+#open-profile > * + * { margin-left: 8px; }
+#profile .record-reset > * + * { margin-left: 4px; }
+.title-tiles > * + * { margin-left: 6px; }
+.menu-header > * + * { margin-left: 16px; }
+#setup-tutorial { margin-left: auto; }
+.setup-controls { width: 100%; max-width: 380px; }
+.menu-options { width: 100%; max-width: 480px; }
+.setup-controls .menu-options { width: 90%; min-width: 0; max-width: 240px; }
+.settings-content { width: 100%; max-width: 680px; }
+.update-controls > :not([hidden]) ~ :not([hidden]) { margin-left: 8px; }
+#update-download { width: 100%; max-width: 240px; }
+.table-hud > :not([hidden]) ~ :not([hidden]):not(.table-score) { margin-left: 12px; }
+.seat-heading > * + * { margin-top: 2px; }
+.avatar-label > * + * { margin-left: 6px; }
+.seat .groups { align-items: flex-end; }
+.seat .groups > * + * { margin-left: var(--meld-gap); }
+.seat-2 .groups > * + *, .many-seats .seat-3 .groups > * + * { margin-left: 0; margin-right: var(--meld-gap); }
+.seat-2 .discarded { width: calc(5 * var(--strip-width) + 4px + (var(--table-width) - 864px) / 2); max-width: 100%; }
+.many-seats .seat-2 .discarded { width: 100%; }
+.showdown .seat-0:not(.winner) .seat-cards:not(.own-discards) {
+  width: var(--seat-cards-width);
+  max-width: calc(100% - var(--seat-card-offset) - var(--own-discard-width) - var(--seat-row-gap));
+}
+.revealed-hand > * + * { margin-left: 1px; }
+.seat-2 .revealed-hand > * + *, .many-seats .seat-3 .revealed-hand > * + * { margin-left: 0; margin-right: 1px; }
+.revealed-deck > * { margin: 0 .5px; }
+.revealed-deck { width: calc(10 * var(--strip-width) + 10px); }
+.hand { --compat-hand-gap: 4px; }
+.wide .hand:not(.opening-row) { justify-content: flex-start; transform: translateX(-50%); }
+.wide .hand-stack, .hand .new-column-slot { align-self: flex-end; }
+.wide .hand.opening-row { --compat-hand-gap: 2px; }
+.hand > :not([hidden]) ~ :not([hidden]):not(.dragged-card):not(.loose) { margin-left: var(--compat-hand-gap); }
+.hand > :not([hidden]) ~ .loose { margin-left: calc(3px + var(--compat-hand-gap)); }
+.wide .hand > :not([hidden]) ~ .loose { margin-left: var(--compat-hand-gap); }
+.actions { align-items: flex-start; }
+.actions > :not([hidden]) ~ :not([hidden]) { margin-left: 6px; }
+.profile-actions > :not([hidden]) ~ :not([hidden]) { margin-left: 8px; }
+.hand-actions > :not([hidden]) ~ :not([hidden]) { margin-left: 4px; }
+.eat-row > * + * { margin-left: 7px; }
+.result { width: calc(100% - 18px); max-width: 530px; }
+.result .groups { align-items: flex-end; }
+.result .groups > * { margin: 0 2px; }
+.game-dialog { width: 390px; }
+#pause-menu { width: 460px; }
+#tutorial { width: 720px; height: 580px; }
+
+.legacy-focus button:focus, .legacy-focus input:focus { outline: none; }
+.legacy-focus.keyboard-focus button:focus, .legacy-focus.keyboard-focus input:focus {
+  outline: 2px solid #fff0b0; outline-offset: 2px;
+}
+@supports not (accent-color: #efcc80) {
+  .volume-control input { -webkit-appearance: none; background: transparent; }
+  .volume-control input::-webkit-slider-runnable-track {
+    height: 6px; border-radius: 4px; border: 1px solid #956e45;
+    background: linear-gradient(90deg, #efcc80 var(--volume-fill), #302319 var(--volume-fill));
+  }
+  .volume-control input::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px; margin-top: -5px;
+    border-radius: 50%; background: #efcc80;
+  }
+  #update-progress::-webkit-progress-bar { background: #302319; border-radius: 4px; }
+  #update-progress::-webkit-progress-value { background: #efcc80; border-radius: 4px; }
+}
+
+[inert] { pointer-events: none; }
+.felt.dragging-hand::before { backdrop-filter: none; }
+.felt.dragging-hand > :not(.seat-0):not(.hand-drag-guides),
+.felt.dragging-hand > .seat-0 > :not(.hand),
+.felt.dragging-hand::after { filter: blur(calc(5px / var(--table-scale))); }

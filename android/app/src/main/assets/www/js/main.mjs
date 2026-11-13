@@ -7,9 +7,9 @@ import { Round } from './game/state-machine.mjs?v=257';
 import { MahjongRound } from './game/mahjong-round.mjs';
 import { presets } from './rules/presets.mjs?v=250';
 import { load, save } from './storage/save.mjs?v=250';
-import { bindHandDrag } from './ui/hand-drag.mjs?v=254';
+import { bindHandDrag } from './ui/hand-drag.mjs?v=259';
 import { createHandLayout, eatPreviewIds, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=235';
-import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=255';
+import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=259';
 import { bindTutorial } from './ui/tutorial.mjs?v=250';
 import { bindProfile } from './ui/profile.mjs?v=202';
 import { bindAppUpdate } from './ui/update.mjs?v=252';
@@ -67,6 +67,7 @@ function showSettingValue(field) {
     if (field.name === 'openMelds') meldVisibility.textContent = value ? '明提明偎' : '暗提暗偎';
   } else {
     field.value = value;
+    if (window.paohuziCompatLayout) field.style.setProperty('--volume-fill', `${value}%`);
     field.nextElementSibling.value = `${value}%`;
     field.setAttribute('aria-valuetext', `${value}%`);
   }
@@ -169,6 +170,7 @@ window.addEventListener('paohuzi-foreground-change', () => {
 
 function showFront(screen, focus) {
   table.hidden = true;
+  window.paohuziCompatLayout?.syncTable();
   for (const page of [home, setup, settings, profilePage]) page.hidden = page !== screen;
   focus.focus({ preventScroll: true });
 }
@@ -202,6 +204,7 @@ function saveRound(keep = round.phase !== 'finished') {
 function paintRound(event, motion, action) {
   const previousSeat = table.querySelector('.turn-arrow')?.dataset.seat;
   table.innerHTML = renderTable(round, data.scores[round.rules.mode], event, '', handLayout, data.profile);
+  window.paohuziCompatLayout?.fitHand();
   animateTurnArrow(table.querySelector('.turn-arrow'), previousSeat);
   if (event || motion) animateAction(table, round, event, motion, action);
 }
@@ -236,6 +239,7 @@ new ResizeObserver(([{ contentRect: { width, height } }]) => {
   main.style.setProperty('--front-scale', scale);
   main.style.setProperty('--front-width', `${width / scale}px`);
   main.style.setProperty('--front-height', `${height / scale}px`);
+  window.paohuziCompatLayout?.fitFront(width / scale, height / scale);
 }).observe(main);
 
 function fitTable() {
@@ -245,6 +249,7 @@ function fitTable() {
   table.style.setProperty('--table-scale', scale);
   table.style.setProperty('--table-width', `${width / scale}px`);
   table.style.setProperty('--table-height', `${height / scale}px`);
+  window.paohuziCompatLayout?.fitHand();
   if (eatMenu.open) placeEatMenu();
 }
 
@@ -309,6 +314,7 @@ function showTable() {
   home.hidden = true;
   setup.hidden = true;
   table.hidden = false;
+  window.paohuziCompatLayout?.syncTable();
   fitTable();
   syncMusic();
 }
@@ -357,7 +363,7 @@ function step(action) {
   if (handLayout && seat === 0) {
     usedCards = action.type === '吃' && round.rules.mode !== 'mahjong'
       ? eatPreviewIds(handLayout, round.rules.patterns, [...action.cards, ...action.groups.slice(1).flat()])
-      : new Set(Array.from(table.querySelectorAll('.hand :is([aria-pressed="true"], .hinted)[data-hand-card]'),
+      : new Set(Array.from(table.querySelectorAll('.hand [aria-pressed="true"][data-hand-card], .hand .hinted[data-hand-card]'),
         card => Number(card.dataset.handCard)));
   }
   round.act(action);
@@ -507,6 +513,7 @@ table.addEventListener('click', ({ target }) => {
     const review = button.dataset.command === 'review-round';
     const back = table.querySelector('[data-command="return-to-result"]');
     table.querySelector('.settlement').hidden = review;
+    window.paohuziCompatLayout?.syncTable();
     table.querySelector('.felt').inert = !review;
     back.hidden = !review;
     (review ? back : table.querySelector('[data-command="review-round"]')).focus({ preventScroll: true });

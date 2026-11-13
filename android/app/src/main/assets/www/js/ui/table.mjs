@@ -2,6 +2,9 @@ import { cardName, huxi, isRed } from '../rules/cards.mjs';
 import { concealedDraw, nextSeat } from '../rules/actions.mjs?v=250';
 import { createHandLayout, eatPreviewIds, handColumnGroup } from './hand.mjs?v=235';
 import { tablemates } from '../data/tablemates.mjs?v=179';
+import { animate, afterSeatAnimations } from './motion.mjs?v=259';
+
+const compatibility = typeof __PAOHUZI_COMPAT__ !== 'undefined';
 
 const htmlEntities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 const escapeHtml = value => String(value).replace(/[&<>"']/g, character => htmlEntities[character]);
@@ -67,7 +70,7 @@ function playerHand(round, layout, canDiscard, response, canDrag) {
     const points = group && !mahjong ? huxi(group) : null;
     const score = points === null ? ''
       : `<strong class="group-score${points === 0 ? ' zero-huxi' : ''}"><span class="sr-only">胡息 </span>${points}</strong>`;
-    return `<div class="hand-stack${group ? '' : ' loose'}">${column.map(cardView).join('')}${score}</div>`;
+    return `<div class="hand-stack${group ? '' : ' loose'}${compatibility && column.length >= 4 ? ' four-cards' : ''}">${column.map(cardView).join('')}${score}</div>`;
   }).join('');
 }
 
@@ -285,7 +288,7 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
         ? `<div class="revealed-deck" role="group" aria-label="牌墩">${revealSlots([...round.deck].reverse())}</div>` : ''}
       <div class="play-area">
         ${showdown ? '' : `<div class="deck${flatDeck && round.deck.length > 1 ? ' stacked' : ''}">
-          <span class="card back deck-tile" aria-hidden="true">${openingPile(openingStage)}</span>
+          <span class="card back deck-tile${compatibility && ['shuffle', 'cut', 'deal'].includes(openingStage) ? ' with-opening-pile' : ''}" aria-hidden="true">${openingPile(openingStage)}</span>
           ${!openingStage ? `<span class="deck-count" aria-label="牌墩剩余 ${round.deck.length} 张">${round.deck.length}</span>` : ''}
           ${playing ? `<span class="turn-arrow to-${activeSeat}" data-seat="${activeSeat}" aria-hidden="true"></span>` : ''}
         </div>`}
@@ -310,7 +313,7 @@ export function animateTurnArrow(arrow, previousSeat) {
   const frames = [start, start - sweep].map(angle => ({
     transform: `translate(-50%, -50%) rotate(${angle}deg) translateX(var(--orbit-radius))`
   }));
-  arrow.animate(frames, { duration: 380, easing: 'ease-in-out' });
+  animate(arrow, frames, { duration: 380, easing: 'ease-in-out' });
 }
 
 function tableOffset(table, from, to) {
@@ -322,7 +325,7 @@ function tableOffset(table, from, to) {
 
 function slideFrom(table, element, from, duration, scale) {
   const [x, y] = tableOffset(table, from, element.getBoundingClientRect());
-  element.animate([
+  animate(element, [
     { transform: `translate(${x}px, ${y}px) scale(${scale})` },
     { transform: 'none' }
   ], { duration, fill: 'backwards', easing: 'cubic-bezier(.22,.6,.28,1)' });
@@ -349,9 +352,7 @@ export function showFinishedTable(table, round, score, event, profile) {
   });
   const scores = totals.map((_, seat) => table.querySelector(`.seat-${seat} .seat-score`));
   const updateScores = () => scores.forEach((label, seat) => { label.textContent = `${totals[seat]}胡息`; });
-  const animations = [...table.querySelectorAll('.seat-cards')].flatMap(cards => cards.getAnimations({ subtree: true }));
-  if (animations.length) Promise.allSettled(animations.map(animation => animation.finished)).then(updateScores);
-  else updateScores();
+  afterSeatAnimations(table, updateScores);
 }
 
 export function animateHandSort(table, render, opening = false) {
@@ -366,6 +367,7 @@ export function animateHandSort(table, render, opening = false) {
     previousCards.get(label).push(card.getBoundingClientRect());
   }
   render();
+  window.paohuziCompatLayout?.fitHand();
   const destination = opening ? '.seat-0 .hand .card, .seat-0 .groups .card' : '.seat-0 .hand .card';
   for (const card of table.querySelectorAll(destination)) {
     const from = previousCards.get(card.textContent)?.shift();
@@ -382,6 +384,7 @@ export function showOpeningFrame(table, round, score, stage, profile) {
   const deck = table.querySelector('.deck-tile').getBoundingClientRect();
   if (stage === 'dealer') {
     const badge = table.querySelector(`.seat-${round.dealer} .dealer`);
+    if (compatibility) badge.closest('.seat').classList.add('dealer-seat');
     slideFrom(table, badge, deck, 550, 1.6);
   } else if (stage === 'deal') {
     const destinations = [
@@ -405,7 +408,7 @@ export function showOpeningFrame(table, round, score, stage, profile) {
       const heightScale = deck.height / position.height;
       const scale = portrait ? [heightScale, widthScale] : [widthScale, heightScale];
       const origin = `translate(${x}px, ${y}px) scale(${scale.join(', ')})`;
-      card.animate([
+      animate(card, [
         { transform: origin, opacity: 0 },
         { transform: origin, opacity: 1, offset: .05 },
         { transform: 'none', opacity: 1 }
@@ -420,6 +423,7 @@ export function showRoundResult(table, round, score, profile) {
   table.querySelector('.table-score span:last-child').textContent = `积分 ${score}`;
   table.querySelector('.felt').inert = true;
   table.insertAdjacentHTML('beforeend', resultView(round, score, profile));
+  window.paohuziCompatLayout?.syncTable();
   table.querySelector('[data-command="review-round"]').focus({ preventScroll: true });
 }
 
@@ -477,7 +481,7 @@ function animateTransfer(table, card, destination, from, effect = 'move') {
   ] : [{ transform: origin }, { transform: target }];
   destination.style.visibility = 'hidden';
   table.append(ghost);
-  ghost.animate(frames, { duration: 220, fill: 'both', easing: 'ease-in-out' }).onfinish = () => {
+  animate(ghost, frames, { duration: 220, fill: 'both', easing: 'ease-in-out' }).onfinish = () => {
     destination.style.visibility = '';
     ghost.remove();
   };
@@ -507,7 +511,7 @@ export function animateAction(table, round, event, motion, action) {
     const origin = event.type === '摸' ? table.querySelector('.deck-tile') : seatView(event.seat);
     const card = table.querySelector('.landing .card');
     const [x, y] = tableOffset(table, origin.getBoundingClientRect(), card.getBoundingClientRect());
-    card.animate([
+    animate(card, [
       { transform: `translate(${x}px, ${y}px) scale(.72)`, opacity: .3 },
       { transform: 'scale(1.08)', opacity: 1, offset: .78 },
       { transform: 'scale(1)', opacity: 1 }

@@ -333,6 +333,11 @@ public class MainActivity extends Activity {
 
     public static final class NativeDiagnostics {
         @JavascriptInterface
+        public boolean compatibilityTesting() {
+            return BuildConfig.COMPATIBILITY_TESTING;
+        }
+
+        @JavascriptInterface
         public String webViewInfo() {
             return webViewDescription();
         }

@@ -14,6 +14,12 @@ android {
         targetSdk 35
         versionCode appVersion.versionCode
         versionName appVersion.versionName
+        buildConfigField 'boolean', 'COMPATIBILITY_TESTING',
+                providers.gradleProperty('compatibilityTesting').map { it.toBoolean().toString() }.getOrElse('false')
+    }
+
+    buildFeatures {
+        buildConfig true
     }
 
     signingConfigs {
@@ -38,6 +44,19 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+}
+
+def buildCompatibilityAssets = tasks.register('buildCompatibilityAssets', Exec) {
+    workingDir rootProject.projectDir.parentFile
+    commandLine 'node', 'scripts/build-compat.mjs'
+    inputs.files fileTree('src/main/assets/www') { include 'css/**', 'js/**', 'media/audio/music/playlist.mjs' }
+    inputs.files fileTree('../../scripts') { include '*compat*' }
+    inputs.file '../../package-lock.json'
+    outputs.dir 'src/main/assets/www/compat'
+}
+
+tasks.named('preBuild').configure {
+    dependsOn buildCompatibilityAssets
 }
 
 dependencies {

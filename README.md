@@ -42,12 +42,14 @@
 在仓库根目录启动静态预览，然后打开 [本地牌桌](http://127.0.0.1:8000/)。
 
 ```powershell
+npm ci --ignore-scripts
+npm run build:compat
 python -m http.server 8000 --bind 127.0.0.1 --directory android/app/src/main/assets/www
 ```
 
 在仓库根目录运行 `node --test` 可执行规则测试。网页和安卓应用共用同一套 HTML、CSS 和 JavaScript。
 
-安卓构建使用 JDK 17、Android SDK Platform 35 和 Build Tools 34.0.0。设置 `ANDROID_HOME`，或在 `android/local.properties` 填写 `sdk.dir`。首次构建会下载 Gradle 和依赖。
+安卓构建使用 JDK 17、Android SDK Platform 35 和 Build Tools 34.0.0，并使用 Node.js 22 或更新版本生成兼容资源。先在仓库根目录运行 `npm ci --ignore-scripts`。设置 `ANDROID_HOME`，或在 `android/local.properties` 填写 `sdk.dir`。
 
 ```powershell
 cd android

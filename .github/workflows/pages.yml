@@ -22,6 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - run: node scripts/update-music.mjs --playlist-only
+      - run: npm ci --ignore-scripts && npm run build:compat
       - name: Set the version shown in web settings
         run: |
           version=$(jq -er '.versionName | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))' android/app/version.json)

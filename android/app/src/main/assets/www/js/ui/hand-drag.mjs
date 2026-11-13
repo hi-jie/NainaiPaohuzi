@@ -1,3 +1,5 @@
+import { animate, cancelHandReflow } from './motion.mjs?v=259';
+
 function bounds(element, portrait) {
   const { left, right, top, bottom } = element.getBoundingClientRect();
   return portrait ? { left: top, right: bottom, top: -right, bottom: -left } : { left, right, top, bottom };
@@ -18,12 +20,6 @@ function handPositions(hand, portrait) {
   ]));
 }
 
-function cancelReflow(hand) {
-  for (const animation of hand.getAnimations({ subtree: true })) {
-    if (animation.id === 'hand-reflow') animation.cancel();
-  }
-}
-
 function animateReflow(hand, previous, portrait, scale, held) {
   if (!hand || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   for (const item of hand.querySelectorAll(reflowItems)) {
@@ -33,7 +29,7 @@ function animateReflow(hand, previous, portrait, scale, held) {
     const x = (from.left - to.left) / scale;
     const y = (from.top - to.top) / scale;
     if (Math.abs(x) < .25 && Math.abs(y) < .25) continue;
-    const animation = item.animate([
+    const animation = animate(item, [
       { transform: `translate(${x}px, ${y}px)` },
       { transform: 'none' }
     ], { duration: 150, easing: 'ease-out', composite: 'add' });
@@ -70,7 +66,7 @@ function showDrop(drag, drop, previous) {
 
   if (!previous) {
     previous = handPositions(drag.hand, drag.portrait);
-    cancelReflow(drag.hand);
+    cancelHandReflow(drag.hand);
   }
   drag.slot.remove();
   drag.drop = drop;
@@ -79,6 +75,7 @@ function showDrop(drag, drop, previous) {
   drag.origin.hidden = !!drop?.newColumn && drag.emptySource;
   if (drop?.newColumn) drag.hand.insertBefore(drag.slot, drop.before);
   else if (drop) drop.stack.insertBefore(drag.slot, drop.before);
+  window.paohuziCompatLayout?.syncHand(drag.hand);
   if (previous) animateReflow(drag.hand, previous, drag.portrait, drag.scale, drag.held);
 }
 
@@ -114,7 +111,7 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       const portrait = matchMedia('(orientation: portrait)').matches;
       const scale = Number(table.style.getPropertyValue('--table-scale'));
       const start = { x: portrait ? drag.startY : drag.startX, y: portrait ? -drag.startX : drag.startY };
-      cancelReflow(hand);
+      cancelHandReflow(hand);
       previous = handPositions(hand, portrait);
       const from = previous.get(drag.card.dataset.handCard);
       const stacks = [...hand.children];
@@ -133,6 +130,7 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
 
       table.setPointerCapture(event.pointerId);
       felt.classList.add('dragging-hand');
+      if (window.paohuziCompatLayout) table.classList.add('dragging-hand');
       drag.card.hidden = true;
       const emptySource = !origin.querySelector(visibleCard);
       const style = getComputedStyle(hand);
@@ -185,13 +183,17 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
     drag = undefined;
     if (columns) {
       const previous = handPositions(hand, portrait);
-      cancelReflow(hand);
+      cancelHandReflow(hand);
       slot.remove();
       held.remove();
       guides.remove();
       card.hidden = false;
       origin.hidden = false;
       felt.classList.remove('dragging-hand');
+      if (window.paohuziCompatLayout) {
+        table.classList.remove('dragging-hand');
+        window.paohuziCompatLayout.syncHand(hand);
+      }
       if (destination) onDrop(source, destination);
       animateReflow(table.querySelector('.hand'), previous, portrait, scale);
     }

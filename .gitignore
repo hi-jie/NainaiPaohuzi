@@ -5,3 +5,5 @@
 /android/local.properties
 /android/**/build/
 /.idea/
+/node_modules/
+/android/app/src/main/assets/www/compat/
