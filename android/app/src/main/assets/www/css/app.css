@@ -707,7 +707,8 @@ main:has(#table:not([hidden])) {
 .mahjong.many-seats .seat { --seat-heading-top: 26px; }
 .mahjong.many-seats .seat-3 { top: 26px; }
 .mahjong.many-seats .seat-4 { top: 62px; }
-.mahjong.five-seats .seat.seat-1 { top: calc(50% - 17px); }
+.mahjong.five-seats .seat:is(.seat-1, .seat-2) { top: calc(50% - 17px - var(--avatar-size)); }
+.mahjong.five-seats .seat.seat-3 { top: 62px; }
 .mahjong.showdown .seat { --mahjong-back-row: 28px; }
 .mahjong.showdown .seat.winner { --mahjong-back-row: 76px; }
 .mahjong .seat-cards > .groups { display: none; }
