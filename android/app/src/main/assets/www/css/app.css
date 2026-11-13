@@ -707,7 +707,9 @@ main:has(#table:not([hidden])) {
 .mahjong.many-seats .seat { --seat-heading-top: 26px; }
 .mahjong.many-seats .seat-3 { top: 26px; }
 .mahjong.many-seats .seat-4 { top: 62px; }
-.mahjong.five-seats .seat:is(.seat-1, .seat-2) { top: calc(50% - 17px - var(--avatar-size)); }
+.mahjong.five-seats .seat:is(.seat-1, .seat-2) {
+  top: calc(50% - 17px - var(--avatar-size) + var(--seat-backs-height));
+}
 .mahjong.five-seats .seat.seat-3 { top: 62px; }
 .mahjong.showdown .seat { --mahjong-back-row: 28px; }
 .mahjong.showdown .seat.winner { --mahjong-back-row: 76px; }
@@ -715,9 +717,6 @@ main:has(#table:not([hidden])) {
 .mahjong.showdown .winner .seat-cards > .groups { display: flex; }
 .mahjong .seat-cards { grid-template-rows: var(--mahjong-back-row) auto; }
 .mahjong .seat:not(.seat-0) .seat-cards { top: var(--seat-heading-top); }
-.mahjong.five-seats:not(.showdown) .seat:not(.seat-0) .seat-cards {
-  top: calc(var(--seat-heading-top) + var(--avatar-size) - var(--mahjong-back-row));
-}
 .mahjong .seat-0 .seat-cards { grid-template-rows: var(--mahjong-back-row); }
 .mahjong .seat-0 .seat-heading {
   top: calc(100% - var(--seat-cards-bottom) - var(--mahjong-back-row));
