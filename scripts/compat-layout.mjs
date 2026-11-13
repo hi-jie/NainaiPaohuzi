@@ -94,6 +94,8 @@ if (!CSS.supports('selector(:focus-visible)')) {
   window.addEventListener('pointerdown', () => root.classList.remove('keyboard-focus'));
 }
 new MutationObserver(safeArea).observe(root, { attributes: true, attributeFilter: ['style'] });
+// Replacing the table for a new round also removes the previous settlement.
+new MutationObserver(syncTable).observe(table, { childList: true });
 new MutationObserver(() => update.parentElement.classList.toggle('without-update', update.hidden))
   .observe(update, { attributes: true, attributeFilter: ['hidden'] });
 update.parentElement.classList.toggle('without-update', update.hidden);
