@@ -565,3 +565,5 @@ resumeMenu.addEventListener('close', () => {
   }
 });
 if (data.round) resumeMenu.showModal();
+// 页面初始化完成，告诉 index.html 里的诊断兜底脚本不用显示诊断页。
+window.__paohuziStarted = true;

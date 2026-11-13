@@ -7,7 +7,192 @@
   <title>衡阳跑胡子</title>
   <link rel="icon" type="image/png" sizes="192x192" href="./favicon.png">
   <link rel="stylesheet" href="./css/app.css?v=258">
-  <script type="module" src="./js/main.mjs?v=257"></script>
+  <script>
+  /* 诊断兜底：主脚本 4 秒内没有启动时（常见于系统 WebView 过旧的设备），用 ES5 内联脚本显示可读的诊断信息，避免只剩一片绿色。 */
+  (function () {
+    var errors = [];
+    var panel = null;
+    var poll = null;
+    var errorList = null;
+    var mini = null;
+
+    function remember(kind, message) {
+      if (errors.length >= 10) return;
+      errors.push({ kind: kind, message: String(message || '').slice(0, 300) });
+      renderErrors();
+    }
+    window.__paohuziStarted = false;
+    window.__paohuziDiagnostics = errors;
+    window.__paohuziShowDiagnostics = show;
+
+    window.addEventListener('error', function (event) {
+      if (event && event.target && event.target !== window && event.target.tagName) {
+        remember('资源加载失败', event.target.tagName + ' ' + (event.target.src || event.target.href || ''));
+      } else {
+        remember('脚本错误', (event && event.message ? event.message : '未知错误') +
+          (event && event.filename ? '（' + event.filename + ':' + event.lineno + '）' : ''));
+      }
+    }, true);
+    window.addEventListener('unhandledrejection', function (event) {
+      var reason = event && event.reason;
+      remember('Promise 错误', reason && reason.message ? reason.message : String(reason));
+    });
+
+    function element(tag, cssText, text) {
+      var node = document.createElement(tag);
+      if (cssText) node.style.cssText = cssText;
+      if (text !== undefined && text !== null) node.textContent = String(text);
+      return node;
+    }
+    function cssSupports(property, value) {
+      try { return !!(window.CSS && CSS.supports && CSS.supports(property, value)); } catch (error) { return false; }
+    }
+    function jsFeature(source) {
+      try { new Function(source)(); return true; } catch (error) { return false; }
+    }
+    function chromeVersion() {
+      var match = /Chrome\/(\d+)/.exec(navigator.userAgent || '');
+      return match ? Number(match[1]) : 0;
+    }
+    function nativeWebView() {
+      try {
+        if (window.paohuziDiagnosticsNative && window.paohuziDiagnosticsNative.webViewInfo) {
+          return String(window.paohuziDiagnosticsNative.webViewInfo());
+        }
+      } catch (error) { return '读取失败：' + error; }
+      return '';
+    }
+
+    function addSection(box, title, rows) {
+      box.appendChild(element('h3', 'margin:18px 0 6px;font-size:18px;color:#ffe2a0;', title));
+      for (var index = 0; index < rows.length; index++) addRow(box, rows[index][0], rows[index][1], rows[index][2]);
+    }
+    function addRow(box, label, value, bad) {
+      var row = element('div', 'padding:5px 0;border-bottom:1px solid #ffffff1f;word-break:break-all;');
+      row.appendChild(element('strong', 'display:inline-block;min-width:12em;padding-right:12px;color:#ffe6b9;font-weight:700;vertical-align:top;', label));
+      row.appendChild(element('span', 'color:' + (bad ? '#ffb4a0' : '#d8f0e2') + ';', value));
+      box.appendChild(row);
+    }
+
+    function renderErrors() {
+      if (!errorList) return;
+      while (errorList.firstChild) errorList.removeChild(errorList.firstChild);
+      if (!errors.length) {
+        errorList.appendChild(element('p', 'margin:4px 0;color:#8fc9ab;', '暂无记录（可能是页面脚本被直接忽略，或错误没有上报）'));
+        return;
+      }
+      for (var index = 0; index < errors.length; index++) {
+        errorList.appendChild(element('p', 'margin:4px 0;color:#ffcfc2;', '· ' + errors[index].kind + '：' + errors[index].message));
+      }
+    }
+
+    function hide() {
+      if (poll) { window.clearInterval(poll); poll = null; }
+      if (panel && panel.parentNode) panel.parentNode.removeChild(panel);
+      panel = null;
+      errorList = null;
+    }
+    function miniButton() {
+      if (mini) return;
+      mini = element('button', 'position:fixed;left:12px;bottom:12px;z-index:2147483646;padding:8px 14px;border-radius:8px;border:1px solid #d6a35e;background:#1d4538;color:#ffe6b9;font:15px system-ui,sans-serif;', '诊断信息');
+      mini.onclick = function () { show(); };
+      document.body.appendChild(mini);
+    }
+
+    function show() {
+      if (panel || window.__paohuziStarted) return;
+      var chrome = chromeVersion();
+      var native = nativeWebView();
+      var mainElement = document.querySelector('main');
+      var homeElement = document.querySelector('#home');
+      var mainRect = mainElement ? mainElement.getBoundingClientRect() : null;
+      var homeRect = homeElement ? homeElement.getBoundingClientRect() : null;
+      var mainHeight = '未找到 <main>';
+      if (mainElement) {
+        mainHeight = Math.round(mainRect.height) + 'px';
+        var computed = window.getComputedStyle(mainElement);
+        if (computed && computed.height) mainHeight += '（计算值 ' + computed.height + '）';
+      }
+      var dvh = cssSupports('height', '100dvh');
+      var clamp = cssSupports('width', 'clamp(1px,2px,3px)');
+      var has = cssSupports('selector(:has(*))');
+      var grid = cssSupports('display', 'grid');
+      var safeArea = cssSupports('padding-top', 'env(safe-area-inset-top)');
+
+      panel = element('div', 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:2147483647;overflow:auto;' +
+        'background:#0d241f;color:#f2ecd9;padding:26px 24px 44px;font:16px/1.55 system-ui,"Microsoft YaHei",sans-serif;');
+      panel.id = 'paohuzi-diagnostics';
+      var box = element('div', 'max-width:980px;margin:0 auto;');
+      panel.appendChild(box);
+      box.appendChild(element('h2', 'margin:0 0 4px;font-size:26px;color:#ffe2a0;', '游戏页面没有正常启动'));
+      box.appendChild(element('p', 'margin:0 0 8px;font-size:17px;color:#f3d9a4;',
+        '这是诊断信息页。常见原因是这台设备的系统 WebView（浏览器内核）太旧或已停用。请把本页截图发给开发者；' +
+        '也可以先用平板浏览器打开网页版：https://hi-jie.github.io/NainaiPaohuzi/'));
+      addSection(box, '设备与页面', [
+        ['User-Agent', navigator.userAgent],
+        ['系统 WebView', native || '（原生未返回）', !native || native.indexOf('未找到') !== -1],
+        ['页面地址', location.href],
+        ['窗口尺寸', window.innerWidth + ' × ' + window.innerHeight + '，像素比 ' + (window.devicePixelRatio || 1)],
+        ['屏幕尺寸', (screen.width || 0) + ' × ' + (screen.height || 0)],
+        ['main 高度', mainHeight, !mainRect || Math.round(mainRect.height) <= 0],
+        ['首页位置', homeRect ? Math.round(homeRect.left) + ', ' + Math.round(homeRect.top) + '，' + Math.round(homeRect.width) + '×' + Math.round(homeRect.height) : '未找到 #home'],
+        ['Chrome 版本', chrome ? chrome + '（本游戏脚本需要 97+，CSS 布局需要 108+）' : '未能识别', !chrome || chrome < 97]
+      ]);
+      var features = [
+        ['ES 模块（<script type="module">）', typeof HTMLScriptElement !== 'undefined' && 'noModule' in HTMLScriptElement.prototype],
+        ['可选链 a?.b', jsFeature('var a={b:1};return a?.b')],
+        ['空值合并 a ?? b', jsFeature('var a=null;return a ?? 1')],
+        ['Array.prototype.at', jsFeature('return [1,2].at(-1)')],
+        ['Object.hasOwn', jsFeature('return Object.hasOwn({a:1},"a")')],
+        ['Array.prototype.findLast', jsFeature('return [1,2].findLast(function(x){return x>1})')],
+        ['Promise.allSettled', jsFeature('return typeof Promise.allSettled === "function"')],
+        ['Object.fromEntries', jsFeature('return typeof Object.fromEntries === "function"')],
+        ['Array.prototype.flatMap', jsFeature('return [1].flatMap(function(x){return [x]})')],
+        ['String.prototype.replaceAll', jsFeature('return "aa".replaceAll("a","b")')]
+      ];
+      var featureRows = [];
+      for (var index = 0; index < features.length; index++) {
+        featureRows.push([features[index][0], features[index][1] ? '支持' : '不支持', !features[index][1]]);
+      }
+      addSection(box, '浏览器功能检测', featureRows);
+      addSection(box, 'CSS 检测', [
+        ['100dvh（Chrome 108+）', dvh ? '支持' : '不支持', !dvh],
+        ['clamp()（Chrome 79+）', clamp ? '支持' : '不支持', !clamp],
+        [':has() 选择器（Chrome 105+）', has ? '支持' : '不支持', !has],
+        ['CSS Grid（Chrome 57+）', grid ? '支持' : '不支持', !grid],
+        ['env(safe-area-inset-*)（Chrome 69+）', safeArea ? '支持' : '不支持', !safeArea]
+      ]);
+      box.appendChild(element('h3', 'margin:18px 0 6px;font-size:18px;color:#ffe2a0;', '错误记录'));
+      errorList = element('div', 'margin-bottom:6px;');
+      box.appendChild(errorList);
+      renderErrors();
+      var actions = element('div', 'margin-top:22px;display:flex;gap:12px;flex-wrap:wrap;');
+      var reload = element('button', 'font:17px system-ui,sans-serif;font-weight:700;padding:10px 22px;border-radius:10px;border:1px solid #d6a35e;background:#2a5a48;color:#fff0c9;', '重新加载');
+      reload.onclick = function () { location.reload(); };
+      var close = element('button', 'font:17px system-ui,sans-serif;padding:10px 22px;border-radius:10px;border:1px solid #7a9a8a;background:#173a30;color:#e8f0e6;', '关闭提示');
+      close.onclick = function () { hide(); miniButton(); };
+      actions.appendChild(reload);
+      actions.appendChild(close);
+      box.appendChild(actions);
+      document.body.appendChild(panel);
+      if (poll) window.clearInterval(poll);
+      poll = window.setInterval(function () {
+        if (window.__paohuziStarted) hide();
+      }, 800);
+    }
+
+    function schedule() {
+      window.setTimeout(function () {
+        if (window.__paohuziStarted) return;
+        show();
+      }, 4000);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule);
+    else schedule();
+    window.addEventListener('load', schedule);
+  })();
+  </script>
+  <script type="module" src="./js/main.mjs?v=258"></script>
 </head>
 <body>
   <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">

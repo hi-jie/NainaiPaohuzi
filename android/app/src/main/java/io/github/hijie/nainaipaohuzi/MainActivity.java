@@ -1,22 +1,30 @@
 package io.github.hijie.nainaipaohuzi;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.ContentResolver;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
+import android.util.Log;
 import android.view.DisplayCutout;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
+import android.webkit.JavascriptInterface;
+import android.webkit.RenderProcessGoneDetail;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -34,16 +42,33 @@ public class MainActivity extends Activity {
     private static final String GAME_URL = "https://appassets.androidplatform.net/assets/www/index.html";
     private static final String EXIT_URL = "paohuzi://exit";
     private static final int CHOOSE_AVATAR = 1;
+    private static final String TAG = "PaohuziDiag";
     private FrameLayout root;
     private WebView game;
     private AppUpdates updates;
     private boolean updatePageReady;
     private ValueCallback<Uri[]> avatarSelection;
     private boolean resumed;
+    private String pageProblem;
+    private boolean pageStarted;
+    private boolean diagnosticShown;
+    private boolean rendererGone;
+    private final Runnable diagnostics = new Runnable() {
+        @Override
+        public void run() {
+            if (rendererGone || pageStarted || isFinishing() || isDestroyed()) return;
+            game.evaluateJavascript("window.__paohuziStarted === true", value -> {
+                if ("true".equals(value)) pageStarted = true;
+                else showDiagnosticDialog();
+            });
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // 允许在电脑上用 chrome://inspect 调试页面，方便排查平板上的渲染问题。
+        WebView.setWebContentsDebuggingEnabled(true);
         WebViewAssetLoader.AssetsPathHandler assets = new WebViewAssetLoader.AssetsPathHandler(this);
         WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
                 .addPathHandler("/assets/", path -> {
@@ -70,6 +95,8 @@ public class MainActivity extends Activity {
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
+        // 给诊断兜底页提供系统 WebView 的包名和版本。
+        game.addJavascriptInterface(new NativeDiagnostics(), "paohuziDiagnosticsNative");
         game.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback,
@@ -98,9 +125,37 @@ public class MainActivity extends Activity {
                     view.evaluateJavascript("document.getElementById('exit-game').hidden = false", null);
                     updatePageReady = true;
                     updates.sendState();
+                    scheduleDiagnostics();
                 }
                 syncDisplayCutout(root.getRootWindowInsets());
                 syncMusicForeground();
+            }
+
+            @Override
+            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                if (request.isForMainFrame()) {
+                    pageProblem = "主页面加载失败：" + error.getErrorCode() + " " + error.getDescription();
+                    Log.e(TAG, pageProblem);
+                    scheduleDiagnostics();
+                }
+            }
+
+            @Override
+            public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse response) {
+                if (request.isForMainFrame()) {
+                    pageProblem = "主页面返回 HTTP " + response.getStatusCode() + "：" + request.getUrl();
+                    Log.e(TAG, pageProblem);
+                    scheduleDiagnostics();
+                }
+            }
+
+            @Override
+            public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+                rendererGone = true;
+                pageProblem = "WebView 渲染进程崩溃（didCrash=" + detail.didCrash() + "）";
+                Log.e(TAG, pageProblem);
+                showDiagnosticDialog();
+                return true;
             }
 
             @Override
@@ -148,6 +203,8 @@ public class MainActivity extends Activity {
         setContentView(root);
         enterImmersiveMode();
         game.loadUrl(GAME_URL);
+        // 即使页面完全没有加载，也在 6 秒后检查一次，避免只剩一片绿色。
+        scheduleDiagnostics();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
@@ -220,6 +277,67 @@ public class MainActivity extends Activity {
                 + "; window.dispatchEvent(new Event('paohuzi-foreground-change'));", null);
     }
 
+    private void scheduleDiagnostics() {
+        game.removeCallbacks(diagnostics);
+        game.postDelayed(diagnostics, 6000);
+    }
+
+    private static String webViewDescription() {
+        PackageInfo webViewPackage = WebView.getCurrentWebViewPackage();
+        if (webViewPackage == null) return "未找到系统 WebView（可能已被停用或缺失）";
+        return webViewPackage.packageName + " " + webViewPackage.versionName;
+    }
+
+    private String diagnosticReport() {
+        StringBuilder text = new StringBuilder();
+        text.append("游戏页面没有正常启动。\n\n");
+        text.append("设备：").append(Build.MANUFACTURER).append(' ').append(Build.MODEL).append('\n');
+        text.append("系统：Android ").append(Build.VERSION.RELEASE)
+                .append("（API ").append(Build.VERSION.SDK_INT).append("）\n");
+        text.append("系统 WebView：").append(webViewDescription()).append('\n');
+        text.append("UA：").append(WebSettings.getDefaultUserAgent(this)).append('\n');
+        if (pageProblem != null) text.append("错误：").append(pageProblem).append('\n');
+        text.append("\n建议：\n1. 更新或启用系统的 Android System WebView / Chrome；\n")
+                .append("2. 或先用平板浏览器打开 https://hi-jie.github.io/NainaiPaohuzi/ 玩网页版；\n")
+                .append("3. 把这段信息发给开发者。");
+        return text.toString();
+    }
+
+    private void showDiagnosticDialog() {
+        if (diagnosticShown || isFinishing() || isDestroyed()) return;
+        diagnosticShown = true;
+        String report = diagnosticReport();
+        Log.e(TAG, report);
+        new AlertDialog.Builder(this)
+                .setTitle(rendererGone ? "WebView 渲染进程崩溃" : "游戏页面未能启动")
+                .setMessage(report)
+                .setPositiveButton(rendererGone ? "重新打开" : "重新加载", (dialog, which) -> {
+                    if (rendererGone) {
+                        recreate();
+                        return;
+                    }
+                    diagnosticShown = false;
+                    pageProblem = null;
+                    pageStarted = false;
+                    game.reload();
+                    scheduleDiagnostics();
+                })
+                .setNeutralButton("复制信息", (dialog, which) -> {
+                    ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                    clipboard.setPrimaryClip(ClipData.newPlainText("跑胡子诊断信息", report));
+                    Toast.makeText(this, "诊断信息已复制", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("关闭", null)
+                .show();
+    }
+
+    public static final class NativeDiagnostics {
+        @JavascriptInterface
+        public String webViewInfo() {
+            return webViewDescription();
+        }
+    }
+
     @Override
     public void onBackPressed() {
         navigateBack();
@@ -271,6 +389,7 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         completeAvatarSelection(null);
         updatePageReady = false;
+        game.removeCallbacks(diagnostics);
         updates.close();
         root.removeView(game);
         game.destroy();
