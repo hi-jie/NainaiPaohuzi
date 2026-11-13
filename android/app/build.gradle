@@ -15,7 +15,7 @@ android {
         versionCode appVersion.versionCode
         versionName appVersion.versionName
         buildConfigField 'boolean', 'COMPATIBILITY_TESTING',
-                providers.gradleProperty('compatibilityTesting').map { it.toBoolean().toString() }.getOrElse('false')
+                providers.gradleProperty('compatibilityTesting').map { it.toBoolean().toString() }.getOrElse('true')
     }
 
     buildFeatures {
