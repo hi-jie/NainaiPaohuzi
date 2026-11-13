@@ -48,7 +48,20 @@
       try { return !!(window.CSS && CSS.supports && CSS.supports(property, value)); } catch (error) { return false; }
     }
     function jsFeature(source) {
-      try { new Function(source)(); return true; } catch (error) { return false; }
+      try { return Boolean(new Function(source)()); } catch (error) { return false; }
+    }
+    function flexGap() {
+      try {
+        var box = element('div', 'display:flex;column-gap:10px;position:absolute;visibility:hidden;left:-9999px;top:0;');
+        var first = element('div', 'width:10px;height:1px;flex:none;');
+        var second = element('div', 'width:10px;height:1px;flex:none;');
+        box.appendChild(first);
+        box.appendChild(second);
+        document.body.appendChild(box);
+        var supported = Math.round(second.getBoundingClientRect().left - first.getBoundingClientRect().left) >= 19;
+        box.parentNode.removeChild(box);
+        return supported;
+      } catch (error) { return false; }
     }
     function chromeVersion() {
       var match = /Chrome\/(\d+)/.exec(navigator.userAgent || '');
@@ -116,8 +129,19 @@
       var dvh = cssSupports('height', '100dvh');
       var clamp = cssSupports('width', 'clamp(1px,2px,3px)');
       var has = cssSupports('selector(:has(*))');
+      var is = cssSupports('selector(:is(a))');
+      var where = cssSupports('selector(:where(a))');
       var grid = cssSupports('display', 'grid');
       var safeArea = cssSupports('padding-top', 'env(safe-area-inset-top)');
+      var inset = cssSupports('inset', '0px');
+      var translate = cssSupports('translate', '1px');
+      var aspect = cssSupports('aspect-ratio', '1');
+      var subgrid = cssSupports('grid-template-columns', 'subgrid');
+      var container = cssSupports('container-type', 'inline-size');
+      var backdrop = cssSupports('backdrop-filter', 'blur(1px)');
+      var flexGapOk = flexGap();
+      var getAnimations = jsFeature('return typeof Element.prototype.getAnimations === "function"');
+      var finished = jsFeature('return typeof Animation !== "undefined" && "finished" in Animation.prototype');
 
       panel = element('div', 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:2147483647;overflow:auto;' +
         'background:#0d241f;color:#f2ecd9;padding:26px 24px 44px;font:16px/1.55 system-ui,"Microsoft YaHei",sans-serif;');
@@ -148,7 +172,9 @@
         ['Promise.allSettled', jsFeature('return typeof Promise.allSettled === "function"')],
         ['Object.fromEntries', jsFeature('return typeof Object.fromEntries === "function"')],
         ['Array.prototype.flatMap', jsFeature('return [1].flatMap(function(x){return [x]})')],
-        ['String.prototype.replaceAll', jsFeature('return "aa".replaceAll("a","b")')]
+        ['String.prototype.replaceAll', jsFeature('return "aa".replaceAll("a","b")')],
+        ['Element.getAnimations（Chrome 84+）', getAnimations],
+        ['Animation.finished（Chrome 84+）', finished]
       ];
       var featureRows = [];
       for (var index = 0; index < features.length; index++) {
@@ -158,7 +184,16 @@
       addSection(box, 'CSS 检测', [
         ['100dvh（Chrome 108+）', dvh ? '支持' : '不支持', !dvh],
         ['clamp()（Chrome 79+）', clamp ? '支持' : '不支持', !clamp],
-        [':has() 选择器（Chrome 105+）', has ? '支持' : '不支持', !has],
+        [':is()（Chrome 88+）', is ? '支持' : '不支持', !is],
+        [':where()（Chrome 88+）', where ? '支持' : '不支持', !where],
+        [':has()（Chrome 105+）', has ? '支持' : '不支持', !has],
+        ['flex 的 gap（Chrome 84+）', flexGapOk ? '支持' : '不支持', !flexGapOk],
+        ['inset 简写（Chrome 87+）', inset ? '支持' : '不支持', !inset],
+        ['translate 属性（Chrome 104+）', translate ? '支持' : '不支持', !translate],
+        ['aspect-ratio（Chrome 88+）', aspect ? '支持' : '不支持', !aspect],
+        ['subgrid（Chrome 117+）', subgrid ? '支持' : '不支持', !subgrid],
+        ['@container（Chrome 105+）', container ? '支持' : '不支持', !container],
+        ['backdrop-filter（Chrome 76+）', backdrop ? '支持' : '不支持', !backdrop],
         ['CSS Grid（Chrome 57+）', grid ? '支持' : '不支持', !grid],
         ['env(safe-area-inset-*)（Chrome 69+）', safeArea ? '支持' : '不支持', !safeArea]
       ]);
