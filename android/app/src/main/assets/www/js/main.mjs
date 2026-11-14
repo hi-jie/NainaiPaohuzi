@@ -9,7 +9,7 @@ import { presets } from './rules/presets.mjs?v=250';
 import { load, save } from './storage/save.mjs?v=272';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=259';
 import { createHandLayout, eatPreviewIds, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=235';
-import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=282';
+import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, renderPendingResponse, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=285';
 import { bindTutorial } from './ui/tutorial.mjs?v=282';
 import { bindProfile } from './ui/profile.mjs?v=202';
 import { bindAppUpdate } from './ui/update.mjs?v=252';
@@ -52,7 +52,6 @@ let handLayout = null;
 let timer;
 let openingEnds;
 let turnPresentationEnds = 0;
-let confirmedAction = null;
 let musicWaitingForSound = data.settings.sound;
 
 const modes = home.querySelector('.modes');
@@ -260,7 +259,6 @@ function showRound(event, motion, action) {
     timer = setTimeout(() => showRoundResult(table, round, score, data.profile), 2200);
   } else {
     paintRound(event, motion, action);
-    showConfirmedAction();
     scheduleTurn();
   }
 
@@ -303,7 +301,7 @@ new ResizeObserver(fitTable).observe(table);
 function scheduleTurn() {
   if (pauseMenu.open || leaveMenu.open || tutorial.open) return;
   clearTimeout(timer);
-  const pending = confirmedAction ?? round.pendingPlayerAction;
+  const pending = round.pendingPlayerAction;
   if (pending) {
     timer = setTimeout(() => step(pending), 0);
     return;
@@ -369,7 +367,6 @@ function resumeRound() {
 
 function showTable() {
   turnPresentationEnds = 0;
-  confirmedAction = null;
   home.hidden = true;
   setup.hidden = true;
   table.hidden = false;
@@ -414,7 +411,6 @@ function continueSavedRound() {
 }
 
 function step(action) {
-  confirmedAction = null;
   const before = round.events.length;
   const seat = round.seat;
   const implicitPass = action.type === '过' && round.pendingResponse?.type !== '过' && Boolean(round.pendingPlayerAction);
@@ -443,39 +439,21 @@ function step(action) {
 }
 
 function submitPlayerAction(index) {
-  if (confirmedAction || round.pendingResponse) return;
+  if (round.pendingResponse) return;
   const responses = round.playerResponses;
-  const action = (responses ?? round.options)[index];
+  let action = (responses ?? round.options)[index];
   if (!action) return;
   if (responses) {
     round.submitPlayerResponse(action);
-    saveRound();
-    showConfirmedAction();
-    if (!round.pendingPlayerAction) return;
-    scheduleTurn();
-  } else {
-    confirmAction(action);
+    action = round.pendingPlayerAction;
+    if (!action) {
+      saveRound();
+      table.querySelector('.hand-actions').innerHTML = renderPendingResponse(round);
+      return;
+    }
   }
-}
-
-function confirmAction(action) {
-  if (!action || confirmedAction) return;
-  confirmedAction = action;
-  showConfirmedAction();
-  scheduleTurn();
-}
-
-function showConfirmedAction() {
-  const type = (confirmedAction ?? round.pendingResponse)?.type;
-  const actions = table.querySelector('.hand-actions');
-  if (!type || !actions) return;
-  const status = document.createElement('span');
-  status.className = 'pending-action';
-  status.setAttribute('role', 'status');
-  const label = type === '过' ? '已过' : `已选${['出', '摸'].includes(type) ? type + '牌' : type}`;
-  status.textContent = round.pendingResponse && !round.pendingPlayerAction ? `${label}，等待其他玩家` : label;
-  actions.textContent = '';
-  actions.append(status);
+  clearTimeout(timer);
+  step(action);
 }
 
 function selectDiscard(button) {
@@ -527,7 +505,6 @@ function setHandLayout(layout, selectedId) {
   if (selectedId !== undefined) {
     selectDiscard(table.querySelector(`[data-hand-card="${selectedId}"][data-select-card]`));
   }
-  showConfirmedAction();
   if (eatMenu.open) updateEatSelection(eatMenu.querySelector('.eat-choice[aria-pressed="true"]'));
 }
 
@@ -578,7 +555,6 @@ table.addEventListener('click', ({ target }) => {
     submitPlayerAction(Number(button.dataset.action));
     return;
   }
-  if (confirmedAction && button.dataset.selectCard !== undefined) return;
   clearTimeout(timer);
   if (button.dataset.command === 'home') {
     showHome();
@@ -605,7 +581,7 @@ table.addEventListener('click', ({ target }) => {
     selectDiscard(button);
   } else if (button.dataset.command === 'discard') {
     const selected = table.querySelector('[data-select-card][aria-pressed="true"]');
-    confirmAction(round.options[Number(selected.dataset.selectCard)]);
+    step(round.options[Number(selected.dataset.selectCard)]);
   }
 });
 eatMenu.addEventListener('click', ({ target }) => {
