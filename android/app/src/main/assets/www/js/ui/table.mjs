@@ -331,10 +331,21 @@ function slideFrom(table, element, from, duration, scale) {
   ], { duration, fill: 'backwards', easing: 'cubic-bezier(.22,.6,.28,1)' });
 }
 
-export function showFinishedTable(table, round, score, event, profile) {
+export function showFinishedTable(table, round, score, event, profile, motion) {
   const backs = round.players.map((_, seat) => Array.from(table.querySelectorAll(`.seat-${seat} .seat-backs span`),
     card => card.getBoundingClientRect()));
+  // The last discard may end the round before it reaches the center.
+  const discarder = event?.type === '出' ? table.querySelector(`.seat-${event.seat}`) : null;
+  const lastDiscardFrom = (discarder?.querySelector('[data-select-card][aria-pressed="true"]')
+    ?? discarder?.querySelector('.avatar'))?.getBoundingClientRect();
   table.innerHTML = renderTable(round, score - round.result.delta[0], event, '', null, profile);
+  if (round.result.winner === null) {
+    if (event?.type === '出') {
+      if (lastDiscardFrom) animateDiscard(table, { offer: { card: event.card, source: event.seat }, from: lastDiscardFrom });
+    } else if (!event && motion && motion.meld === undefined && motion.offer.kind !== 'opening') {
+      animateDiscard(table, motion);
+    }
+  }
   if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
     backs.forEach((positions, seat) => {
       table.querySelectorAll(`.seat-${seat} .reveal-slot`).forEach((slot, index) => {
@@ -472,26 +483,24 @@ function animateTransfer(table, card, destination, from, effect = 'move') {
     `translate(${x - start.x}px, ${y - start.y}px) scale(${width / deck.width}, ${height / deck.height})`;
   const origin = transform(start);
   const target = transform(end);
-  const frames = effect === 'discard' ? [
-    { transform: origin, opacity: 1 },
-    { transform: `${origin} scale(.85)`, opacity: 0, offset: .42 },
-    { transform: `${target} scale(.85)`, opacity: 0, offset: .43 },
-    { transform: `${target} scale(1.08)`, opacity: 1, offset: .8 },
-    { transform: target, opacity: 1 }
-  ] : [{ transform: origin }, { transform: target }];
   destination.style.visibility = 'hidden';
   table.append(ghost);
-  animate(ghost, frames, { duration: 220, fill: 'both', easing: 'ease-in-out' }).onfinish = () => {
+  animate(ghost, [{ transform: origin }, { transform: target }],
+    { duration: 220, fill: 'both', easing: 'ease-in-out' }).onfinish = () => {
     destination.style.visibility = '';
     ghost.remove();
   };
 }
 
+function animateDiscard(table, { offer: { card, source }, from }) {
+  const destination = Array.from(table.querySelectorAll(`.seat-${source} .discarded .card`)).at(-1);
+  if (destination) animateTransfer(table, card, destination, from);
+}
+
 export function animateAction(table, round, event, motion, action) {
   const seatView = seat => table.querySelector(`.seat-${seat}`);
-  const discard = seat => [...seatView(seat).querySelectorAll('.discarded .card')].at(-1);
-  if (round.rules.mode === 'mahjong' && action?.type === '摸' && motion) {
-    animateTransfer(table, motion.offer.card, discard(motion.offer.source), motion.from, 'discard');
+  if (motion?.offer.parked || (round.rules.mode === 'mahjong' && action?.type === '摸' && motion)) {
+    animateDiscard(table, motion);
   }
   if (round.rules.mode === 'mahjong' && ['吃', '摸'].includes(event?.type)) {
     const seat = seatView(event.seat);
@@ -501,10 +510,6 @@ export function animateAction(table, round, event, motion, action) {
     const from = event.type === '摸' ? table.querySelector('.deck-tile').getBoundingClientRect() : motion.from;
     animateTransfer(table, event.card, destination, from, event.type === '摸' ? 'draw' : 'move');
     return;
-  }
-  if (motion?.offer.parked) {
-    const { offer: { card, source }, from } = motion;
-    animateTransfer(table, card, discard(source), from, 'discard');
   }
   if (event?.type === '摸' || event?.type === '出') {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
