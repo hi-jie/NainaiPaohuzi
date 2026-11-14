@@ -1,5 +1,5 @@
 import { cardName, huxi, isRed } from '../rules/cards.mjs';
-import { concealedDraw, nextSeat } from '../rules/actions.mjs?v=280';
+import { concealedDraw, nextSeat } from '../rules/actions.mjs?v=281';
 import { createHandLayout, eatPreviewIds, handColumnGroup } from './hand.mjs?v=235';
 import { tablemates } from '../data/tablemates.mjs?v=179';
 import { animate, afterSeatAnimations } from './motion.mjs?v=259';
