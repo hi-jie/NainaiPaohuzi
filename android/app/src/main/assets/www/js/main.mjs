@@ -52,6 +52,7 @@ let handLayout = null;
 let timer;
 let openingEnds;
 let turnPresentationEnds = 0;
+let confirmedAction = null;
 let musicWaitingForSound = data.settings.sound;
 
 const modes = home.querySelector('.modes');
@@ -259,6 +260,7 @@ function showRound(event, motion, action) {
     timer = setTimeout(() => showRoundResult(table, round, score, data.profile), 2200);
   } else {
     paintRound(event, motion, action);
+    showConfirmedAction();
     scheduleTurn();
   }
 
@@ -299,8 +301,11 @@ function fitTable() {
 new ResizeObserver(fitTable).observe(table);
 
 function scheduleTurn() {
-  const presentationDelay = Math.max(0, turnPresentationEnds - performance.now());
-  const pending = round.pendingPlayerAction;
+  if (pauseMenu.open || leaveMenu.open || tutorial.open) return;
+  clearTimeout(timer);
+  const fast = data.settings.pace === 'fast';
+  const presentationDelay = fast ? Math.max(0, Math.ceil(turnPresentationEnds - performance.now())) : 0;
+  const pending = confirmedAction ?? round.pendingPlayerAction;
   if (pending) {
     timer = setTimeout(() => step(pending), presentationDelay);
     return;
@@ -309,17 +314,20 @@ function scheduleTurn() {
   if (!action || (round.seat === 0 && !action.forced)) return;
   const perform = () => step(action.forced ? action : chooseAction(round));
   if (round.phase === 'last-draw') {
-    timer = setTimeout(() => step(action), Math.max(1200, presentationDelay));
+    timer = setTimeout(perform, Math.max(1200, presentationDelay));
     return;
   }
-  if (data.settings.pace === 'fast') {
+  if (action.forced) {
+    timer = setTimeout(perform, 650);
+    return;
+  }
+  if (fast) {
     timer = setTimeout(perform, presentationDelay);
     return;
   }
   const [minimum, maximum] = round.phase === 'discard' ? [1800, 3500]
     : round.phase === 'draw' ? [950, 1600] : [1150, 1800];
-  const thinkingDelay = action.forced ? 650 : minimum + Math.random() * (maximum - minimum);
-  timer = setTimeout(perform, Math.max(thinkingDelay, presentationDelay));
+  timer = setTimeout(perform, minimum + Math.random() * (maximum - minimum));
 }
 
 function beginPlay() {
@@ -361,6 +369,7 @@ function resumeRound() {
 
 function showTable() {
   turnPresentationEnds = 0;
+  confirmedAction = null;
   home.hidden = true;
   setup.hidden = true;
   table.hidden = false;
@@ -405,12 +414,7 @@ function continueSavedRound() {
 }
 
 function step(action) {
-  const presentationDelay = Math.ceil(turnPresentationEnds - performance.now());
-  if (presentationDelay > 0) {
-    clearTimeout(timer);
-    timer = setTimeout(() => step(action), presentationDelay);
-    return;
-  }
+  confirmedAction = null;
   const before = round.events.length;
   const seat = round.seat;
   const implicitPass = action.type === '过' && round.pendingResponse?.type !== '过' && Boolean(round.pendingPlayerAction);
@@ -439,25 +443,39 @@ function step(action) {
 }
 
 function submitPlayerAction(index) {
+  if (confirmedAction || round.pendingResponse) return;
   const responses = round.playerResponses;
   const action = (responses ?? round.options)[index];
   if (!action) return;
   if (responses) {
     round.submitPlayerResponse(action);
-    if (!round.pendingPlayerAction) {
-      saveRound();
-      const status = document.createElement('span');
-      status.className = 'pending-action';
-      status.setAttribute('role', 'status');
-      status.textContent = `${action.type === '过' ? '已过' : `已选${action.type}`}，等待其他玩家`;
-      const actions = table.querySelector('.hand-actions');
-      actions.textContent = '';
-      actions.append(status);
-      return;
-    }
+    saveRound();
+    showConfirmedAction();
+    if (!round.pendingPlayerAction) return;
+    scheduleTurn();
+  } else {
+    confirmAction(action);
   }
-  clearTimeout(timer);
-  step(responses ? round.pendingPlayerAction : action);
+}
+
+function confirmAction(action) {
+  if (!action || confirmedAction) return;
+  confirmedAction = action;
+  showConfirmedAction();
+  scheduleTurn();
+}
+
+function showConfirmedAction() {
+  const type = (confirmedAction ?? round.pendingResponse)?.type;
+  const actions = table.querySelector('.hand-actions');
+  if (!type || !actions) return;
+  const status = document.createElement('span');
+  status.className = 'pending-action';
+  status.setAttribute('role', 'status');
+  const label = type === '过' ? '已过' : `已选${['出', '摸'].includes(type) ? type + '牌' : type}`;
+  status.textContent = round.pendingResponse && !round.pendingPlayerAction ? `${label}，等待其他玩家` : label;
+  actions.textContent = '';
+  actions.append(status);
 }
 
 function selectDiscard(button) {
@@ -509,6 +527,7 @@ function setHandLayout(layout, selectedId) {
   if (selectedId !== undefined) {
     selectDiscard(table.querySelector(`[data-hand-card="${selectedId}"][data-select-card]`));
   }
+  showConfirmedAction();
   if (eatMenu.open) updateEatSelection(eatMenu.querySelector('.eat-choice[aria-pressed="true"]'));
 }
 
@@ -559,6 +578,7 @@ table.addEventListener('click', ({ target }) => {
     submitPlayerAction(Number(button.dataset.action));
     return;
   }
+  if (confirmedAction && button.dataset.selectCard !== undefined) return;
   clearTimeout(timer);
   if (button.dataset.command === 'home') {
     showHome();
@@ -585,7 +605,7 @@ table.addEventListener('click', ({ target }) => {
     selectDiscard(button);
   } else if (button.dataset.command === 'discard') {
     const selected = table.querySelector('[data-select-card][aria-pressed="true"]');
-    step(round.options[Number(selected.dataset.selectCard)]);
+    confirmAction(round.options[Number(selected.dataset.selectCard)]);
   }
 });
 eatMenu.addEventListener('click', ({ target }) => {
