@@ -355,8 +355,9 @@ main:has(#table:not([hidden])) {
 }
 .table-hud button { min-height: 44px; pointer-events: auto; }
 .table-score { margin-left: auto; display: grid; text-align: right; line-height: 1.2; }
+/* Opponent offsets are based on the original 480px-high table. */
 .seat {
-  position: absolute; width: var(--side-seat-width); height: 212px; top: 55px;
+  position: absolute; width: var(--side-seat-width); height: 212px; top: calc(100% * 55 / 480);
   --side-seat-width: 178px;
   --avatar-size: 40.8px;
   --seat-card-offset: calc(var(--avatar-size) + 7px);
@@ -679,9 +680,9 @@ main:has(#table:not([hidden])) {
 .flying-card { position: absolute; z-index: 3; transform-origin: top left; pointer-events: none; }
 
 #table.wide .felt::after { inset: 42px 32px 112px; }
-.wide .seat { top: 60px; --side-seat-width: 180px; }
-.wide .seat-1 { left: 34px; top: 76px; }
-.wide .seat.seat-2 { right: 34px; top: 76px; }
+.wide .seat { --side-seat-width: 180px; }
+.wide .seat-1 { left: 34px; top: calc(100% * 76 / 480); }
+.wide .seat.seat-2 { right: 34px; top: calc(100% * 76 / 480); }
 .wide .seat-0 {
   --seat-bottom: 16px;
   --seat-inset: 34px;
@@ -695,13 +696,12 @@ main:has(#table:not([hidden])) {
   --side-seat-width: 203px;
   --seat-cards-width: 165px;
 }
-.many-seats .seat:not(.seat-0) { top: 147px; }
-.many-seats .seat.seat-1 { left: 23px; top: 163px; }
+.many-seats .seat:not(.seat-0) { top: calc(100% * 147 / 480); }
+.many-seats .seat.seat-1 { left: 23px; }
 .many-seats .seat-2 { right: 23px; }
-.many-seats .seat:is(.seat-3, .seat-4) { top: 10px; }
+.many-seats .seat:is(.seat-3, .seat-4) { top: calc(100% * 10 / 480); }
 .many-seats .seat-3 { right: 112px; }
 .many-seats .seat-4 { left: 112px; }
-.wide .many-seats .seat.seat-2 { top: 140px; }
 .many-seats .seat-heading { left: 0; right: auto; }
 .many-seats .seat-cards {
   left: var(--seat-card-offset); right: auto;
@@ -721,10 +721,10 @@ main:has(#table:not([hidden])) {
 .six-hu.many-seats { --right-seat-cards-width: 165px; }
 .six-hu.many-seats .seat-0 { --seat-cards-width: 250px; }
 .six-hu.many-seats .seat.seat-1,
-.mahjong.many-seats:not(.five-seats) .seat.seat-1 { top: 76px; left: 34px; }
+.mahjong.many-seats:not(.five-seats) .seat.seat-1 { top: calc(100% * 76 / 480); left: 34px; }
 .six-hu.many-seats .seat.seat-2 { --seat-cards-width: var(--right-seat-cards-width); }
 .wide .six-hu.many-seats .seat.seat-2,
-.wide .mahjong.many-seats:not(.five-seats) .seat.seat-2 { top: 182px; }
+.wide .mahjong.many-seats:not(.five-seats) .seat.seat-2 { top: calc(100% * 182 / 480); }
 .six-hu.many-seats .seat-3,
 .mahjong.many-seats:not(.five-seats) .seat-3 { right: 46px; }
 .many-seats :is(.seat-3, .seat-4) .dealer,
