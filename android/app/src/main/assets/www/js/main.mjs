@@ -6,7 +6,7 @@ import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
 import { Round } from './game/state-machine.mjs?v=271';
 import { MahjongRound } from './game/mahjong-round.mjs';
 import { presets } from './rules/presets.mjs?v=250';
-import { load, save } from './storage/save.mjs?v=250';
+import { load, save } from './storage/save.mjs?v=272';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=259';
 import { createHandLayout, eatPreviewIds, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=235';
 import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=270';
@@ -60,6 +60,16 @@ const sharedControls = document.querySelector('#shared-setting-controls');
 for (const panel of document.querySelectorAll('.shared-settings')) {
   panel.append(sharedControls.content.cloneNode(true));
 }
+const paceOptions = document.querySelectorAll('.pace-options input');
+for (const option of paceOptions) {
+  option.checked = option.value === data.settings.pace;
+  option.addEventListener('change', () => {
+    if (!option.checked) return;
+    data.settings.pace = option.value;
+    for (const input of paceOptions) input.checked = input.value === option.value;
+    save(data);
+  });
+}
 function showSettingValue(field) {
   const value = data.settings[field.name];
   if (field.type === 'checkbox') {
@@ -73,7 +83,7 @@ function showSettingValue(field) {
   }
 }
 
-const settingFields = document.querySelectorAll('.menu-options input, #pause-menu input');
+const settingFields = document.querySelectorAll('.menu-options input:not([type="radio"]), #pause-menu input:not([type="radio"])');
 for (const field of settingFields) {
   showSettingValue(field);
   const isVolume = field.type === 'range';
@@ -280,6 +290,11 @@ function scheduleTurn() {
   }
   const action = round.options[0];
   if (!action || (round.seat === 0 && !action.forced)) return;
+  const perform = () => step(action.forced ? action : chooseAction(round));
+  if (data.settings.pace === 'fast') {
+    timer = setTimeout(perform, 0);
+    return;
+  }
   if (round.phase === 'last-draw') {
     timer = setTimeout(() => step(action), 1200);
     return;
@@ -287,7 +302,7 @@ function scheduleTurn() {
   const [minimum, maximum] = round.phase === 'discard' ? [1800, 3500]
     : round.phase === 'draw' ? [950, 1600] : [1150, 1800];
   const delay = action.forced ? 650 : minimum + Math.random() * (maximum - minimum);
-  timer = setTimeout(() => step(action.forced ? action : chooseAction(round)), delay);
+  timer = setTimeout(perform, delay);
 }
 
 function beginPlay() {

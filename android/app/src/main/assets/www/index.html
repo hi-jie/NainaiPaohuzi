@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#113f32">
   <title>衡阳跑胡子</title>
   <link rel="icon" type="image/png" sizes="192x192" href="./favicon.png">
-  <link rel="stylesheet" href="./css/app.css?v=269">
+  <link rel="stylesheet" href="./css/app.css?v=272">
   <script>
   /* 诊断兜底：主脚本 4 秒内没有启动时（常见于系统 WebView 过旧的设备），用 ES5 内联脚本显示可读的诊断信息，避免只剩一片绿色。 */
   (function () {
@@ -228,7 +228,7 @@
     window.addEventListener('load', schedule);
   })();
   </script>
-  <script defer src="./js/bootstrap.js?v=271"></script>
+  <script defer src="./js/bootstrap.js?v=272"></script>
 </head>
 <body>
   <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -418,6 +418,13 @@
         <output aria-hidden="true"></output>
       </div>
     </div>
+    <fieldset class="pace-setting">
+      <legend>出牌节奏</legend>
+      <div class="pace-options">
+        <label><input type="radio" name="pace" value="human"><span>模拟真人</span></label>
+        <label><input type="radio" name="pace" value="fast"><span>快</span></label>
+      </div>
+    </fieldset>
   </template>
 </body>
 </html>
