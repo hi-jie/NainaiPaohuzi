@@ -11,21 +11,6 @@ function openingQuads(hand) {
 
 const responsePass = { type: '过' };
 
-function restoreDiscardHistory(events, seats) {
-  const history = Array.from({ length: seats }, () => ({ ownDiscards: [], chongpao: false }));
-  const wei = Array.from({ length: seats }, () => new Set());
-  for (const [index, event] of events.entries()) {
-    const { type, seat, card } = event;
-    if (type === '出') history[seat].ownDiscards.push(card);
-    if (type === '偎') wei[seat].add(card);
-    if (type === '提') wei[seat].delete(card);
-    if (type !== '跑' || !wei[seat].delete(card)) continue;
-    const prior = events[index - 1];
-    if (prior?.type === '出' && prior.card === card) history[prior.seat].chongpao = true;
-  }
-  return history;
-}
-
 export class Round {
   constructor(settings, dealer, random = Math.random, deck = shuffledDeck(random), { deferOpening = false } = {}) {
     this.rules = { openMelds: defaultSettings.openMelds, ...settings, ...presets[settings.mode], patterns: patterns(settings.oneFiveTen) };
@@ -51,7 +36,6 @@ export class Round {
   toSave() {
     return {
       ...this,
-      checksKanHu: true,
       players: this.players.map(player => ({
         ...player, passedChi: [...player.passedChi], passedPeng: [...player.passedPeng]
       }))
@@ -59,73 +43,10 @@ export class Round {
   }
 
   static fromSave(state) {
-    const { checksKanHu, ...saved } = state;
-    const legacy = state.players.some(player => !player.ownDiscards);
-    const history = legacy ? restoreDiscardHistory(state.events, state.players.length) : [];
-    const players = state.players.map((player, seat) => ({
-      ...history[seat], ...player, passedChi: new Set(player.passedChi), passedPeng: new Set(player.passedPeng),
-      groups: player.groups.map(group => {
-        if (!['碰', '偎', '跑', '提'].includes(group.type)) return group;
-        const card = group.cards[0];
-        const wasTaken = group.offeredCard !== undefined || state.events.some(event =>
-          event.seat === seat && event.type === group.type && event.card === card && !event.fromHand);
-        const stinky = group.type === '偎' && player.passedPeng.includes(card);
-        return wasTaken ? { ...group, offeredCard: card, ...(stinky ? { stinky } : {}) } : group;
-      })
+    const players = state.players.map(player => ({
+      ...player, passedChi: new Set(player.passedChi), passedPeng: new Set(player.passedPeng)
     }));
-    const rules = { openMelds: defaultSettings.openMelds, ...state.rules };
-    const round = Object.assign(Object.create(Round.prototype), saved, { players, rules });
-    const hadDeferredMeld = round.phase === 'response' && round.offer?.kind === 'draw'
-      && [round.options, ...round.queue.map(entry => entry.choices)]
-      .some(([choice]) => choice?.priority === 2 && ['提', '偎'].includes(choice.type));
-    if (round.phase === 'response' && (legacy || hadDeferredMeld)) {
-      const { source, card, kind } = round.offer;
-      round.reveal(source, card, kind);
-    } else if (round.phase === 'response' && !checksKanHu && round.offer.kind !== 'opening') {
-      round.restoreKanHu();
-    }
-    if (state.rules.openMelds === undefined && rules.mode === 'fifteen') {
-      const belowMinimum = choices => choices[0]?.type === '胡' && choices[0].hu.huxi < rules.minimum;
-      if (round.phase === 'response') {
-        round.queue = round.queue.filter(({ choices }) => !belowMinimum(choices));
-        if (belowMinimum(round.options)) round.advanceResponse();
-      } else if (round.phase === 'after-meld' && belowMinimum(round.options)) {
-        round.finishMeld(round.repeatQuad);
-      }
-    }
-    if (round.phase === 'draw' && !round.deck.length) round.waitForDraw(round.seat);
-    return round;
-  }
-
-  restoreKanHu() {
-    const { card, source, kind } = this.offer;
-    if (!canHuFrom(kind, this.rules)) return;
-    const current = { seat: this.seat, priority: this.options[0].priority, choices: this.options };
-    const candidates = [current, ...this.queue];
-    const huOptions = [];
-    for (const { seat, choices } of candidates) {
-      const player = this.players[seat];
-      if (seat === source || choices[0].type !== '跑' || countCard(player.hand, card) !== 3) continue;
-      const alreadyOffered = candidates.some(entry => entry.seat === seat && entry.choices[0].type === '胡');
-      if (alreadyOffered) continue;
-      const hu = responses(player, seat, this.offer, this.rules).find(choice => choice.type === '胡');
-      if (hu) huOptions.push({ seat, priority: hu.priority, choices: [hu] });
-    }
-    if (!huOptions.length) return;
-    const seatOrder = [];
-    for (let seat = source; seatOrder.length < this.players.length; seat = nextSeat(seat, this.players.length)) {
-      seatOrder.push(seat);
-    }
-    const ordered = [...candidates, ...huOptions].sort((a, b) =>
-      a.priority - b.priority || seatOrder.indexOf(a.seat) - seatOrder.indexOf(b.seat));
-    if (huOptions.some(({ seat }) => seat === 0)) delete this.pendingResponse;
-    this.queue = ordered.slice(1);
-    if (ordered[0] !== current) {
-      const first = ordered[0];
-      this.seat = first.seat;
-      this.options = [...first.choices, responsePass];
-    }
-    if (this.queue.includes(current)) current.choices = current.choices.filter(choice => choice.type !== '过');
+    return Object.assign(Object.create(Round.prototype), state, { players });
   }
 
   revealOpening() {
@@ -147,11 +68,6 @@ export class Round {
       }
       seat = nextSeat(seat, this.players.length);
     } while (seat !== 0);
-    if (!this.offer) {
-      // Older saves started the automatic Ti before the opening response.
-      this.reveal(this.dealer, this.opening, 'opening');
-      return;
-    }
     const player = this.players[this.dealer];
     const forced = ownForcedMeld(player, this.opening);
     if (forced) {
@@ -320,7 +236,7 @@ export class Round {
       let declined = [this.options[0]];
       if (seat === 0 && this.pendingResponse?.priority === declined[0].priority) {
         const passAll = this.pendingResponse.type === '过';
-        const passChi = this.pendingResponse.passChi !== false;
+        const { passChi } = this.pendingResponse;
         delete this.pendingResponse;
         if (passAll) {
           declined = this.playerResponseGroups().map(choices => choices[0])

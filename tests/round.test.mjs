@@ -196,7 +196,7 @@ test('庄家亮张凑成第三提、闲家起手五坎都直接胡', () => {
   assert.deepEqual(fiveKan.result.hu.loose, [5, 7, 8, 14, 15]);
 });
 
-test('十五胡黑胡也要满十五息，旧存档里的低息胡不能确认', () => {
+test('十五胡黑胡也要满十五息', () => {
   const black = player([2, 12, 12, 5, 5, 15, 7, 17, 17], [
     { type: '碰', cards: [3, 3, 3] }, { type: '碰', cards: [18, 18, 18] },
     { type: '坎', cards: [0, 0, 0] }, { type: '坎', cards: [4, 4, 4] }
@@ -208,14 +208,6 @@ test('十五胡黑胡也要满十五息，旧存档里的低息胡不能确认',
   assert.equal(findHu(black, null, false, fifteen), null);
   black.groups[0] = { type: '跑', cards: [3, 3, 3, 3] };
   assert.equal(findHu(black, null, false, fifteen).huxi, 15);
-
-  const round = new Round({ ...defaultSettings, mode: 'fifteen' }, 0);
-  const saved = JSON.parse(JSON.stringify(round.toSave()));
-  delete saved.rules.openMelds;
-  Object.assign(saved, { phase: 'after-meld', seat: 0, repeatQuad: true, options: [{ type: '胡', hu: tenHuxi }, { type: '过' }] });
-  const restored = Round.fromSave(saved);
-  assert.deepEqual(restored.options, [{ type: '摸' }]);
-  assert.equal(restored.rules.openMelds, true);
 });
 
 test('吃和比的牌组互换顺序时只保留一种吃法', () => {
@@ -272,10 +264,6 @@ test('外来第四张可保留原坎抢跑胡，自摸仍先提', () => {
       assert.equal(findHu({ ...round.players[0], passedHu: 15 }, 1, false, round.rules), null);
       assert.ok(hu.groups.some(group => group.type === '坎' && group.cards.join() === '1,1,1'));
       assert.ok(hu.groups.some(group => group.type === '吃' && group.cards.join() === '0,1,2'));
-      const oldSave = JSON.parse(JSON.stringify(round.toSave()));
-      delete oldSave.checksKanHu;
-      oldSave.options = oldSave.queue.shift().choices;
-      assert.equal(Round.fromSave(oldSave).options[0].type, '胡');
       const restored = Round.fromSave(JSON.parse(JSON.stringify(round.toSave())));
       restored.act(restored.options.find(action => action.type === '过'));
       assert.equal(restored.options[0].type, '跑');
@@ -310,10 +298,6 @@ test('自己打过的同牌不能碰，忍碰后摸到同牌算臭偎', () => {
   round.players = [player([1, 1, 8]), { ...player([]), discards: [1] }, player([]), player([])];
   round.reveal(1, 1, 'discard');
   assert.equal(round.options[0].type, '碰');
-  const legacy = JSON.parse(JSON.stringify(round.toSave()));
-  delete legacy.players[0].ownDiscards;
-  legacy.events.unshift({ type: '出', seat: 0, card: 1 });
-  assert.equal(Round.fromSave(legacy).options.some(action => action.type === '碰'), false);
 
   round.act(round.options.find(action => action.type === '过'));
   round.reveal(0, 1, 'draw');
@@ -323,11 +307,10 @@ test('自己打过的同牌不能碰，忍碰后摸到同牌算臭偎', () => {
   assert.match(renderTable(round, 0, round.events.at(-1)), /class="callout" aria-hidden="true">臭偎</);
 
   const saved = JSON.parse(JSON.stringify(round.toSave()));
-  delete saved.players[0].groups[0].stinky;
   assert.equal(Round.fromSave(saved).players[0].groups[0].stinky, true);
 });
 
-test('冲跑成功后本局禁吃碰，仍可强制偎或胡，旧存档可恢复限制', () => {
+test('冲跑成功后本局禁吃碰，续局后仍可强制偎或胡', () => {
   const round = new Round(defaultSettings, 0);
   round.players = [
     player([8], [{ type: '偎', cards: [1, 1, 1], offeredCard: 1 }]),
@@ -342,10 +325,6 @@ test('冲跑成功后本局禁吃碰，仍可强制偎或胡，旧存档可恢�
   assert.equal(round.players[1].chongpao, true);
 
   const saved = JSON.parse(JSON.stringify(round.toSave()));
-  for (const seat of saved.players) {
-    delete seat.ownDiscards;
-    delete seat.chongpao;
-  }
   const restored = Round.fromSave(saved).players[1];
   assert.deepEqual(restored.ownDiscards, [1]);
   assert.equal(restored.chongpao, true);
@@ -604,7 +583,7 @@ test('落地牌按牌序显示，只有吃进的牌加边框标记', () => {
   assert.deepEqual(displayOrder(round), [['二', '*二', '贰']]);
 });
 
-test('碰、偎、跑、提只标记一张新进牌，旧存档也可恢复标记', () => {
+test('碰、偎、跑、提只标记一张新进牌，续局后保留标记', () => {
   for (const [type, copies, seat, source, kind, openMelds = true] of [
     ['碰', 2, 0, 1, 'discard'], ['偎', 2, 1, 1, 'draw'],
     ['跑', 3, 0, 1, 'discard'], ['提', 3, 0, 0, 'draw'], ['提', 3, 0, 0, 'draw', false]
@@ -624,7 +603,6 @@ test('碰、偎、跑、提只标记一张新进牌，旧存档也可恢复标�
     assert.equal([...html.matchAll(/meld-offered/g)].length, 1);
 
     const saved = JSON.parse(JSON.stringify(round.toSave()));
-    delete saved.players[seat].groups[0].offeredCard;
     assert.ok(renderTable(Round.fromSave(saved), 0).includes(expected));
   }
 });
@@ -752,25 +730,19 @@ test('十胡卡和十五胡的十到十二红同乘二，首张弃牌不算地�
   }
 });
 
-test('提、偎优先于别家胡，旧响应队列续局时重新判定', () => {
+test('提、偎优先于别家胡', () => {
   for (const [type, hand] of [['提', [17, 17, 17, 8]], ['偎', [17, 17, 8]]]) {
     const round = new Round(defaultSettings, 0);
     round.players = [player(waitingHand), player(hand), player([]), player([])];
     round.reveal(1, 17, 'draw');
     assert.equal(round.options[0].type, type);
 
-    const saved = JSON.parse(JSON.stringify(round.toSave()));
     const hu = responses(round.players[0], 0, round.offer, round.rules).find(choice => choice.type === '胡');
     assert.ok(hu);
-    saved.queue = [{ seat: 1, priority: 2, choices: saved.options.map(choice => ({ ...choice, priority: 2 })) }];
-    saved.seat = 0;
-    saved.options = [{ ...hu, priority: 1 }, { type: '过' }];
-    const restored = Round.fromSave(saved);
-    assert.equal(restored.seat, 1);
-    assert.equal(restored.options[0].type, type);
-    restored.act(restored.options[0]);
-    assert.equal(restored.players[1].groups[0].type, type);
-    assert.equal(restored.phase, 'discard');
+    assert.equal(round.seat, 1);
+    round.act(round.options[0]);
+    assert.equal(round.players[1].groups[0].type, type);
+    assert.equal(round.phase, 'discard');
   }
 });
 
@@ -888,19 +860,9 @@ test('三种玩法都能打到胡牌或黄庄', () => {
   }
 });
 
-test('四人六胡抢逆时针轮转，上家可吃，旧三人存档仍可恢复', () => {
+test('四人六胡抢逆时针轮转', () => {
   const round = new Round(defaultSettings, 3, () => 0.375, undefined, { deferOpening: true });
   assert.equal(round.deck.length, 23);
   assert.match(renderTable(round, 0, null, 'deal'), /class="seat seat-3"/);
   assert.deepEqual([0, 2, 3, 1].map(seat => nextSeat(seat, round.rules.seats)), [2, 3, 1, 0]);
-
-  const state = round.toSave();
-  delete state.rules.seats;
-  state.players.pop();
-  state.dealer = 0;
-  delete state.openingHand;
-  Object.assign(state, { deck: [], phase: 'draw', seat: 1, options: [{ type: '摸' }] });
-  const restored = Round.fromSave(state);
-  assert.equal(restored.phase, 'finished');
-  assert.deepEqual(restored.result, { winner: null, delta: [0, 0, 0], nextDealer: 2 });
 });

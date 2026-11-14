@@ -3,13 +3,13 @@ import { setMusicPlaying, setMusicVolume } from './audio/music.mjs?v=208-cbe0bee
 import { playAction, playEffect, setSoundEnabled, setSoundVolume, stopEffect, stopSound, unlockSound } from './audio/player.mjs?v=282';
 import { pickTablemates } from './data/tablemates.mjs?v=179';
 import { cutDeck, shuffledDeck } from './game/deck.mjs?v=17';
-import { Round } from './game/state-machine.mjs?v=282';
+import { Round } from './game/state-machine.mjs?v=286';
 import { MahjongRound } from './game/mahjong-round.mjs';
 import { presets } from './rules/presets.mjs?v=250';
-import { load, save } from './storage/save.mjs?v=272';
+import { load, roundSaveVersion, save } from './storage/save.mjs?v=286';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=259';
 import { createHandLayout, eatPreviewIds, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=235';
-import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, renderPendingResponse, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=285';
+import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, renderPendingResponse, showOpeningFrame, renderTable, showFinishedTable, showRoundResult, updateHandLayout } from './ui/table.mjs?v=286';
 import { bindTutorial } from './ui/tutorial.mjs?v=282';
 import { bindProfile } from './ui/profile.mjs?v=202';
 import { bindAppUpdate } from './ui/update.mjs?v=252';
@@ -233,7 +233,7 @@ function updateSeatPicker() {
 }
 
 function saveRound(keep = round.phase !== 'finished') {
-  data.round = keep ? { state: round.toSave(), handLayout } : null;
+  data.round = keep ? { version: roundSaveVersion, state: round.toSave(), handLayout } : null;
   save(data);
 }
 
@@ -248,8 +248,7 @@ function paintRound(event, motion, action) {
   const cssDuration = Math.max(0, ...[callout, face].filter(Boolean)
     .map(element => parseFloat(getComputedStyle(element).animationDuration) * 1000));
   const hold = face || callout || actionDuration ? 750 : 0;
-  turnPresentationEnds = Math.max(turnPresentationEnds,
-    performance.now() + Math.max(arrowDuration, actionDuration, cssDuration) + hold);
+  turnPresentationEnds = performance.now() + Math.max(arrowDuration, actionDuration, cssDuration) + hold;
 }
 
 function showRound(event, motion, action) {
@@ -402,9 +401,6 @@ function continueSavedRound() {
   }
   round.rules.sound = data.settings.sound;
   handLayout = data.round.handLayout;
-  const needsTablemates = !round.tablemates;
-  if (needsTablemates) round.tablemates = pickTablemates(round.players.length - 1);
-  if (needsTablemates || round.phase === 'finished') saveRound();
   showTable();
   if (round.openingHand) beginPlay();
   else showRound();
@@ -501,7 +497,8 @@ function updateEatSelection(choice) {
 function setHandLayout(layout, selectedId) {
   handLayout = layout;
   saveRound();
-  paintRound();
+  updateHandLayout(table, round, handLayout);
+  window.paohuziCompatLayout?.fitHand();
   if (selectedId !== undefined) {
     selectDiscard(table.querySelector(`[data-hand-card="${selectedId}"][data-select-card]`));
   }

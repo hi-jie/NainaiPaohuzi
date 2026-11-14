@@ -17,7 +17,7 @@
 
   var script = document.createElement('script');
   script.type = 'module';
-  script.src = useCompat ? './compat/game.mjs?v=285' : './js/main.mjs?v=285';
+  script.src = useCompat ? './compat/game.mjs?v=286' : './js/main.mjs?v=286';
   if (useCompat) {
     var stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';

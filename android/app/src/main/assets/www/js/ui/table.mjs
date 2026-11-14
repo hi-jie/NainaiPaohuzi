@@ -74,6 +74,26 @@ function playerHand(round, layout, canDiscard, response, canDrag) {
   }).join('');
 }
 
+function handHint(round) {
+  const { seat, phase, options } = round;
+  if (seat === 0 && (phase === 'opening-ti' || (phase === 'response' && options[0].forced))) {
+    return options[0];
+  }
+  return round.playerResponses?.[0];
+}
+
+const autoHandButton = '<button data-command="auto-hand">自动理牌</button>';
+
+export function updateHandLayout(table, round, handLayout) {
+  const hand = table.querySelector('.seat-0 .hand');
+  const layout = handLayout ?? createHandLayout(round.players[0].hand, round.rules.patterns, round.rules.mode === 'mahjong');
+  hand.style.setProperty('--hand-columns', layout.length);
+  hand.innerHTML = playerHand(round, layout, round.seat === 0 && round.phase === 'discard', handHint(round), true);
+  const autoHand = table.querySelector('[data-command="auto-hand"]');
+  if (handLayout && !autoHand) table.querySelector('.table-score').insertAdjacentHTML('beforebegin', autoHandButton);
+  else if (!handLayout) autoHand?.remove();
+}
+
 function centerOffer(round) {
   if (round.rules.mode === 'mahjong') return round.offer;
   if (['response', 'opening-ti', 'last-draw'].includes(round.phase)) return round.offer;
@@ -256,7 +276,6 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
   const offer = centerOffer(round);
   const playerResponses = round.playerResponses;
   const response = playerResponses?.[0] ?? (seat === 0 && phase === 'response' && options[0].forced ? options[0] : null);
-  const handHint = seat === 0 && phase === 'opening-ti' ? options[0] : response;
   const arrowSeat = offer && ['response', 'claim'].includes(phase) ? offer.source : seat;
   const source = offer?.source ?? event?.seat ?? round.dealer;
   const visibleCard = offer?.card ?? round.opening;
@@ -280,7 +299,7 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
       ${phase !== 'finished' ? navButton('leave', 'back', '返回首页') + navButton('pause', 'settings', '设置')
         + navButton('tutorial', 'book-open', '教程') : ''}
       ${showdown ? '<button data-command="return-to-result" hidden>返回结算</button>' : ''}
-      ${playing && handLayout ? '<button data-command="auto-hand">自动理牌</button>' : ''}
+      ${playing && handLayout ? autoHandButton : ''}
       <div class="table-score"><span>${round.rules.name}</span><span>积分 ${score}</span></div>
     </div>
     ${round.players.slice(1).map((_, index) => {
@@ -304,7 +323,7 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
         </div>
       </div>
     </div>
-    ${seatView(round, 0, seatIdentity(round, 0, profile), activeSeat, event, handHint, openingStage, actions, handLayout)}
+    ${seatView(round, 0, seatIdentity(round, 0, profile), activeSeat, event, handHint(round), openingStage, actions, handLayout)}
     </div>`;
 }
 
