@@ -313,7 +313,9 @@ export function animateTurnArrow(arrow, previousSeat) {
   const frames = [start, start - sweep].map(angle => ({
     transform: `translate(-50%, -50%) rotate(${angle}deg) translateX(var(--orbit-radius))`
   }));
-  animate(arrow, frames, { duration: 380, easing: 'ease-in-out' });
+  const duration = 380;
+  animate(arrow, frames, { duration, easing: 'ease-in-out' });
+  return duration;
 }
 
 function tableOffset(table, from, to) {
@@ -460,6 +462,8 @@ export function captureOfferMotion(table, round) {
   }
 }
 
+const transferDuration = 220;
+
 function animateTransfer(table, card, destination, from, effect = 'move') {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const frame = table.getBoundingClientRect();
@@ -486,21 +490,23 @@ function animateTransfer(table, card, destination, from, effect = 'move') {
   destination.style.visibility = 'hidden';
   table.append(ghost);
   animate(ghost, [{ transform: origin }, { transform: target }],
-    { duration: 220, fill: 'both', easing: 'ease-in-out' }).onfinish = () => {
+    { duration: transferDuration, fill: 'both', easing: 'ease-in-out' }).onfinish = () => {
     destination.style.visibility = '';
     ghost.remove();
   };
+  return transferDuration;
 }
 
 function animateDiscard(table, { offer: { card, source }, from }) {
   const destination = Array.from(table.querySelectorAll(`.seat-${source} .discarded .card`)).at(-1);
-  if (destination) animateTransfer(table, card, destination, from);
+  if (destination) return animateTransfer(table, card, destination, from);
 }
 
 export function animateAction(table, round, event, motion, action) {
   const seatView = seat => table.querySelector(`.seat-${seat}`);
+  let discardDuration;
   if (motion?.offer.parked || (round.rules.mode === 'mahjong' && action?.type === '摸' && motion)) {
-    animateDiscard(table, motion);
+    discardDuration = animateDiscard(table, motion);
   }
   if (round.rules.mode === 'mahjong' && ['吃', '摸'].includes(event?.type)) {
     const seat = seatView(event.seat);
@@ -508,8 +514,7 @@ export function animateAction(table, round, event, motion, action) {
       ? [...seat.querySelectorAll('.hand .card')].findLast(card => card.textContent === cardName(event.card))
       : seat.querySelector('.seat-backs').lastElementChild;
     const from = event.type === '摸' ? table.querySelector('.deck-tile').getBoundingClientRect() : motion.from;
-    animateTransfer(table, event.card, destination, from, event.type === '摸' ? 'draw' : 'move');
-    return;
+    return animateTransfer(table, event.card, destination, from, event.type === '摸' ? 'draw' : 'move');
   }
   if (event?.type === '摸' || event?.type === '出') {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -520,25 +525,28 @@ export function animateAction(table, round, event, motion, action) {
       { transform: `translate(${x}px, ${y}px) scale(.72)`, opacity: .3 },
       { transform: 'scale(1.08)', opacity: 1, offset: .78 },
       { transform: 'scale(1)', opacity: 1 }
-    ], { duration: 220, easing: 'cubic-bezier(.2,.72,.28,1)' });
+    ], { duration: transferDuration, easing: 'cubic-bezier(.2,.72,.28,1)' });
+    return transferDuration;
   } else if (event?.fromHand) {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const seat = seatView(event.seat);
     const origin = event.seat === 0 ? seat.querySelector('.hand') : seat.querySelector('.avatar');
-    slideFrom(table, seat.querySelector('.groups').lastElementChild, origin.getBoundingClientRect(), 220, .72);
+    slideFrom(table, seat.querySelector('.groups').lastElementChild, origin.getBoundingClientRect(), transferDuration, .72);
+    return transferDuration;
   } else if (event) {
     const { card, seat } = event;
     const { groups } = round.players[seat];
     const index = action.previous >= 0 ? action.previous : groups.length - (action.groups?.length ?? 1);
     const stack = seatView(seat).querySelector('.groups').children[index];
     const destination = offeredTile(stack);
-    animateTransfer(table, card, destination, motion.from, motion.concealed ? 'draw' : 'move');
+    return animateTransfer(table, card, destination, motion.from, motion.concealed ? 'draw' : 'move');
   } else if (motion?.offer.kind === 'opening' && motion.meld === undefined && round.phase !== 'response' && round.phase !== 'opening-ti') {
     const { offer: { source, card }, from } = motion;
     const seat = seatView(source);
     const destination = source === 0
       ? [...seat.querySelectorAll('.hand .card')].findLast(tile => tile.textContent === cardName(card))
       : seat.querySelector('.seat-backs').lastElementChild;
-    animateTransfer(table, card, destination, from);
+    return animateTransfer(table, card, destination, from);
   }
+  return discardDuration;
 }

@@ -9,7 +9,7 @@ import { presets } from './rules/presets.mjs?v=250';
 import { load, save } from './storage/save.mjs?v=272';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=259';
 import { createHandLayout, eatPreviewIds, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=235';
-import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=270';
+import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=275';
 import { bindTutorial } from './ui/tutorial.mjs?v=250';
 import { bindProfile } from './ui/profile.mjs?v=202';
 import { bindAppUpdate } from './ui/update.mjs?v=252';
@@ -50,6 +50,7 @@ let round;
 let handLayout = null;
 let timer;
 let openingEnds;
+let turnPresentationEnds = 0;
 let musicWaitingForSound = data.settings.sound;
 
 const modes = home.querySelector('.modes');
@@ -237,8 +238,12 @@ function paintRound(event, motion, action) {
   const previousSeat = table.querySelector('.turn-arrow')?.dataset.seat;
   table.innerHTML = renderTable(round, data.scores[round.rules.mode], event, '', handLayout, data.profile);
   window.paohuziCompatLayout?.fitHand();
-  animateTurnArrow(table.querySelector('.turn-arrow'), previousSeat);
-  if (event || motion) animateAction(table, round, event, motion, action);
+  const arrowDuration = animateTurnArrow(table.querySelector('.turn-arrow'), previousSeat) ?? 0;
+  const actionDuration = event || motion ? animateAction(table, round, event, motion, action) ?? 0 : 0;
+  // Leave time to read a newly shown card, even when motion is reduced.
+  const faceDuration = (event?.type === '摸' || event?.type === '出') && table.querySelector('.landing .card:not(.back)')
+    ? 450 : 0;
+  turnPresentationEnds = performance.now() + Math.max(arrowDuration, actionDuration, faceDuration);
 }
 
 function showRound(event, motion, action) {
@@ -288,26 +293,27 @@ function fitTable() {
 new ResizeObserver(fitTable).observe(table);
 
 function scheduleTurn() {
+  const delay = data.settings.pace === 'fast' ? Math.max(0, turnPresentationEnds - performance.now()) : 0;
   const pending = round.pendingPlayerAction;
   if (pending) {
-    timer = setTimeout(() => step(pending), 0);
+    timer = setTimeout(() => step(pending), delay);
     return;
   }
   const action = round.options[0];
   if (!action || (round.seat === 0 && !action.forced)) return;
   const perform = () => step(action.forced ? action : chooseAction(round));
-  if (data.settings.pace === 'fast') {
-    timer = setTimeout(perform, 0);
-    return;
-  }
   if (round.phase === 'last-draw') {
     timer = setTimeout(() => step(action), 1200);
     return;
   }
+  if (data.settings.pace === 'fast') {
+    timer = setTimeout(perform, delay);
+    return;
+  }
   const [minimum, maximum] = round.phase === 'discard' ? [1800, 3500]
     : round.phase === 'draw' ? [950, 1600] : [1150, 1800];
-  const delay = action.forced ? 650 : minimum + Math.random() * (maximum - minimum);
-  timer = setTimeout(perform, delay);
+  const thinkingDelay = action.forced ? 650 : minimum + Math.random() * (maximum - minimum);
+  timer = setTimeout(perform, thinkingDelay);
 }
 
 function beginPlay() {
