@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#113f32">
   <title>衡阳跑胡子</title>
   <link rel="icon" type="image/png" sizes="192x192" href="./favicon.png">
-  <link rel="stylesheet" href="./css/app.css?v=279">
+  <link rel="stylesheet" href="./css/app.css?v=288">
   <script>
   /* 诊断兜底：主脚本 4 秒内没有启动时（常见于系统 WebView 过旧的设备），用 ES5 内联脚本显示可读的诊断信息，避免只剩一片绿色。 */
   (function () {
@@ -228,7 +228,7 @@
     window.addEventListener('load', schedule);
   })();
   </script>
-  <script defer src="./js/bootstrap.js?v=287"></script>
+  <script defer src="./js/bootstrap.js?v=288"></script>
 </head>
 <body>
   <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -247,16 +247,19 @@
   </svg>
   <main>
     <section id="home" class="front-screen" aria-labelledby="home-title">
-      <button id="exit-game" class="icon-button" type="button" aria-label="退出游戏" hidden><svg class="nav-icon" aria-hidden="true"><use href="#icon-power"/></svg></button>
-      <header class="home-top">
-        <button id="open-profile" type="button">
-          <span class="profile-avatar" aria-hidden="true">
-            <img alt="" hidden>
-            <svg class="nav-icon"><use href="#icon-person"/></svg>
-          </span>
-          <span id="home-nickname"></span>
-        </button>
-        <button id="open-settings" class="icon-button" type="button" aria-label="设置"><svg class="nav-icon" aria-hidden="true"><use href="#icon-settings"/></svg></button>
+      <header class="home-header">
+        <button id="exit-game" class="icon-button" type="button" aria-label="退出游戏" hidden><svg class="nav-icon" aria-hidden="true"><use href="#icon-power"/></svg></button>
+        <p id="home-update-notice" role="status" hidden></p>
+        <div class="home-top">
+          <button id="open-profile" type="button">
+            <span class="profile-avatar" aria-hidden="true">
+              <img alt="" hidden>
+              <svg class="nav-icon"><use href="#icon-person"/></svg>
+            </span>
+            <span id="home-nickname"></span>
+          </button>
+          <button id="open-settings" class="icon-button" type="button" aria-label="设置"><svg class="nav-icon" aria-hidden="true"><use href="#icon-settings"/></svg></button>
+        </div>
       </header>
       <div class="home-brand">
         <h1 id="home-title">衡阳跑胡子</h1>

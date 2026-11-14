@@ -84,8 +84,9 @@ public class MainActivity extends Activity {
         game = new WebView(this);
         updates = new AppUpdates(this, state -> {
             if (updatePageReady) {
-                game.evaluateJavascript("window.dispatchEvent(new CustomEvent('paohuzi-update', { detail: "
-                        + state + " }));", null);
+                game.evaluateJavascript("window.paohuziUpdateState = " + state
+                        + "; window.dispatchEvent(new CustomEvent('paohuzi-update', "
+                        + "{ detail: window.paohuziUpdateState }));", null);
             }
         });
         game.setBackgroundColor(Color.rgb(16, 58, 48));
@@ -124,7 +125,7 @@ public class MainActivity extends Activity {
                 if (GAME_URL.equals(url)) {
                     view.evaluateJavascript("document.getElementById('exit-game').hidden = false", null);
                     updatePageReady = true;
-                    updates.sendState();
+                    updates.checkOnLaunch();
                     scheduleDiagnostics();
                 }
                 syncDisplayCutout(root.getRootWindowInsets());
@@ -175,7 +176,7 @@ public class MainActivity extends Activity {
                 if (request.isForMainFrame() && GAME_URL.equals(view.getUrl())) {
                     switch (url) {
                         case EXIT_URL -> finish();
-                        case "paohuzi://check-update" -> updates.check();
+                        case "paohuzi://check-update" -> updates.checkManually();
                         case "paohuzi://download-update" -> updates.download();
                         case "paohuzi://cancel-update-download" -> updates.cancelDownload();
                         case "paohuzi://install-update" -> updates.install();

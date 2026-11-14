@@ -60,10 +60,13 @@ public final class AppUpdates {
     private int progress = -1;
     private boolean ready;
     private boolean checking;
+    private boolean checkedOnLaunch;
+    private boolean showCheckResult;
     private boolean validating;
     private boolean foreground;
     private boolean closed;
     private Update offered;
+    private String latestVersion;
 
     AppUpdates(Activity activity, Consumer<JSONObject> render) {
         this.activity = activity;
@@ -100,21 +103,42 @@ public final class AppUpdates {
         try {
             render.accept(new JSONObject()
                     .put("version", installed.versionName)
-                    .put("checking", checking)
+                    .put("checking", checking && showCheckResult)
                     .put("downloading", downloadId != 0 && !ready)
                     .put("ready", ready)
                     .put("progress", progress)
                     .put("message", message)
+                    .put("latestVersion", latestVersion)
                     .put("available", available));
         } catch (JSONException error) {
             throw new IllegalStateException(error);
         }
     }
 
-    void check() {
-        if (checking || (downloadId != 0 && !ready)) return;
+    void checkOnLaunch() {
+        if (checkedOnLaunch) {
+            sendState();
+            return;
+        }
+        checkedOnLaunch = true;
+        check(false);
+    }
+
+    void checkManually() {
+        if (downloadId != 0 && !ready) return;
+        check(true);
+    }
+
+    private void check(boolean manual) {
+        if (manual) {
+            showCheckResult = true;
+            offered = null;
+        }
+        if (checking) {
+            sendState();
+            return;
+        }
         checking = true;
-        offered = null;
         sendState();
         worker.execute(() -> {
             Update latest = null;
@@ -127,6 +151,14 @@ public final class AppUpdates {
             activity.runOnUiThread(() -> {
                 if (closed) return;
                 checking = false;
+                if (result != null) {
+                    latestVersion = result.code() > versionCode(installed) ? result.name() : null;
+                }
+                if (!showCheckResult) {
+                    sendState();
+                    return;
+                }
+                showCheckResult = false;
                 if (result == null) publish("检查更新失败，请稍后重试。", null);
                 else if (result.code() <= versionCode(installed)) publish("已是最新版本", null);
                 else if (ready && downloadVersion >= result.code()) publish("更新已下载，可以安装。", null);

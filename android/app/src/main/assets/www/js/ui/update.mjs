@@ -9,6 +9,7 @@ export function bindAppUpdate() {
   const progress = document.querySelector('#update-progress');
   const percent = document.querySelector('#update-percent');
   const status = document.querySelector('#update-status');
+  const notice = document.querySelector('#home-update-notice');
   const dialog = document.querySelector('#update-dialog');
   const description = document.querySelector('#update-description');
 
@@ -27,8 +28,10 @@ export function bindAppUpdate() {
     section.hidden = false;
   }
 
-  window.addEventListener('paohuzi-update', ({ detail }) => {
+  function renderUpdate(detail) {
     showVersion(detail.version);
+    notice.hidden = !detail.latestVersion;
+    notice.textContent = detail.latestVersion ? `有新版本 v${detail.latestVersion}，可前往设置页更新` : '';
     controls.hidden = false;
     status.hidden = false;
     check.hidden = detail.downloading;
@@ -45,7 +48,9 @@ export function bindAppUpdate() {
       description.textContent = `发现 ${detail.available} 版，是否下载？`;
       dialog.showModal();
     }
-  });
+  }
 
+  window.addEventListener('paohuzi-update', ({ detail }) => renderUpdate(detail));
   if (version.dataset.webVersion) showVersion(version.dataset.webVersion);
+  if (window.paohuziUpdateState) renderUpdate(window.paohuziUpdateState);
 }
