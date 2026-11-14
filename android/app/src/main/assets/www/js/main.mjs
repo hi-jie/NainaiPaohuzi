@@ -240,10 +240,13 @@ function paintRound(event, motion, action) {
   window.paohuziCompatLayout?.fitHand();
   const arrowDuration = animateTurnArrow(table.querySelector('.turn-arrow'), previousSeat) ?? 0;
   const actionDuration = event || motion ? animateAction(table, round, event, motion, action) ?? 0 : 0;
-  // Leave time to read a newly shown card, even when motion is reduced.
-  const faceDuration = (event?.type === '摸' || event?.type === '出') && table.querySelector('.landing .card:not(.back)')
-    ? 450 : 0;
-  turnPresentationEnds = performance.now() + Math.max(arrowDuration, actionDuration, faceDuration);
+  const callout = table.querySelector('.callout');
+  const face = (event?.type === '摸' || event?.type === '出') && table.querySelector('.landing .card:not(.back)');
+  const cssDuration = Math.max(0, ...[callout, face].filter(Boolean)
+    .map(element => parseFloat(getComputedStyle(element).animationDuration) * 1000));
+  const hold = face || callout || actionDuration ? 750 : 0;
+  turnPresentationEnds = Math.max(turnPresentationEnds,
+    performance.now() + Math.max(arrowDuration, actionDuration, cssDuration) + hold);
 }
 
 function showRound(event, motion, action) {
@@ -293,27 +296,27 @@ function fitTable() {
 new ResizeObserver(fitTable).observe(table);
 
 function scheduleTurn() {
-  const delay = data.settings.pace === 'fast' ? Math.max(0, turnPresentationEnds - performance.now()) : 0;
+  const presentationDelay = Math.max(0, turnPresentationEnds - performance.now());
   const pending = round.pendingPlayerAction;
   if (pending) {
-    timer = setTimeout(() => step(pending), delay);
+    timer = setTimeout(() => step(pending), presentationDelay);
     return;
   }
   const action = round.options[0];
   if (!action || (round.seat === 0 && !action.forced)) return;
   const perform = () => step(action.forced ? action : chooseAction(round));
   if (round.phase === 'last-draw') {
-    timer = setTimeout(() => step(action), 1200);
+    timer = setTimeout(() => step(action), Math.max(1200, presentationDelay));
     return;
   }
   if (data.settings.pace === 'fast') {
-    timer = setTimeout(perform, delay);
+    timer = setTimeout(perform, presentationDelay);
     return;
   }
   const [minimum, maximum] = round.phase === 'discard' ? [1800, 3500]
     : round.phase === 'draw' ? [950, 1600] : [1150, 1800];
   const thinkingDelay = action.forced ? 650 : minimum + Math.random() * (maximum - minimum);
-  timer = setTimeout(perform, thinkingDelay);
+  timer = setTimeout(perform, Math.max(thinkingDelay, presentationDelay));
 }
 
 function beginPlay() {
@@ -354,6 +357,7 @@ function resumeRound() {
 }
 
 function showTable() {
+  turnPresentationEnds = 0;
   home.hidden = true;
   setup.hidden = true;
   table.hidden = false;
@@ -398,6 +402,12 @@ function continueSavedRound() {
 }
 
 function step(action) {
+  const presentationDelay = Math.ceil(turnPresentationEnds - performance.now());
+  if (presentationDelay > 0) {
+    clearTimeout(timer);
+    timer = setTimeout(() => step(action), presentationDelay);
+    return;
+  }
   const before = round.events.length;
   const seat = round.seat;
   const implicitPass = action.type === '过' && round.pendingResponse?.type !== '过' && Boolean(round.pendingPlayerAction);
@@ -433,7 +443,13 @@ function submitPlayerAction(index) {
     round.submitPlayerResponse(action);
     if (!round.pendingPlayerAction) {
       saveRound();
-      paintRound();
+      const status = document.createElement('span');
+      status.className = 'pending-action';
+      status.setAttribute('role', 'status');
+      status.textContent = `${action.type === '过' ? '已过' : `已选${action.type}`}，等待其他玩家`;
+      const actions = table.querySelector('.hand-actions');
+      actions.textContent = '';
+      actions.append(status);
       return;
     }
   }
