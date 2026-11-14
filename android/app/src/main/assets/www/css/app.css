@@ -299,7 +299,7 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
   align-items: center; gap: 12px; padding: 8px 12px; font-size: 20px;
 }
 .pace-options {
-  position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 2px;
+  position: relative; justify-self: end; display: grid; grid-template-columns: repeat(2, 1fr); padding: 2px;
   border: 1px solid #a97949; border-radius: 8px; background: linear-gradient(#211510, #4a3021);
 }
 .pace-options::before {
@@ -314,7 +314,7 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
 .pace-options label { position: relative; }
 .pace-options input { position: absolute; opacity: 0; }
 .pace-options span {
-  display: grid; place-items: center; width: 100%; min-height: 36px;
+  display: grid; place-items: center; width: 100%; min-height: 36px; padding: 0 8px;
   border-radius: 6px; font-size: 16px; font-weight: 750; white-space: nowrap;
 }
 .pace-options input:checked + span { color: #392215; }
