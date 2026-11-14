@@ -1,5 +1,5 @@
 import { countCard, hasCards, takeCards } from './cards.mjs';
-import { findHu, findOpeningHu } from './hu.mjs?v=250';
+import { findHu, findOpeningHu } from './hu.mjs?v=282';
 
 // Seat indices are bottom, left, right and (in four-player rounds) top.
 const nextByCount = { 3: [2, 0, 1], 4: [2, 0, 3, 1], 5: [2, 0, 3, 4, 1] };

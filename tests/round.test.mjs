@@ -253,6 +253,54 @@ test('第四张同牌不能把原有坎拆散来胡，仍可跑后胡', () => {
   assert.equal(round.options[0].hu.huxi, 12);
 });
 
+test('外来第四张可保留原坎抢跑胡，自摸仍先提', () => {
+  for (const [source, kind, discardHu, first] of [
+    [0, 'draw', true, '提'],
+    [1, 'draw', false, '胡'],
+    [1, 'discard', true, '胡'],
+    [1, 'discard', false, '跑']
+  ]) {
+    const round = new Round({ ...defaultSettings, discardHu }, 0);
+    const hand = [0, 1, 1, 1, 2, 3, 3, 3, 5, 6, 7, 10, 11, 12];
+    round.players = [player(hand), player([]), player([]), player([])];
+    if (kind === 'discard') round.players[source].discards.push(1);
+    round.reveal(source, 1, kind);
+    assert.equal(round.options[0].type, first);
+    if (first === '胡') {
+      const { hu } = round.options[0];
+      assert.equal(hu.huxi, 15);
+      assert.equal(findHu({ ...round.players[0], passedHu: 15 }, 1, false, round.rules), null);
+      assert.ok(hu.groups.some(group => group.type === '坎' && group.cards.join() === '1,1,1'));
+      assert.ok(hu.groups.some(group => group.type === '吃' && group.cards.join() === '0,1,2'));
+      const oldSave = JSON.parse(JSON.stringify(round.toSave()));
+      delete oldSave.checksKanHu;
+      oldSave.options = oldSave.queue.shift().choices;
+      assert.equal(Round.fromSave(oldSave).options[0].type, '胡');
+      const restored = Round.fromSave(JSON.parse(JSON.stringify(round.toSave())));
+      restored.act(restored.options.find(action => action.type === '过'));
+      assert.equal(restored.options[0].type, '跑');
+      round.act(round.options[0]);
+      assert.equal(round.result.winner, 0);
+      assert.deepEqual(round.players[source].discards, []);
+    } else {
+      round.act(round.options[0]);
+      assert.equal(round.options.some(action => action.type === '胡'), false);
+    }
+  }
+});
+
+test('已偎或已碰的第四张可以先胡，原落地牌组保留', () => {
+  for (const [type, kind] of [['偎', 'draw'], ['偎', 'discard'], ['碰', 'draw'], ['碰', 'discard']]) {
+    const round = new Round(defaultSettings, 0);
+    const group = { type, cards: [1, 1, 1] };
+    round.players = [player([0, 2, 3, 3, 3, 5, 6, 7, 10, 11, 12], [group]), player([]), player([]), player([])];
+    round.reveal(1, 1, kind);
+    assert.equal(round.options[0].type, '胡');
+    assert.deepEqual(round.options[0].hu.groups[0], group);
+    assert.equal(round.queue.some(({ choices }) => choices[0].type === '跑'), type === '偎' || kind === 'draw');
+  }
+});
+
 test('自己打过的同牌不能碰，忍碰后摸到同牌算臭偎', () => {
   const offer = { card: 1, source: 1, kind: 'discard' };
   const ownDiscard = { ...player([1, 1, 8]), ownDiscards: [1] };

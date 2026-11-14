@@ -32,6 +32,7 @@ export function findOpeningHu(player, card, dealer, rules) {
     groups.push({ type: matching === 2 ? '偎' : '提', cards: [...own, card] });
     return findHu({ ...player, hand: takeCards(hand, own), groups }, null, false, rules);
   }
+  if (matching === 3) return null;
   return findHu({ ...player, hand, groups }, card, dealer, rules);
 }
 
@@ -71,8 +72,13 @@ export function findHu(player, card, selfDraw, rules) {
     : (a, b) => a - b;
   if (card !== null) {
     const count = countCard(hand, card);
-    // A fourth copy must go through the forced meld before checking Hu.
-    if (count === 3) return null;
+    if (count === 3) {
+      if (selfDraw) return null;
+      // Keep the original kan intact and use only the incoming copy in the hand.
+      const cards = [card, card, card];
+      const kan = { type: '坎', cards };
+      return evaluate(sortCards([...takeCards(hand, cards), card]), [...fixed, kan], rules, compare, passedHu);
+    }
     if (count === 2 && !selfDraw) {
       // Compare a winning triplet with using the same card in a sequence.
       const triplet = { type: '碰', cards: [card, card, card] };

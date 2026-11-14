@@ -1,6 +1,6 @@
 import { countCard, patterns, sortCards, takeCards } from '../rules/cards.mjs';
-import { canHuFrom, concealedDraw, nextSeat, ownForcedMeld, responses } from '../rules/actions.mjs?v=281';
-import { findHu } from '../rules/hu.mjs?v=250';
+import { canHuFrom, concealedDraw, nextSeat, ownForcedMeld, responses } from '../rules/actions.mjs?v=282';
+import { findHu } from '../rules/hu.mjs?v=282';
 import { defaultSettings, presets } from '../rules/presets.mjs?v=250';
 import { settle } from '../rules/scoring.mjs?v=250';
 import { shuffledDeck } from './deck.mjs';
@@ -51,6 +51,7 @@ export class Round {
   toSave() {
     return {
       ...this,
+      checksKanHu: true,
       players: this.players.map(player => ({
         ...player, passedChi: [...player.passedChi], passedPeng: [...player.passedPeng]
       }))
@@ -58,6 +59,7 @@ export class Round {
   }
 
   static fromSave(state) {
+    const { checksKanHu, ...saved } = state;
     const legacy = state.players.some(player => !player.ownDiscards);
     const history = legacy ? restoreDiscardHistory(state.events, state.players.length) : [];
     const players = state.players.map((player, seat) => ({
@@ -72,13 +74,15 @@ export class Round {
       })
     }));
     const rules = { openMelds: defaultSettings.openMelds, ...state.rules };
-    const round = Object.assign(Object.create(Round.prototype), state, { players, rules });
+    const round = Object.assign(Object.create(Round.prototype), saved, { players, rules });
     const hadDeferredMeld = round.phase === 'response' && round.offer?.kind === 'draw'
       && [round.options, ...round.queue.map(entry => entry.choices)]
       .some(([choice]) => choice?.priority === 2 && ['提', '偎'].includes(choice.type));
     if (round.phase === 'response' && (legacy || hadDeferredMeld)) {
       const { source, card, kind } = round.offer;
       round.reveal(source, card, kind);
+    } else if (round.phase === 'response' && !checksKanHu && round.offer.kind !== 'opening') {
+      round.restoreKanHu();
     }
     if (state.rules.openMelds === undefined && rules.mode === 'fifteen') {
       const belowMinimum = choices => choices[0]?.type === '胡' && choices[0].hu.huxi < rules.minimum;
@@ -91,6 +95,37 @@ export class Round {
     }
     if (round.phase === 'draw' && !round.deck.length) round.waitForDraw(round.seat);
     return round;
+  }
+
+  restoreKanHu() {
+    const { card, source, kind } = this.offer;
+    if (!canHuFrom(kind, this.rules)) return;
+    const current = { seat: this.seat, priority: this.options[0].priority, choices: this.options };
+    const candidates = [current, ...this.queue];
+    const huOptions = [];
+    for (const { seat, choices } of candidates) {
+      const player = this.players[seat];
+      if (seat === source || choices[0].type !== '跑' || countCard(player.hand, card) !== 3) continue;
+      const alreadyOffered = candidates.some(entry => entry.seat === seat && entry.choices[0].type === '胡');
+      if (alreadyOffered) continue;
+      const hu = responses(player, seat, this.offer, this.rules).find(choice => choice.type === '胡');
+      if (hu) huOptions.push({ seat, priority: hu.priority, choices: [hu] });
+    }
+    if (!huOptions.length) return;
+    const seatOrder = [];
+    for (let seat = source; seatOrder.length < this.players.length; seat = nextSeat(seat, this.players.length)) {
+      seatOrder.push(seat);
+    }
+    const ordered = [...candidates, ...huOptions].sort((a, b) =>
+      a.priority - b.priority || seatOrder.indexOf(a.seat) - seatOrder.indexOf(b.seat));
+    if (huOptions.some(({ seat }) => seat === 0)) delete this.pendingResponse;
+    this.queue = ordered.slice(1);
+    if (ordered[0] !== current) {
+      const first = ordered[0];
+      this.seat = first.seat;
+      this.options = [...first.choices, responsePass];
+    }
+    if (this.queue.includes(current)) current.choices = current.choices.filter(choice => choice.type !== '过');
   }
 
   revealOpening() {
