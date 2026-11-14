@@ -179,9 +179,14 @@ export class Round {
     if (this.phase !== 'response' || this.pendingResponse) return [];
     if (this.seat !== 0 && concealedDraw(this)) return [];
     const groups = [];
+    let waitingForOther = false;
     for (const { seat, choices } of [{ seat: this.seat, choices: this.options }, ...this.queue]) {
-      if (seat !== 0) continue;
+      if (seat !== 0) {
+        waitingForOther = true;
+        continue;
+      }
       if (choices[0].forced) break;
+      if (waitingForOther && choices[0].type === '吃') continue;
       groups.push(choices.filter(choice => choice.type !== '过'));
     }
     return groups;
@@ -198,6 +203,7 @@ export class Round {
     const choices = action === responsePass ? groups[0] : groups.find(group => group.includes(action));
     if (!choices) throw new Error('动作已失效');
     this.pendingResponse = { priority: choices[0].priority, index: choices.indexOf(action), type: action.type };
+    if (action === responsePass) this.pendingResponse.passChi = groups.some(group => group[0].type === '吃');
   }
 
   get pendingPlayerAction() {
@@ -276,9 +282,11 @@ export class Round {
       let declined = [this.options[0]];
       if (seat === 0 && this.pendingResponse?.priority === declined[0].priority) {
         const passAll = this.pendingResponse.type === '过';
+        const passChi = this.pendingResponse.passChi !== false;
         delete this.pendingResponse;
         if (passAll) {
-          declined = this.playerResponseGroups().map(choices => choices[0]);
+          declined = this.playerResponseGroups().map(choices => choices[0])
+            .filter(choice => passChi || choice.type !== '吃');
           const priorities = new Set(declined.map(choice => choice.priority));
           this.queue = this.queue.filter(candidate => candidate.seat !== 0 || !priorities.has(candidate.priority));
         }
