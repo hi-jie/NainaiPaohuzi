@@ -704,6 +704,48 @@ test('十胡卡和十五胡的十到十二红同乘二，首张弃牌不算地�
   }
 });
 
+test('别家能胡时，摸牌者的提和偎必须等胡牌响应', () => {
+  for (const [type, hand] of [['提', [17, 17, 17]], ['偎', [17, 17]]]) {
+    for (const accept of [true, false]) {
+      const round = new Round({ ...defaultSettings, openMelds: false }, 0);
+      round.players = [player(waitingHand), player(hand), player([]), player([])];
+      round.reveal(1, 17, 'draw');
+      assert.equal(round.seat, 0);
+      assert.equal(round.options[0].type, '胡');
+      const saved = JSON.parse(JSON.stringify(round.toSave()));
+      const [forced] = saved.queue.splice(0, 1);
+      saved.queue.unshift({ seat: 0, priority: 2, choices: saved.options.filter(choice => choice.type === '胡') });
+      saved.seat = forced.seat;
+      saved.options = forced.choices.map(choice => ({ ...choice, priority: 1 }));
+      const restored = Round.fromSave(saved);
+      assert.equal(restored.seat, 0);
+      restored.act(restored.options.find(choice => choice.type === (accept ? '胡' : '过')));
+      if (accept) {
+        assert.equal(restored.result.winner, 0);
+        assert.deepEqual(restored.players[1].groups, []);
+      } else {
+        assert.equal(restored.seat, 1);
+        assert.equal(restored.options[0].type, type);
+        restored.act(restored.options[0]);
+        assert.equal(restored.players[1].groups[0].type, type);
+      }
+    }
+  }
+});
+
+test('自摸能按提或偎的牌组直接判胡', () => {
+  const groups = [[10, 11, 12], [6, 16, 16], [4, 14, 14]].map(cards => ({ type: '吃', cards }));
+  for (const [type, hand] of [['提', [2, 2, 2, 7, 7]], ['偎', [2, 2, 3, 4, 5]]]) {
+    const round = new Round(defaultSettings, 0);
+    round.players = [player(hand, groups), player([]), player([]), player([])];
+    round.reveal(0, 2, 'draw');
+    assert.equal(round.options[0].type, '胡');
+    assert.equal(round.options[0].hu.groups.find(group => group.type === type)?.offeredCard, 2);
+    round.act(round.options[0]);
+    assert.equal(round.result.winner, 0);
+  }
+});
+
 test('胡牌优先于座次靠前的跑、碰和吃', () => {
   for (const [type, hand] of [['跑', [17, 17, 17]], ['碰', [17, 17]], ['吃', [15, 16]]]) {
     const round = new Round(defaultSettings, 0);

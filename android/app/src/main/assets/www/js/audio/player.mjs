@@ -1,4 +1,4 @@
-import { concealedDraw } from '../rules/actions.mjs?v=250';
+import { concealedDraw } from '../rules/actions.mjs?v=280';
 
 const numbers = ['yi', 'er', 'san', 'si', 'wu', 'liu', 'qi', 'ba', 'jiu', 'shi'];
 const actions = { 吃: 'chi', 碰: 'peng', 偎: 'wei', 提: 'ti', 跑: 'pao', 胡: 'hu', 过: 'guo' };

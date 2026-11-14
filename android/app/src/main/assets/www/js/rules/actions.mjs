@@ -11,10 +11,10 @@ export function canHuFrom(kind, rules) {
 
 export function ownForcedMeld(player, card) {
   const count = countCard(player.hand, card);
-  if (count === 2) return { type: '偎', cards: [card, card], priority: 1, forced: true };
+  if (count === 2) return { type: '偎', cards: [card, card], priority: 2, forced: true };
   const previous = player.groups.findIndex(group => group.type === '偎' && group.cards[0] === card);
   if (count === 3 || previous >= 0) {
-    return { type: '提', cards: count === 3 ? [card, card, card] : [], previous, priority: 1, forced: true };
+    return { type: '提', cards: count === 3 ? [card, card, card] : [], previous, priority: 2, forced: true };
   }
   return null;
 }
@@ -58,21 +58,28 @@ export function responses(player, seat, { card, source, kind }, rules) {
   }
 
   const ownDraw = self && kind === 'draw';
-  if (ownDraw) {
-    const forced = ownForcedMeld(player, card);
-    if (forced) return [forced];
+  const forced = ownDraw ? ownForcedMeld(player, card) : null;
+  const actions = [];
+  if (canHuFrom(kind, rules)) {
+    let hu;
+    if (forced) {
+      const groups = [...player.groups];
+      const cards = forced.previous >= 0 ? groups[forced.previous].cards : forced.cards;
+      const group = { type: forced.type, cards: [...cards, card], offeredCard: card };
+      if (forced.previous >= 0) groups[forced.previous] = group;
+      else groups.push(group);
+      hu = findHu({ ...player, hand: takeCards(player.hand, forced.cards), groups }, null, false, rules);
+    } else {
+      hu = findHu(player, card, ownDraw, rules);
+    }
+    if (hu) actions.push({ type: '胡', hu, priority: 1 });
   }
+  if (forced) return [...actions, forced];
 
   const count = countCard(player.hand, card);
   const previous = player.groups.findIndex(group =>
     ['偎', '碰'].includes(group.type) && group.cards[0] === card);
   const previousType = previous === -1 ? null : player.groups[previous].type;
-  const actions = [];
-
-  if (canHuFrom(kind, rules)) {
-    const hu = findHu(player, card, ownDraw, rules);
-    if (hu) actions.push({ type: '胡', hu, priority: 2 });
-  }
   if (count === 3 || previousType === '偎' || (previousType === '碰' && kind !== 'discard')) {
     actions.push({
       type: '跑', cards: count === 3 ? [card, card, card] : [], previous,

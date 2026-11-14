@@ -1,5 +1,5 @@
 import { countCard, patterns, sortCards, takeCards } from '../rules/cards.mjs';
-import { canHuFrom, concealedDraw, nextSeat, ownForcedMeld, responses } from '../rules/actions.mjs?v=250';
+import { canHuFrom, concealedDraw, nextSeat, ownForcedMeld, responses } from '../rules/actions.mjs?v=280';
 import { findHu } from '../rules/hu.mjs?v=250';
 import { defaultSettings, presets } from '../rules/presets.mjs?v=250';
 import { settle } from '../rules/scoring.mjs?v=250';
@@ -73,7 +73,9 @@ export class Round {
     }));
     const rules = { openMelds: defaultSettings.openMelds, ...state.rules };
     const round = Object.assign(Object.create(Round.prototype), state, { players, rules });
-    if (legacy && round.phase === 'response') {
+    const oldForcedDraw = round.offer?.kind === 'draw' && round.options[0]?.priority === 1
+      && ['提', '偎'].includes(round.options[0].type);
+    if (round.phase === 'response' && (legacy || oldForcedDraw)) {
       const { source, card, kind } = round.offer;
       round.reveal(source, card, kind);
     }
