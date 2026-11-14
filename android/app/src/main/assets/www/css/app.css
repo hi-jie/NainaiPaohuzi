@@ -143,16 +143,16 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
 #nickname-status:empty { display: none; }
 .score-records {
   grid-area: 1 / 2; width: 100%; display: grid;
-  grid-template-columns: minmax(0, 1fr) repeat(2, max-content); gap: clamp(6px, calc(var(--screen-height) * .018), 12px) 10px;
+  grid-template-columns: minmax(0, 1fr); gap: clamp(6px, calc(var(--screen-height) * .018), 12px) 10px;
   margin: 0; padding: 0; list-style: none; place-self: center;
 }
 .record-entry {
-  grid-column: span 3; display: grid; grid-template-columns: minmax(0, 1fr) 60px max-content;
-  grid-template-columns: subgrid; align-items: center; column-gap: 10px;
+  display: grid; grid-template-columns: minmax(0, 1fr) max-content; align-items: center; column-gap: 10px;
 }
 .record-card {
-  grid-column: span 2; display: grid; grid-template-columns: minmax(0, 1fr) 60px;
-  grid-template-columns: subgrid; align-items: center; column-gap: 12px;
+  --record-score-padding: 12px;
+  display: grid; align-items: center;
+  grid-template-columns: minmax(0, 1fr) minmax(max-content, calc(var(--record-score-width, 0px) + 2 * var(--record-score-padding) + 1px));
   margin: 0;
   min-height: clamp(42px, calc(var(--screen-height) * .12), 66px);
   padding: 6px clamp(12px, calc(var(--screen-width) * .032), 28px);
@@ -166,9 +166,10 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
   font-size: clamp(17px, calc(var(--screen-height) * .052), 27px);
 }
 .record-score {
-  margin: 0; padding-left: 12px; border-left: 1px solid #b4946180;
-  color: #fff0c8; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; text-align: end;
+  margin: 0; padding-inline: var(--record-score-padding); border-left: 1px solid #b4946180;
+  color: #fff0c8; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; text-align: center;
 }
+.record-score-value { display: inline-block; }
 .record-score strong { font-size: clamp(18px, calc(var(--screen-height) * .062), 32px); line-height: 1; }
 #profile .record-reset {
   display: inline-flex; align-items: center; justify-content: center; gap: 4px;
@@ -178,14 +179,11 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
 #profile .record-reset:active { translate: none; }
 .record-reset .nav-icon { width: 17px; height: 17px; }
 @container profile (max-height: 218px) {
-  .score-records { grid-template-columns: repeat(2, minmax(0, 1fr) max-content); gap: 6px; }
-  .record-entry { grid-column: span 2; grid-template-columns: minmax(0, 1fr) 36px; grid-template-columns: subgrid; row-gap: 2px; }
-  .record-card {
-    grid-template-columns: minmax(0, 1fr) 44px; grid-template-columns: subgrid;
-    column-gap: 4px; padding-inline: 7px;
-  }
+  .score-records { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .record-entry { grid-template-columns: minmax(0, 1fr); row-gap: 2px; }
+  .record-card { --record-score-padding: 4px; padding-inline: 7px; }
   .record-card dt { font-size: clamp(12px, calc(var(--screen-width) * .024), 17px); }
-  .record-score { padding-left: 4px; font-size: 11px; }
+  .record-score { font-size: 11px; }
   .record-score strong { font-size: clamp(13px, calc(var(--screen-width) * .025), 18px); }
   #profile .record-reset { grid-column: 1 / -1; justify-self: center; min-height: 30px; font-size: 13px; }
 }

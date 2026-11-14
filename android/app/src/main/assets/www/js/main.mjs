@@ -109,14 +109,22 @@ settings.querySelector('[data-back-home]').addEventListener('click', () => showH
 setup.querySelector('[data-back-home]').addEventListener('click', () => showHome());
 document.querySelector('#setup-tutorial').addEventListener('click', () => openTutorial(selectedMode));
 document.querySelector('#pause-tutorial').addEventListener('click', () => openTutorial(round.rules.mode));
+const scoreSizeObserver = new ResizeObserver(() => {
+  if (profilePage.hidden) return;
+  const widths = Array.from(scoreRecords.querySelectorAll('.record-score-value'),
+    value => parseFloat(getComputedStyle(value).width));
+  scoreRecords.style.setProperty('--record-score-width', `${Math.ceil(Math.max(...widths))}px`);
+});
 profileButton.addEventListener('click', () => {
+  scoreSizeObserver.disconnect();
   scoreRecords.innerHTML = Object.entries(presets).map(([mode, { name }]) =>
     `<li class="record-entry">
-      <dl class="record-card"><dt>${name}</dt><dd class="record-score"><strong>${data.scores[mode]}</strong> 分</dd></dl>
+      <dl class="record-card"><dt>${name}</dt><dd class="record-score"><span class="record-score-value"><strong>${data.scores[mode]}</strong> 分</span></dd></dl>
       <button class="record-reset" type="button" data-reset-mode="${mode}" aria-label="${name}积分清零" aria-haspopup="dialog">
         <svg class="nav-icon" aria-hidden="true"><use href="#icon-refresh"/></svg>清零
       </button>
     </li>`).join('');
+  for (const value of scoreRecords.querySelectorAll('.record-score-value')) scoreSizeObserver.observe(value);
   refreshProfile();
   showFront(profilePage, profilePage.querySelector('[data-back-home]'));
 });
