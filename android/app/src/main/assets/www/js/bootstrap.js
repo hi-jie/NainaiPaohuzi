@@ -17,11 +17,11 @@
 
   var script = document.createElement('script');
   script.type = 'module';
-  script.src = useCompat ? './compat/game.mjs?v=276' : './js/main.mjs?v=276';
+  script.src = useCompat ? './compat/game.mjs?v=278' : './js/main.mjs?v=278';
   if (useCompat) {
     var stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = './compat/app.css?v=277';
+    stylesheet.href = './compat/app.css?v=278';
     stylesheet.onload = function () {
       document.querySelector('link[href^="./css/app.css"]').disabled = true;
       document.head.appendChild(script);

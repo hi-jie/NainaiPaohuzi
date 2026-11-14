@@ -9,7 +9,7 @@ import { presets } from './rules/presets.mjs?v=250';
 import { load, save } from './storage/save.mjs?v=272';
 import { bindHandDrag } from './ui/hand-drag.mjs?v=259';
 import { createHandLayout, eatPreviewIds, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=235';
-import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=275';
+import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, showOpeningFrame, renderTable, showFinishedTable, showRoundResult } from './ui/table.mjs?v=278';
 import { bindTutorial } from './ui/tutorial.mjs?v=250';
 import { bindProfile } from './ui/profile.mjs?v=202';
 import { bindAppUpdate } from './ui/update.mjs?v=252';
@@ -38,7 +38,8 @@ const modeScore = document.querySelector('#mode-score');
 const seatPicker = document.querySelector('#mahjong-seats');
 const paohuziOptions = document.querySelector('#paohuzi-options');
 const meldVisibility = document.querySelector('#meld-visibility');
-const openTutorial = bindTutorial(document.querySelector('#tutorial'));
+const tutorial = document.querySelector('#tutorial');
+const openTutorial = bindTutorial(tutorial);
 const data = load();
 const refreshProfile = bindProfile(profilePage, profileButton, document.querySelector('#nickname-dialog'), data.profile, profile => {
   save({ ...data, profile });
@@ -124,7 +125,9 @@ document.querySelector('#exit-game').addEventListener('click', () => { location.
 settings.querySelector('[data-back-home]').addEventListener('click', () => showHome(settingsButton));
 setup.querySelector('[data-back-home]').addEventListener('click', () => showHome());
 document.querySelector('#setup-tutorial').addEventListener('click', () => openTutorial(selectedMode));
-document.querySelector('#pause-tutorial').addEventListener('click', () => openTutorial(round.rules.mode));
+tutorial.addEventListener('close', () => {
+  if (!table.hidden) resumeRound();
+});
 const scoreSizeObserver = new ResizeObserver(() => {
   if (profilePage.hidden) return;
   const values = Array.from(scoreRecords.querySelectorAll('.record-score-value'));
@@ -566,6 +569,8 @@ table.addEventListener('click', ({ target }) => {
     leaveMenu.showModal();
   } else if (button.dataset.command === 'pause') {
     pauseMenu.showModal();
+  } else if (button.dataset.command === 'tutorial') {
+    openTutorial(round.rules.mode);
   } else if (button.dataset.command === 'again') {
     start(round.result.nextDealer ?? round.result.winner ?? round.dealer, round.tablemates);
   } else if (button.dataset.command === 'review-round' || button.dataset.command === 'return-to-result') {

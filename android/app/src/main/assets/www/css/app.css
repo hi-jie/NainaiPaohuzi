@@ -216,7 +216,8 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
   column-gap: clamp(16px, calc(var(--screen-width) * .045), 44px); row-gap: 8px;
 }
 #round-setup .menu-header { grid-area: 1 / 1 / 2 / -1; }
-#setup-tutorial { margin-inline-start: auto; }
+#setup-tutorial { margin-inline-start: auto; display: inline-flex; align-items: center; }
+#setup-tutorial .nav-icon { width: 22px; height: 22px; margin-right: 6px; }
 .setup-summary {
   grid-area: 1 / 1 / -1 / 2; place-self: center;
   display: grid; justify-items: center; gap: 12px; text-align: center;
@@ -350,8 +351,9 @@ main:has(#table:not([hidden])) {
 .table-hud {
   position: absolute; top: 11px; left: 26px; right: 26px; display: flex; align-items: center; gap: 12px; min-height: 44px;
   color: #ffe6ad; font-size: 17px; font-weight: 750;
+  z-index: 2; pointer-events: none;
 }
-.table-hud button { min-height: 44px; }
+.table-hud button { min-height: 44px; pointer-events: auto; }
 .table-score { margin-left: auto; display: grid; text-align: right; line-height: 1.2; }
 .seat {
   position: absolute; width: var(--side-seat-width); height: 212px; top: 55px;

@@ -274,7 +274,8 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
   const lastLabel = offer?.kind === 'draw' ? '摸牌' : offer?.kind === 'discard' ? '出牌' : '庄家亮张';
   return `<div class="felt${mahjong ? ' mahjong' : ''}${round.rules.mode === 'six' ? ' six-hu' : ''}${round.players.length > 3 ? ' many-seats' : ''}${round.players.length === 5 ? ' five-seats' : ''}${openingStage ? ' opening' : ''}${showdown ? ' showdown' : ''}"${openingStage ? ` data-stage="${openingStage}"` : ''}>
     <div class="table-hud">
-      ${phase !== 'finished' ? navButton('leave', 'back', '返回首页') + navButton('pause', 'settings', '设置') : ''}
+      ${phase !== 'finished' ? navButton('leave', 'back', '返回首页') + navButton('pause', 'settings', '设置')
+        + navButton('tutorial', 'book-open', '教程') : ''}
       ${showdown ? '<button data-command="return-to-result" hidden>返回结算</button>' : ''}
       ${playing && handLayout ? '<button data-command="auto-hand">自动理牌</button>' : ''}
       <div class="table-score"><span>${round.rules.name}</span><span>积分 ${score}</span></div>
