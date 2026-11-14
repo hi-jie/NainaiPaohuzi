@@ -7,9 +7,9 @@ import { Round } from './game/state-machine.mjs?v=286';
 import { MahjongRound } from './game/mahjong-round.mjs';
 import { presets } from './rules/presets.mjs?v=250';
 import { load, roundSaveVersion, save } from './storage/save.mjs?v=286';
-import { bindHandDrag } from './ui/hand-drag.mjs?v=259';
+import { bindHandDrag } from './ui/hand-drag.mjs?v=287';
 import { createHandLayout, eatPreviewIds, moveHandCard, syncHandLayout } from './ui/hand.mjs?v=235';
-import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, renderPendingResponse, showOpeningFrame, renderTable, showFinishedTable, showRoundResult, updateHandLayout } from './ui/table.mjs?v=286';
+import { animateAction, animateHandSort, animateTurnArrow, captureOfferMotion, openingStages, previewEat, renderEatChoices, renderPendingResponse, showOpeningFrame, renderTable, showFinishedTable, showRoundResult, updateHandLayout, updatePlayingTable } from './ui/table.mjs?v=287';
 import { bindTutorial } from './ui/tutorial.mjs?v=282';
 import { bindProfile } from './ui/profile.mjs?v=202';
 import { bindAppUpdate } from './ui/update.mjs?v=252';
@@ -239,7 +239,7 @@ function saveRound(keep = round.phase !== 'finished') {
 
 function paintRound(event, motion, action) {
   const previousSeat = table.querySelector('.turn-arrow')?.dataset.seat;
-  table.innerHTML = renderTable(round, data.scores[round.rules.mode], event, '', handLayout, data.profile);
+  updatePlayingTable(table, renderTable(round, data.scores[round.rules.mode], event, '', handLayout, data.profile));
   window.paohuziCompatLayout?.fitHand();
   const arrowDuration = animateTurnArrow(table.querySelector('.turn-arrow'), previousSeat) ?? 0;
   const actionDuration = event || motion ? animateAction(table, round, event, motion, action) ?? 0 : 0;

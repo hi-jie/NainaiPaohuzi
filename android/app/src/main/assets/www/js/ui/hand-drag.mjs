@@ -22,6 +22,7 @@ function handPositions(hand, portrait) {
 
 function animateReflow(hand, previous, portrait, scale, held) {
   if (!hand || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const moves = [];
   for (const item of hand.querySelectorAll(reflowItems)) {
     const from = previous.get(reflowKey(item));
     if (!from || item === held) continue;
@@ -29,6 +30,9 @@ function animateReflow(hand, previous, portrait, scale, held) {
     const x = (from.left - to.left) / scale;
     const y = (from.top - to.top) / scale;
     if (Math.abs(x) < .25 && Math.abs(y) < .25) continue;
+    moves.push({ item, x, y });
+  }
+  for (const { item, x, y } of moves) {
     const animation = animate(item, [
       { transform: `translate(${x}px, ${y}px)` },
       { transform: 'none' }
@@ -75,13 +79,16 @@ function showDrop(drag, drop, previous) {
   drag.origin.hidden = !!drop?.newColumn && drag.emptySource;
   if (drop?.newColumn) drag.hand.insertBefore(drag.slot, drop.before);
   else if (drop) drop.stack.insertBefore(drag.slot, drop.before);
-  window.paohuziCompatLayout?.syncHand(drag.hand);
+  window.paohuziCompatLayout?.syncHand(drag.hand, [drag.origin, old?.stack, drop?.stack]);
   if (previous) animateReflow(drag.hand, previous, drag.portrait, drag.scale, drag.held);
+  drag.track = null;
 }
 
 export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
   let drag;
   let suppressClick = false;
+  let frame = 0;
+  let latestPointer;
 
   table.addEventListener('pointerdown', event => {
     if (!event.isPrimary || event.button !== 0) return;
@@ -165,18 +172,36 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       suppressClick = true;
     }
 
+    latestPointer = event;
+    if (previous) {
+      // Initialize the drag from the first movement so pointer capture stays synchronous.
+      moveHeld(previous);
+    } else if (!frame) {
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        moveHeld();
+      });
+    }
+  });
+
+  function moveHeld(previous) {
     const { portrait, scale, held, hand, gripX, gripY } = drag;
-    const x = portrait ? event.clientY : event.clientX;
-    const y = portrait ? -event.clientX : event.clientY;
+    const x = portrait ? latestPointer.clientY : latestPointer.clientX;
+    const y = portrait ? -latestPointer.clientX : latestPointer.clientY;
     showDrop(drag, findDrop(drag, x, y), previous);
-    const track = bounds(hand, portrait);
+    const track = drag.track ?? (drag.track = bounds(hand, portrait));
     held.style.setProperty('--drag-x', `${(x - track.left - gripX) / scale}px`);
     held.style.setProperty('--drag-y', `${(y - track.top - gripY) / scale}px`);
-  });
+  }
+
+  window.addEventListener('resize', () => { if (drag) drag.track = null; });
 
   function end(event) {
     if (drag?.pointer !== event.pointerId) return;
-    const { card, columns, source, portrait, scale, hand, felt, held, slot, guides, origin } = drag;
+    cancelAnimationFrame(frame);
+    frame = 0;
+    latestPointer = null;
+    const { card, columns, source, portrait, scale, hand, felt, held, slot, guides, origin, drop } = drag;
     const destination = columns && event.type === 'pointerup'
       ? findDrop(drag, portrait ? event.clientY : event.clientX, portrait ? -event.clientX : event.clientY)
       : null;
@@ -192,7 +217,7 @@ export function bindHandDrag(table, { onStart, onDrop, onEnd }) {
       felt.classList.remove('dragging-hand');
       if (window.paohuziCompatLayout) {
         table.classList.remove('dragging-hand');
-        window.paohuziCompatLayout.syncHand(hand);
+        window.paohuziCompatLayout.syncHand(hand, [origin, drop?.stack]);
       }
       if (destination) onDrop(source, destination);
       animateReflow(table.querySelector('.hand'), previous, portrait, scale);

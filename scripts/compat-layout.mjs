@@ -8,6 +8,7 @@ const profile = document.querySelector('#profile');
 const update = document.querySelector('#app-update');
 const clamp = (minimum, value, maximum) => Math.max(minimum, Math.min(value, maximum));
 const size = (style, name) => parseFloat(style.getPropertyValue(`--${name}`));
+const fittedHandWidths = new WeakMap();
 function px(element, name, value) {
   const property = `--${name}`;
   const length = `${value}px`;
@@ -67,8 +68,10 @@ function fitHand() {
   px(hand, 'compat-hand-gap', gap);
   px(hand, 'strip-font', Math.min(33.6, (width - gaps * gap) / columns - 3));
   if (!symmetric) {
-    const position = clamp(start + inset - tableWidth / 2, -hand.offsetWidth / 2,
-      tableWidth / 2 - inset - own - hand.offsetWidth);
+    const handWidth = hand.offsetWidth;
+    fittedHandWidths.set(hand, handWidth);
+    const position = clamp(start + inset - tableWidth / 2, -handWidth / 2,
+      tableWidth / 2 - inset - own - handWidth);
     hand.style.transform = `translateX(${position}px)`;
   }
 }
@@ -78,12 +81,13 @@ function syncTable() {
   main.classList.toggle('settlement-visible', !table.hidden && !!table.querySelector('.settlement:not([hidden])'));
 }
 
-function syncHand(hand) {
-  for (const stack of hand.querySelectorAll('.hand-stack')) {
+function syncHand(hand, stacks) {
+  for (const stack of new Set(stacks)) {
+    if (!stack) continue;
     stack.classList.toggle('four-cards', stack.querySelectorAll('.card:not([hidden])').length >= 4);
     stack.classList.toggle('reordering', !!stack.querySelector('.card[hidden], .hand-drop-slot'));
   }
-  fitHand();
+  if (fittedHandWidths.has(hand) && hand.offsetWidth !== fittedHandWidths.get(hand)) fitHand();
 }
 
 viewport();

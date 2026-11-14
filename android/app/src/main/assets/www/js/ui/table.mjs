@@ -327,6 +327,71 @@ export function renderTable(round, score, event, openingStage = '', handLayout =
     </div>`;
 }
 
+export function updatePlayingTable(table, markup) {
+  const felt = table.firstElementChild;
+  if (!felt?.matches('.felt:not(.opening):not(.showdown)')) {
+    table.innerHTML = markup;
+    return;
+  }
+  const template = document.createElement('template');
+  template.innerHTML = markup;
+  const next = template.content.firstElementChild;
+  if (felt.className !== next.className || felt.children.length !== next.children.length) {
+    table.innerHTML = markup;
+    return;
+  }
+  for (const ghost of table.querySelectorAll('.flying-card')) ghost.remove();
+  const keepChildren = (current, incoming) => {
+    const count = incoming.childElementCount;
+    for (const [index, child] of Array.from(incoming.children).entries()) {
+      const old = current.children[index];
+      if (!old?.isEqualNode(child)) {
+        if (old) old.replaceWith(child);
+        else current.append(child);
+      }
+    }
+    while (current.children.length > count) current.lastElementChild.remove();
+  };
+  for (const [index, incoming] of Array.from(next.children).entries()) {
+    const current = felt.children[index];
+    if (current.matches('.table-hud')) {
+      keepChildren(current, incoming);
+    } else if (current.matches('.seat')) {
+      current.className = incoming.className;
+      if (incoming.hasAttribute('aria-current')) current.setAttribute('aria-current', 'true');
+      else current.removeAttribute('aria-current');
+
+      // Refresh transient controls and callouts, while retaining unchanged cards.
+      for (const selector of ['.callout', '.hand-actions', '.hand']) {
+        current.querySelector(selector)?.remove();
+      }
+      const oldCards = Array.from(current.querySelectorAll('.seat-cards'));
+      let cardsIndex = 0;
+      let position = 0;
+      for (const child of Array.from(incoming.children)) {
+        let node = current.children[position];
+        if (child.matches('.seat-cards')) {
+          node = oldCards[cardsIndex++];
+          const groups = Array.from(child.children);
+          for (const [i, group] of groups.entries()) {
+            const previous = node.children[i];
+            if (previous.isEqualNode(group)) continue;
+            if (group.hasAttribute('aria-label')) previous.setAttribute('aria-label', group.getAttribute('aria-label'));
+            keepChildren(previous, group);
+          }
+        } else if (child.matches('.seat-heading')) {
+          keepChildren(node, child);
+        } else {
+          current.insertBefore(child, node ?? null);
+        }
+        position++;
+      }
+    } else {
+      current.replaceWith(incoming);
+    }
+  }
+}
+
 export function animateTurnArrow(arrow, previousSeat) {
   if (!arrow || previousSeat === undefined || previousSeat === arrow.dataset.seat ||
       matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -403,7 +468,7 @@ export function animateHandSort(table, render, opening = false) {
     previousCards.get(label).push(card.getBoundingClientRect());
   }
   render();
-  window.paohuziCompatLayout?.fitHand();
+  if (opening) window.paohuziCompatLayout?.fitHand();
   const destination = opening ? '.seat-0 .hand .card, .seat-0 .groups .card' : '.seat-0 .hand .card';
   for (const card of table.querySelectorAll(destination)) {
     const from = previousCards.get(card.textContent)?.shift();
