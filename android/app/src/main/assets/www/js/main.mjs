@@ -111,9 +111,15 @@ document.querySelector('#setup-tutorial').addEventListener('click', () => openTu
 document.querySelector('#pause-tutorial').addEventListener('click', () => openTutorial(round.rules.mode));
 const scoreSizeObserver = new ResizeObserver(() => {
   if (profilePage.hidden) return;
-  const widths = Array.from(scoreRecords.querySelectorAll('.record-score-value'),
-    value => parseFloat(getComputedStyle(value).width));
+  const values = Array.from(scoreRecords.querySelectorAll('.record-score-value'));
+  const widths = values.map(value => parseFloat(getComputedStyle(value).width));
   scoreRecords.style.setProperty('--record-score-width', `${Math.ceil(Math.max(...widths))}px`);
+  const scales = values.map((value, index) => {
+    const score = getComputedStyle(value.parentElement);
+    const available = parseFloat(score.width) - parseFloat(score.paddingLeft) - parseFloat(score.borderLeftWidth);
+    return Math.min(1, available / widths[index]);
+  });
+  values.forEach((value, index) => { value.style.transform = `scaleX(${scales[index]})`; });
 });
 profileButton.addEventListener('click', () => {
   scoreSizeObserver.disconnect();
@@ -124,7 +130,10 @@ profileButton.addEventListener('click', () => {
         <svg class="nav-icon" aria-hidden="true"><use href="#icon-refresh"/></svg>清零
       </button>
     </li>`).join('');
-  for (const value of scoreRecords.querySelectorAll('.record-score-value')) scoreSizeObserver.observe(value);
+  for (const value of scoreRecords.querySelectorAll('.record-score-value')) {
+    scoreSizeObserver.observe(value);
+    scoreSizeObserver.observe(value.closest('.record-card'));
+  }
   refreshProfile();
   showFront(profilePage, profilePage.querySelector('[data-back-home]'));
 });
