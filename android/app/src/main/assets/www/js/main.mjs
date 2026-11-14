@@ -61,12 +61,17 @@ for (const panel of document.querySelectorAll('.shared-settings')) {
   panel.append(sharedControls.content.cloneNode(true));
 }
 const paceOptions = document.querySelectorAll('.pace-options input');
+const paceControls = document.querySelectorAll('.pace-options');
+function syncPaceControls() {
+  for (const input of paceOptions) input.checked = input.value === data.settings.pace;
+  for (const control of paceControls) control.dataset.pace = data.settings.pace;
+}
+syncPaceControls();
 for (const option of paceOptions) {
-  option.checked = option.value === data.settings.pace;
   option.addEventListener('change', () => {
     if (!option.checked) return;
     data.settings.pace = option.value;
-    for (const input of paceOptions) input.checked = input.value === option.value;
+    syncPaceControls();
     save(data);
   });
 }
