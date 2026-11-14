@@ -93,7 +93,7 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
   align-items: center; z-index: 1;
 }
 #exit-game { grid-column: 1; grid-row: 1; place-self: start; }
-#home-update-notice { grid-column: 2; grid-row: 1; padding: 0 8px; color: var(--gold); font-size: 14px; text-align: center; }
+#home-update-notice { grid-column: 2; grid-row: 1; padding: 0 8px; text-align: center; }
 .home-top {
   grid-column: 3; grid-row: 1; display: flex; align-items: center; justify-content: flex-end;
   gap: clamp(18px, calc(var(--screen-width) * .028), 30px); min-width: 0;
