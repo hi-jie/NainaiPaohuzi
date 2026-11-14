@@ -303,13 +303,13 @@ new ResizeObserver(fitTable).observe(table);
 function scheduleTurn() {
   if (pauseMenu.open || leaveMenu.open || tutorial.open) return;
   clearTimeout(timer);
-  const fast = data.settings.pace === 'fast';
-  const presentationDelay = fast ? Math.max(0, Math.ceil(turnPresentationEnds - performance.now())) : 0;
   const pending = confirmedAction ?? round.pendingPlayerAction;
   if (pending) {
-    timer = setTimeout(() => step(pending), presentationDelay);
+    timer = setTimeout(() => step(pending), 0);
     return;
   }
+  const fast = data.settings.pace === 'fast';
+  const presentationDelay = fast ? Math.max(0, Math.ceil(turnPresentationEnds - performance.now())) : 0;
   const action = round.options[0];
   if (!action || (round.seat === 0 && !action.forced)) return;
   const perform = () => step(action.forced ? action : chooseAction(round));
