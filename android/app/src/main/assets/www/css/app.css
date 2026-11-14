@@ -294,11 +294,13 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
 #update-description { margin: 8px 0 14px; }
 .audio-setting { padding: 8px 12px 4px; font-size: 20px; }
 .audio-setting label { white-space: nowrap; }
-.pace-setting { grid-column: 1 / -1; min-width: 0; margin: 0; padding: 4px 12px 10px; font-size: 20px; }
-.pace-setting legend { padding: 0 4px; }
+.pace-setting {
+  grid-column: 1 / -1; display: grid; grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center; gap: 12px; padding: 8px 12px; font-size: 20px;
+}
 .pace-options {
-  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-  border: 1px solid #a97949; border-radius: 7px; background: linear-gradient(#211510, #4a3021);
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 2px;
+  border: 1px solid #a97949; border-radius: 8px; background: linear-gradient(#211510, #4a3021);
 }
 .pace-options label { position: relative; }
 .pace-options input { position: absolute; opacity: 0; }
@@ -306,7 +308,6 @@ button:not(.card, .eat-choice):active:not(:disabled) { translate: 0 2px; filter:
   display: grid; place-items: center; width: 100%; min-height: 36px;
   border-radius: 6px; font-size: 16px; font-weight: 750; white-space: nowrap;
 }
-.pace-options label + label { border-left: 1px solid #a97949; }
 .pace-options input:checked + span { background: linear-gradient(#fff1b0, #eac170 44%, #b07435); color: #392215; }
 .pace-options input:focus + span { outline: 2px solid #fff0b0; outline-offset: -2px; }
 .volume-control {
